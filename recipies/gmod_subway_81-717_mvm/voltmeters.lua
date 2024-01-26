@@ -11,17 +11,54 @@ function RECIPE:InjectSpawner(entclass)
 end
 
 function RECIPE:Inject(ent, entclass)
-    MetrostroiExtensions.NewClientProp(ent, "voltmeter", {
+    MetrostroiExtensions.NewClientProp(ent, "voltmeter_body", {
         model = MODELS_ROOT.."voltmeters/Voltmeters_Default.mdl",
         pos = Vector(0,0,0),
         ang = Angle(0,0,0),
-        modelcallback = function(_ent)
+        modelcallback = function(ent)
             local voltmeters = {
                 [1] = "voltmeters/Voltmeters_Default.mdl",
                 [2] = "voltmeters/Voltmeters_Round1.mdl"
             }
-            print(_ent:GetNW2Int("VoltmeterType", 1))
-            return MODELS_ROOT..voltmeters[_ent:GetNW2Int("VoltmeterType", 1)]
+            return MODELS_ROOT..voltmeters[ent:GetNW2Int("VoltmeterType", 1)]
         end
     }, "VoltmeterType")
+    MetrostroiExtensions.NewClientProp(ent, "voltmeter_glow", {
+        model = MODELS_ROOT.."voltmeters/Voltmeters_Round1_lit.mdl",
+        pos = Vector(452.909, -29.7786, 15.2064),
+        ang = Angle(0,0,0),
+    }, "VoltmeterType")
+    MetrostroiExtensions.UpdateCallback(ent, "voltmeter", function(ent, cent)
+        local value = ent:GetNW2Int("VoltmeterType", 1)
+        local value_to_pos = {
+            [1] = {Vector(452.246277,-30.519978,12.287716), Angle(90.5,0,40)},
+            [2] = {Vector(454.288,-27.9389,14.3), Angle(90,0,30)}
+        }
+        cent:SetPos(ent:LocalToWorld(value_to_pos[value][1]))
+        cent:SetAngles(ent:LocalToWorldAngles(value_to_pos[value][2]))
+    end)
+    MetrostroiExtensions.UpdateCallback(ent, "ampermeter", function(ent, cent)
+        local value = ent:GetNW2Int("VoltmeterType", 1)
+        local value_to_pos = {
+            [1] = {Vector(452.269592,-30.540430,16.922098), Angle(90.5,0,40)},
+            [2] = {Vector(452.006,-31.8885,14.5), Angle(90,0,30)}
+        }
+        cent:SetPos(ent:LocalToWorld(value_to_pos[value][1]))
+        cent:SetAngles(ent:LocalToWorldAngles(value_to_pos[value][2]))
+    end)
+    MetrostroiExtensions.InjectIntoClientThink(entclass, function(self)
+        self.PanelLights = self:GetPackedBool("PanelLights")
+        self:ShowHide("voltmeter_glow",self.PanelLights and self:GetNW2Int("VoltmeterType", 1) == 2)
+    end)
+    MetrostroiExtensions.InjectIntoUpdateWagonNumber(entclass, function(self)
+        if self:GetNW2Int("VoltmeterType", 1) == 2 then
+            self.Lights[44].brightness = 0
+            self.Lights[45].brightness = 0
+        else
+            self.Lights[44].brightness = 1
+            self.Lights[45].brightness = 1
+        end
+        self:SetLightPower(44,self:GetPackedBool("PanelLights"), 0)
+        self:SetLightPower(45,self:GetPackedBool("PanelLights"), 0)
+    end)
 end

@@ -94,6 +94,17 @@ function MetrostroiExtensions.InjectIntoUpdateWagonNumber(entclass, function_to_
     MetrostroiExtensions.InjectIntoENTClientFunction(entclass, "UpdateWagonNumber", function_to_inject)
 end
 
+function MetrostroiExtensions.InjectIntoClientThink(entclass, function_to_inject)
+    --[[
+        Injects into default Think client method. Called on every tick
+        Args:
+            * entclass: entity class of train where we should inject into function
+            * function_to_inject: function, that you want to inject. Recieves all arguments of default function.
+        Scope: Client
+    ]]
+    MetrostroiExtensions.InjectIntoENTClientFunction(entclass, "Think", function_to_inject)
+end
+
 function MetrostroiExtensions.AddSpawnerField(entclass, field_data, is_list_random)
     --[[
         Adds a new field to ent spawner. Automaticly re-adds this field on reload.
@@ -154,9 +165,27 @@ function MetrostroiExtensions.UpdateModelCallback(ent, clientprop_name, new_mode
     ]]
     if CLIENT and istable(ent) then
         local old_modelcallback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
-        ent.ClientProps[clientprop_name]["modelcallback"] = function(ent)
-            local new_modelpath = new_modelcallback(ent)
-            return new_modelpath or old_modelcallback(ent)
+        ent.ClientProps[clientprop_name]["modelcallback"] = function(self)
+            local new_modelpath = new_modelcallback(self)
+            return new_modelpath or old_modelcallback(self)
+        end
+    end
+end
+
+function MetrostroiExtensions.UpdateCallback(ent, clientprop_name, new_callback)
+    --[[
+        Inject into callback of existing ClientProp. Use this function for changing spawner prop somehow.
+        Args:
+            * ent: entity of train where we should update clientprop modelcallback
+            * clientprop_name: clientprop name
+            * new_callback: function, that recieves wagon ent and ent of prop.
+        Scope: Client
+    ]]
+    if CLIENT and istable(ent) then
+        local old_callback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
+        ent.ClientProps[clientprop_name]["callback"] = function(self, cent)
+            old_callback(self, cent)
+            new_callback(self, cent)
         end
     end
 end
