@@ -1,5 +1,5 @@
 MetrostroiExtensions.DefineRecipe("voltmeters")
-local MODELS_ROOT = "models/metrostroiextensions/81-717/"
+local MODELS_ROOT = "models/metrostroi_extensions/81-717/"
 
 function RECIPE:InjectSpawner(entclass)
     MetrostroiExtensions.AddSpawnerField("gmod_subway_81-717_mvm_custom", {

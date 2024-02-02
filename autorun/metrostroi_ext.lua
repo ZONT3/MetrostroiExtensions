@@ -224,6 +224,72 @@ function MetrostroiExtensions.NewClientProp(ent, clientprop_name, clientprop_inf
     end
 end
 
+function MetrostroiExtensions.NewButtonMap(ent, buttonmap_name, buttonmap_info)
+    --[[
+        Adds new buttonmap to entity. 
+        Args:
+            * ent: entity of train where we should add new buttonmap
+            * buttonmap_name: clientprop name
+            * buttonmap_info: clientprop info in default metrostroi format
+                pos - position of buttonmap local to wagon ent
+                ang - angle of prop local to wagon ent
+                width - width of buttonmap
+                height - width of buttonmap
+                scale - scale of buttonmap
+                sensor -  ¯\_(ツ)_/¯
+                system -  ¯\_(ツ)_/¯
+                hide - if this value set, it would be used as coef for renderDistance
+                    (in simpler words - from what distance we should hide this ent)
+                hideseat - if this value set, then if player is in seat of other wagon this value would be used same as hide
+                buttons: table of buttons, with format like this:
+                    *ID - id of a button
+                    x - x coordinate of button local to buttonmap
+                    y - y coordinate of button local to buttonmap
+                    radius - interaction radius of button, used if w or h is not set
+                    w - width of interaction zone
+                    h - height of interaction zone
+                    tooltip - fallback tooltip. You probably want to set empty string ("") and provide tooltip in translations
+                    model:
+                        name - name of button model. Defaults to button id
+                        model - model of button. Defaults to models/metrostroi/81-717/button07.mdl
+                        pos - position of button model. Defaults to position of button. 
+                        ang - angle of button model relative to buttonmap. 
+                        color - color of button model
+                        colora - color of button model with alpha value
+                        skin - skin of button model
+                        hide - if this value set, it would be used as coef for renderDistance
+                            (in simpler words - from what distance we should hide this ent)
+                        hideseat - if this value set, then if player is in seat of other wagon this value would be used same as hide
+                        scale - scale of button
+                        bscale - scale of bone with id=0. See Entity:ManipulateBoneScale
+                        vmin - start value of animation used in getfunc
+                        vmax - end value of animation used in getfunc
+                        min - start value of animation
+                        max - end value of animation
+                        speed - speed of animation
+                        damping - damping of animation
+                        stickyness - stickyness of animation
+                        var - NW2 bool, that will be used for animation of this model
+                        getfunc - function, to get bool for animation. Recieves ent, vmin, vmax, var
+                        disable - if current button toggled, than this button will be hidden. Useful for krishki
+                        disableinv - same as disabled, but inverted
+                        disableoff and disableon - if current button is off, than disableoff will be hidden. if current button is on, than disableon will be hidden.
+                        disablevar - if this var is true, then current button will be disabled
+                        sound - id of sound. defaults to ID
+
+
+
+            * field_name: if this set, then this model will be reloaded on update of spawner field with field_name
+        Scope: Client
+    ]]
+    if CLIENT and istable(ent) then
+        ent.ClientProps[clientprop_name] = clientprop_info
+    end
+    if field_name then
+        MetrostroiExtensions.MarkClientPropForReload(ent.ent_class, clientprop_name, field_name)
+    end
+end
+
 function MetrostroiExtensions.DefineRecipe(name)
     if not MetrostroiExtensions.BaseRecipies[name] then
         MetrostroiExtensions.BaseRecipies[name] = {}
