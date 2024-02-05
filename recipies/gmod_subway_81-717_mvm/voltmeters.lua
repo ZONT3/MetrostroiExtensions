@@ -11,11 +11,13 @@ function RECIPE:InjectSpawner(entclass)
 end
 
 function RECIPE:Inject(ent, entclass)
+    -- Создаем новый clientprop с нашей моделью вольтметра
     MetrostroiExtensions.NewClientProp(ent, "voltmeter_body", {
         model = MODELS_ROOT.."voltmeters/Voltmeters_Default.mdl",
         pos = Vector(0,0,0),
         ang = Angle(0,0,0),
         modelcallback = function(ent)
+            -- т.к. вольтметры зависят от значения в спавнере, меняем мо 
             local voltmeters = {
                 [1] = "voltmeters/Voltmeters_Default.mdl",
                 [2] = "voltmeters/Voltmeters_Round1.mdl"
@@ -37,7 +39,7 @@ function RECIPE:Inject(ent, entclass)
         cent:SetPos(ent:LocalToWorld(value_to_pos[value][1]))
         cent:SetAngles(ent:LocalToWorldAngles(value_to_pos[value][2]))
     end)
-    MetrostroiExtensions.MarkClientPropForReload(entclass, "voltmeter", "VoltmeterType")
+    MetrostroiExtensions.MarkClientPropForReload(ent, "voltmeter", "VoltmeterType")
     MetrostroiExtensions.UpdateCallback(ent, "ampermeter", function(ent, cent)
         local value = ent:GetNW2Int("VoltmeterType", 1)
         local value_to_pos = {
@@ -47,12 +49,12 @@ function RECIPE:Inject(ent, entclass)
         cent:SetPos(ent:LocalToWorld(value_to_pos[value][1]))
         cent:SetAngles(ent:LocalToWorldAngles(value_to_pos[value][2]))
     end)
-    MetrostroiExtensions.MarkClientPropForReload(entclass, "ampermeter", "VoltmeterType")
-    MetrostroiExtensions.InjectIntoClientThink(entclass, function(self)
+    MetrostroiExtensions.MarkClientPropForReload(ent, "ampermeter", "VoltmeterType")
+    MetrostroiExtensions.InjectIntoClientFunction(ent, "Think", function(self)
         self.PanelLights = self:GetPackedBool("PanelLights")
         self:ShowHide("voltmeter_glow",self.PanelLights and self:GetNW2Int("VoltmeterType", 1) == 2)
     end)
-    MetrostroiExtensions.InjectIntoUpdateWagonNumber(entclass, function(self)
+    MetrostroiExtensions.InjectIntoClientFunction(ent, "UpdateWagonNumber", function(self)
         if self:GetNW2Int("VoltmeterType", 1) == 2 then
             self.Lights[44].brightness = 0
             self.Lights[45].brightness = 0

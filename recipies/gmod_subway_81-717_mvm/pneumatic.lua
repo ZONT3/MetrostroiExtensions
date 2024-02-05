@@ -55,7 +55,7 @@ function RECIPE:Inject(ent, entclass)
         pos = Vector(418.022, -58.1148, -26.6543),
         ang = Angle(0,0,0),
     })
-    MetrostroiExtensions.InjectIntoClientThink(entclass, function(self)
+    MetrostroiExtensions.InjectIntoClientFunction(ent, "Think", function(self)
         self:Animate("UAVALever",   self:GetPackedBool("UAVA") and 1 or 0,0,1, 1,  3,false)
     end, 1)
 end

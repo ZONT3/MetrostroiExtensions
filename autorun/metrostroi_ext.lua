@@ -18,11 +18,21 @@ MetrostroiExtensions.RandomFields = {}  -- all fields, that marked as random (fi
 
 MetrostroiExtensions.ent_tables = {}
 
+
 -- helper methods
-function injectIntoEntFunction(entclass, function_name, function_to_inject, priority)
+function getEntclass(ent_or_entclass)
+    -- get entclass from ent table or from str entclass 
+    if type(ent_or_entclass) == "table" then
+        return ent_or_entclass.ent_class
+    end
+    return ent_or_entclass
+end
+
+function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
         -- negative priority - inject before default function
         -- positive priority - inject after default function
         -- zero - default function priority, error!
+        local entclass = getEntclass(ent_or_entclass)
         if priority == 0 then
             ErrorNoHaltWithStack("[MetrostroiExtensions]: error when injecting function with name "..function_name..": priority couldn't be zero")
         end
@@ -39,7 +49,8 @@ function injectIntoEntFunction(entclass, function_name, function_to_inject, prio
         table.insert(MetrostroiExtensions.FunctionInjectStack[entclass][function_name][inject_priority], function_to_inject)
 end
 
-function MetrostroiExtensions.MarkClientPropForReload(entclass, clientprop_name, field_name)
+function MetrostroiExtensions.MarkClientPropForReload(ent_or_entclass, clientprop_name, field_name)
+    local entclass = getEntclass(ent_or_entclass)
     if not MetrostroiExtensions.ClientPropsToReload[entclass] then
         MetrostroiExtensions.ClientPropsToReload[entclass] = {}
     end
@@ -50,29 +61,18 @@ function MetrostroiExtensions.MarkClientPropForReload(entclass, clientprop_name,
     table.insert(MetrostroiExtensions.ClientPropsToReload[entclass][field_name], clientprop_name)
 end
 
-function MetrostroiExtensions.InjectIntoENTClientFunction(entclass, function_name, function_to_inject, priority)
+function MetrostroiExtensions.InjectIntoClientFunction(ent_or_entclass, function_name, function_to_inject, priority)
     if SERVER then return end
-    injectIntoEntFunction(entclass, function_name, function_to_inject, priority)
+    injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
 end
 
-function MetrostroiExtensions.InjectIntoENTServerFunction(entclass, function_name, function_to_inject, priority)
+function MetrostroiExtensions.InjectIntoServerFunction(ent_or_entclass, function_name, function_to_inject, priority)
     if CLIENT then return end
-    injectIntoEntFunction(entclass, function_name, function_to_inject, priority)
+    injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
 end
 
-function MetrostroiExtensions.InjectIntoTrainSpawnerUpdate(entclass, function_to_inject, priority)
-    MetrostroiExtensions.InjectIntoENTServerFunction(entclass, "TrainSpawnerUpdate", function_to_inject, priority)
-end
-
-function MetrostroiExtensions.InjectIntoUpdateWagonNumber(entclass, function_to_inject, priority)
-    MetrostroiExtensions.InjectIntoENTClientFunction(entclass, "UpdateWagonNumber", function_to_inject, priority)
-end
-
-function MetrostroiExtensions.InjectIntoClientThink(entclass, function_to_inject, priority)
-    MetrostroiExtensions.InjectIntoENTClientFunction(entclass, "Think", function_to_inject, priority)
-end
-
-function MetrostroiExtensions.AddSpawnerField(entclass, field_data, is_list_random)
+function MetrostroiExtensions.AddSpawnerField(ent_or_entclass, field_data, is_list_random)
+    local entclass = getEntclass(ent_or_entclass)
     spawner = scripted_ents.GetStored(entclass).t.Spawner
     if MetrostroiExtensions.Debug then
         -- check if we have field with same name, remove it if needed
@@ -281,7 +281,7 @@ function inject()
             -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
             -- hack. iknowiknowiknow its bad
             if ent_class == "gmod_subway_81-717_mvm_custom" then ent_class_inject = "gmod_subway_81-717_mvm" else ent_class_inject = ent_class end
-            MetrostroiExtensions.InjectIntoTrainSpawnerUpdate(ent_class_inject, function(self)
+            MetrostroiExtensions.InjectIntoServerFunction(ent_class_inject, "TrainSpawnerUpdate", function(self)
                 for _, data in pairs(MetrostroiExtensions.RandomFields[ent_class]) do
                     local key = data[1]
                     local amount_of_values = data[2]
@@ -296,7 +296,7 @@ function inject()
         if MetrostroiExtensions.ClientPropsToReload[ent_class] then
             -- add helper inject to server UpdateWagonNumber in order to reload all models, that we should
             if ent_class == "gmod_subway_81-717_mvm_custom" then ent_class_inject = "gmod_subway_81-717_mvm" else ent_class_inject = ent_class end
-            MetrostroiExtensions.InjectIntoUpdateWagonNumber(ent_class_inject, function(self)
+            MetrostroiExtensions.InjectIntoClientFunction(ent_class_inject, "UpdateWagonNumber", function(self)
                 for key, props in pairs(MetrostroiExtensions.ClientPropsToReload[ent_class]) do
                     local value = self:GetNW2Int(key, 1)
                     if self[key] ~= value then
@@ -311,7 +311,6 @@ function inject()
         if MetrostroiExtensions.FunctionInjectStack[ent_class] then
             -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
             for function_name, priorities in pairs(MetrostroiExtensions.FunctionInjectStack[ent_class]) do
-                print(function_name)
                 local before_stack = {}
                 local after_stack = {}
                 for priority, function_stack in SortedPairs(priorities) do
