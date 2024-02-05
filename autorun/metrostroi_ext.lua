@@ -16,15 +16,27 @@ MetrostroiExtensions.ClientPropsToReload = {}  -- client props, injected with Me
 -- (key: entity class, value: table with key as field name and table with props as value)
 MetrostroiExtensions.RandomFields = {}  -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
 
+MetrostroiExtensions.ent_tables = {}
+
 -- helper methods
-function injectIntoEntFunction(entclass, function_name, function_to_inject)
-    if not MetrostroiExtensions.FunctionInjectStack[entclass] then
-        MetrostroiExtensions.FunctionInjectStack[entclass] = {}
-    end
-    if not MetrostroiExtensions.FunctionInjectStack[entclass][function_name] then
-        MetrostroiExtensions.FunctionInjectStack[entclass][function_name] = {}
-    end
-    table.insert(MetrostroiExtensions.FunctionInjectStack[entclass][function_name], function_to_inject)
+function injectIntoEntFunction(entclass, function_name, function_to_inject, priority)
+        -- negative priority - inject before default function
+        -- positive priority - inject after default function
+        -- zero - default function priority, error!
+        if priority == 0 then
+            ErrorNoHaltWithStack("[MetrostroiExtensions]: error when injecting function with name "..function_name..": priority couldn't be zero")
+        end
+        if not MetrostroiExtensions.FunctionInjectStack[entclass] then
+            MetrostroiExtensions.FunctionInjectStack[entclass] = {}
+        end
+        if not MetrostroiExtensions.FunctionInjectStack[entclass][function_name] then
+            MetrostroiExtensions.FunctionInjectStack[entclass][function_name] = {}
+        end
+        local inject_priority = priority or -1
+        if not MetrostroiExtensions.FunctionInjectStack[entclass][function_name][inject_priority] then
+            MetrostroiExtensions.FunctionInjectStack[entclass][function_name][inject_priority] = {}
+        end
+        table.insert(MetrostroiExtensions.FunctionInjectStack[entclass][function_name][inject_priority], function_to_inject)
 end
 
 function MetrostroiExtensions.MarkClientPropForReload(entclass, clientprop_name, field_name)
@@ -46,63 +58,88 @@ function MetrostroiExtensions.MarkClientPropForReload(entclass, clientprop_name,
     table.insert(MetrostroiExtensions.ClientPropsToReload[entclass][field_name], clientprop_name)
 end
 
-function MetrostroiExtensions.InjectIntoENTClientFunction(entclass, function_name, function_to_inject)
+function MetrostroiExtensions.InjectIntoENTClientFunction(entclass, function_name, function_to_inject, priority)
     --[[
         Injects into default ENT client method. You probably want to use some other methods, like InjectIntoClientThink
         Args:
             * entclass: entity class of train where we should inject into function
             * function_name: name of function, where you want to inject to
             * function_to_inject: function, that you want to inject. Recieves ent (usually we call it self) and all arguments of default function.
+            * priority: priority in function inject stack.
+                Functions with negative priority will be called BEFORE default function, and lower values will be called sooner (-100 will be called sooner, than -10)
+                Functions with positive priority will be called AFTER default function, and higher values will be called sooner (100 will be called sooner, than 10)
+                Functions with same priority will be called in order, that they was injected.
+                Priority can't be zero. If priority isn't specified, it defaults to -1 (e.g. function will be called just before calling default function)
         Scope: Client
     ]]
     if SERVER then return end
-    injectIntoEntFunction(entclass, function_name, function_to_inject)
+    injectIntoEntFunction(entclass, function_name, function_to_inject, priority)
 end
 
-function MetrostroiExtensions.InjectIntoENTServerFunction(entclass, function_name, function_to_inject)
+function MetrostroiExtensions.InjectIntoENTServerFunction(entclass, function_name, function_to_inject, priority)
     --[[
         Injects into default ENT server method. You probably want to use some other methods, like InjectIntoServerThink
         Args:
             * entclass: entity class of train where we should inject into function
             * function_name: name of function, where you want to inject to
             * function_to_inject: function, that you want to inject. Recieves ent (usually we call it self) and all arguments of default function.
+            * priority: priority in function inject stack.
+                Functions with negative priority will be called BEFORE default function, and lower values will be called sooner (-100 will be called sooner, than -10)
+                Functions with positive priority will be called AFTER default function, and higher values will be called sooner (100 will be called sooner, than 10)
+                Functions with same priority will be called in order, that they was injected.
+                Priority can't be zero. If priority isn't specified, it defaults to -1 (e.g. function will be called just before calling default function)
         Scope: Server
     ]]
     if CLIENT then return end
-    injectIntoEntFunction(entclass, function_name, function_to_inject)
+    injectIntoEntFunction(entclass, function_name, function_to_inject, priority)
 end
 
-function MetrostroiExtensions.InjectIntoTrainSpawnerUpdate(entclass, function_to_inject)
+function MetrostroiExtensions.InjectIntoTrainSpawnerUpdate(entclass, function_to_inject, priority)
     --[[
         Injects into default TrainSpawnerUpdate server method. Called on every update by train spawner
         Args:
             * entclass: entity class of train where we should inject into function
             * function_to_inject: function, that you want to inject. Recieves all arguments of default function.
+            * priority: priority in function inject stack.
+                Functions with negative priority will be called BEFORE default function, and lower values will be called sooner (-100 will be called sooner, than -10)
+                Functions with positive priority will be called AFTER default function, and higher values will be called sooner (100 will be called sooner, than 10)
+                Functions with same priority will be called in order, that they was injected.
+                Priority can't be zero. If priority isn't specified, it defaults to -1 (e.g. function will be called just before calling default function)
         Scope: Server
     ]]
-    MetrostroiExtensions.InjectIntoENTServerFunction(entclass, "TrainSpawnerUpdate", function_to_inject)
+    MetrostroiExtensions.InjectIntoENTServerFunction(entclass, "TrainSpawnerUpdate", function_to_inject, priority)
 end
 
-function MetrostroiExtensions.InjectIntoUpdateWagonNumber(entclass, function_to_inject)
+function MetrostroiExtensions.InjectIntoUpdateWagonNumber(entclass, function_to_inject, priority)
     --[[
         Injects into default TrainSpawnerUpdate client method. Called on every update by train spawner
         Args:
             * entclass: entity class of train where we should inject into function
             * function_to_inject: function, that you want to inject. Recieves all arguments of default function.
+            * priority: priority in function inject stack.
+                Functions with negative priority will be called BEFORE default function, and lower values will be called sooner (-100 will be called sooner, than -10)
+                Functions with positive priority will be called AFTER default function, and higher values will be called sooner (100 will be called sooner, than 10)
+                Functions with same priority will be called in order, that they was injected.
+                Priority can't be zero. If priority isn't specified, it defaults to -1 (e.g. function will be called just before calling default function)
         Scope: Client
     ]]
-    MetrostroiExtensions.InjectIntoENTClientFunction(entclass, "UpdateWagonNumber", function_to_inject)
+    MetrostroiExtensions.InjectIntoENTClientFunction(entclass, "UpdateWagonNumber", function_to_inject, priority)
 end
 
-function MetrostroiExtensions.InjectIntoClientThink(entclass, function_to_inject)
+function MetrostroiExtensions.InjectIntoClientThink(entclass, function_to_inject, priority)
     --[[
         Injects into default Think client method. Called on every tick
         Args:
             * entclass: entity class of train where we should inject into function
             * function_to_inject: function, that you want to inject. Recieves all arguments of default function.
+            * priority: priority in function inject stack.
+                Functions with negative priority will be called BEFORE default function, and lower values will be called sooner (-100 will be called sooner, than -10)
+                Functions with positive priority will be called AFTER default function, and higher values will be called sooner (100 will be called sooner, than 10)
+                Functions with same priority will be called in order, that they was injected.
+                Priority can't be zero. If priority isn't specified, it defaults to -1 (e.g. function will be called just before calling default function)
         Scope: Client
     ]]
-    MetrostroiExtensions.InjectIntoENTClientFunction(entclass, "Think", function_to_inject)
+    MetrostroiExtensions.InjectIntoENTClientFunction(entclass, "Think", function_to_inject, priority)
 end
 
 function MetrostroiExtensions.AddSpawnerField(entclass, field_data, is_list_random)
@@ -362,23 +399,25 @@ function getEntsByTrainType(train_type)
     return ent_classes
 end
 
-function inject()
-    -- getting all train entity tables
-    local ent_tables = {}
+function get_train_ent_tables()
     for _, ent_class in pairs(Metrostroi.TrainClasses) do
         local ent_table = scripted_ents.GetStored(ent_class).t
         ent_table.ent_class = ent_class  -- add ent_class for convience
-        ent_tables[ent_class] = ent_table 
+        MetrostroiExtensions.ent_tables[ent_class] = ent_table 
     end
-    -- call Inject method on every ent that recipe changes
+end
+
+function inject()
+    -- method that finalizes inject on all trains. called after init of recipies
     for i = 1, MetrostroiExtensions.InjectStack:Size() do
         local recipe = MetrostroiExtensions.InjectStack:Pop()
+        -- call Inject method on every ent that recipe changes
         for _, ent_class in pairs(getEntsByTrainType(recipe.TrainType)) do
             recipe:InjectSpawner(ent_class)
-            recipe:Inject(ent_tables[ent_class], ent_class)
+            recipe:Inject(MetrostroiExtensions.ent_tables[ent_class], ent_class)
         end
     end
-    for ent_class, ent_table in pairs(ent_tables) do
+    for ent_class, ent_table in pairs(MetrostroiExtensions.ent_tables) do
         if MetrostroiExtensions.RandomFields[ent_class] then
             -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
             -- hack. iknowiknowiknow its bad
@@ -411,16 +450,35 @@ function inject()
             end)
         end
         if MetrostroiExtensions.FunctionInjectStack[ent_class] then
-            for function_name, stack in pairs(MetrostroiExtensions.FunctionInjectStack[ent_class]) do
+            -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
+            for function_name, priorities in pairs(MetrostroiExtensions.FunctionInjectStack[ent_class]) do
+                print(function_name)
+                local before_stack = {}
+                local after_stack = {}
+                for priority, function_stack in SortedPairs(priorities) do
+                    if priority < 0 then
+                        table.insert(before_stack, function_stack)
+                    elseif priority > 0 then
+                        table.insert(after_stack, function_stack)
+                    end
+                end
                 -- maybe compile every func from stack?
                 if not ent_table["Default"..function_name] then
                     ent_table["Default"..function_name] = ent_table[function_name]
                 end
                 ent_table[function_name] = function(self)
-                    for i = 1, #stack do
-                        stack[i](self)
+                    for i = #before_stack, 1, -1 do
+                        for _, inject_function in pairs(before_stack[i]) do
+                            inject_function(self)
+                        end
                     end
-                    return ent_table["Default"..function_name](self)
+                    local ret_val = ent_table["Default"..function_name](self)
+                    for i = 1, #after_stack do
+                        for _, inject_function in pairs(after_stack[i]) do
+                            inject_function(self, ret_val)
+                        end
+                    end
+                    return ret_val
                 end
             end
         end
@@ -445,6 +503,7 @@ end
 -- production uses hook GM:InitPostEntity
 if MetrostroiExtensions.Debug then
     timer.Simple(1.3, function()
+        get_train_ent_tables()
         inject()
     end)
 else
@@ -459,19 +518,31 @@ if SERVER then
         net.Start("MetrostroiExtDoReload")
         net.Broadcast()
         print("[MetrostroiExtensions] Reloading recipies...")
+        -- clear all inject stacks
+        MetrostroiExtensions.InjectStack = util.Stack()
+        MetrostroiExtensions.FunctionInjectStack = {}
+        MetrostroiExtensions.ClientPropsToReload = {}
+        MetrostroiExtensions.RandomFields = {}
         for _, recipe in pairs(MetrostroiExtensions.Recipes) do
             initRecipe(recipe)
-            inject()
         end
+        get_train_ent_tables()
+        inject()
     end )
 end
 if CLIENT then
     net.Receive( "MetrostroiExtDoReload", function( len, ply )
         print("[MetrostroiExtensions] Reloading recipies...")
+        -- clear all inject stacks
+        MetrostroiExtensions.InjectStack = util.Stack()
+        MetrostroiExtensions.FunctionInjectStack = {}
+        MetrostroiExtensions.ClientPropsToReload = {}
+        MetrostroiExtensions.RandomFields = {}
         for _, recipe in pairs(MetrostroiExtensions.Recipes) do
             initRecipe(recipe)
-            inject()
-        end    
+        end
+        get_train_ent_tables()
+        inject()
     end )
 end
 

@@ -43,7 +43,19 @@ function RECIPE:Inject(ent, entclass)
         pos = Vector(454.052, -5.84146, -31.7479),
         ang = Angle(0,0,0),
     })
-    MetrostroiExtensions.UpdateCallback(ent, "UAVALever", function(ent, cent)
-        cent:SetRenderFX(kRenderFxGlowShell)
+    MetrostroiExtensions.UpdateModelCallback(ent, "UAVALever", function(ent)
+        return MODELS_ROOT.."pneumatic/pneumatic_pipes1_lever_uava.mdl"
     end)
+    MetrostroiExtensions.UpdateCallback(ent, "UAVALever", function(ent, cent)
+        cent:SetPos(ent:LocalToWorld(Vector(425.131, -58.714, -32.0369)))
+        cent:SetAngles(ent:LocalToWorldAngles(Angle(0, 0, 0)))
+    end)
+    MetrostroiExtensions.NewClientProp(ent, "UAVAcap", {
+        model = MODELS_ROOT.."pneumatic/pneumatic_pipes1_cap_uava.mdl",
+        pos = Vector(418.022, -58.1148, -26.6543),
+        ang = Angle(0,0,0),
+    })
+    MetrostroiExtensions.InjectIntoClientThink(entclass, function(self)
+        self:Animate("UAVALever",   self:GetPackedBool("UAVA") and 1 or 0,0,1, 1,  3,false)
+    end, -1)
 end
