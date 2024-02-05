@@ -41,7 +41,7 @@ end
 
 function MetrostroiExtensions.MarkClientPropForReload(entclass, clientprop_name, field_name)
     --[[
-        Marks props for reload on spawner update. Only works then debug is enabled, if field_name is not set.
+        Marks props for reload on spawner update. If field_name is not set, only works then debug is enabled, .
         Args:
             * entclass: entity class of train where we should reload this prop on
             * clientprop_name: name of client prop
