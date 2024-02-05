@@ -40,14 +40,6 @@ function injectIntoEntFunction(entclass, function_name, function_to_inject, prio
 end
 
 function MetrostroiExtensions.MarkClientPropForReload(entclass, clientprop_name, field_name)
-    --[[
-        Marks props for reload on spawner update. If field_name is not set, only works then debug is enabled, .
-        Args:
-            * entclass: entity class of train where we should reload this prop on
-            * clientprop_name: name of client prop
-            * field_name: if this set, then this prop will be reloaded only then value of spawner field with field_name is changed
-        Scope: Client
-    ]]
     if not MetrostroiExtensions.ClientPropsToReload[entclass] then
         MetrostroiExtensions.ClientPropsToReload[entclass] = {}
     end
@@ -59,119 +51,28 @@ function MetrostroiExtensions.MarkClientPropForReload(entclass, clientprop_name,
 end
 
 function MetrostroiExtensions.InjectIntoENTClientFunction(entclass, function_name, function_to_inject, priority)
-    --[[
-        Injects into default ENT client method.
-        Args:
-            * entclass: entity class of train where we should inject into function
-            * function_name: name of function, where you want to inject to
-            * function_to_inject: function, that you want to inject. Recieves ent (usually we call it self) and all arguments of default function.
-            * priority: priority in function inject stack.
-                Functions with negative priority will be called BEFORE default function, and lower values will be called sooner (-100 will be called sooner, than -10)
-                Functions with positive priority will be called AFTER default function, and higher values will be called sooner (100 will be called sooner, than 10)
-                Functions with same priority will be called in order, that they was injected.
-                Priority can't be zero. If priority isn't specified, it defaults to -1 (e.g. function will be called just before calling default function)
-        Scope: Client
-    ]]
     if SERVER then return end
     injectIntoEntFunction(entclass, function_name, function_to_inject, priority)
 end
 
 function MetrostroiExtensions.InjectIntoENTServerFunction(entclass, function_name, function_to_inject, priority)
-    --[[
-        Injects into default ENT server method.
-        Args:
-            * entclass: entity class of train where we should inject into function
-            * function_name: name of function, where you want to inject to
-            * function_to_inject: function, that you want to inject. Recieves ent (usually we call it self) and all arguments of default function.
-            * priority: priority in function inject stack.
-                Functions with negative priority will be called BEFORE default function, and lower values will be called sooner (-100 will be called sooner, than -10)
-                Functions with positive priority will be called AFTER default function, and higher values will be called sooner (100 will be called sooner, than 10)
-                Functions with same priority will be called in order, that they was injected.
-                Priority can't be zero. If priority isn't specified, it defaults to -1 (e.g. function will be called just before calling default function)
-        Scope: Server
-    ]]
     if CLIENT then return end
     injectIntoEntFunction(entclass, function_name, function_to_inject, priority)
 end
 
 function MetrostroiExtensions.InjectIntoTrainSpawnerUpdate(entclass, function_to_inject, priority)
-    --[[
-        Injects into default TrainSpawnerUpdate server method. Called on every update by train spawner
-        Args:
-            * entclass: entity class of train where we should inject into function
-            * function_to_inject: function, that you want to inject. Recieves all arguments of default function.
-            * priority: priority in function inject stack.
-                Functions with negative priority will be called BEFORE default function, and lower values will be called sooner (-100 will be called sooner, than -10)
-                Functions with positive priority will be called AFTER default function, and higher values will be called sooner (100 will be called sooner, than 10)
-                Functions with same priority will be called in order, that they was injected.
-                Priority can't be zero. If priority isn't specified, it defaults to -1 (e.g. function will be called just before calling default function)
-        Scope: Server
-    ]]
     MetrostroiExtensions.InjectIntoENTServerFunction(entclass, "TrainSpawnerUpdate", function_to_inject, priority)
 end
 
 function MetrostroiExtensions.InjectIntoUpdateWagonNumber(entclass, function_to_inject, priority)
-    --[[
-        Injects into default TrainSpawnerUpdate client method. Called on every update by train spawner
-        Args:
-            * entclass: entity class of train where we should inject into function
-            * function_to_inject: function, that you want to inject. Recieves all arguments of default function.
-            * priority: priority in function inject stack.
-                Functions with negative priority will be called BEFORE default function, and lower values will be called sooner (-100 will be called sooner, than -10)
-                Functions with positive priority will be called AFTER default function, and higher values will be called sooner (100 will be called sooner, than 10)
-                Functions with same priority will be called in order, that they was injected.
-                Priority can't be zero. If priority isn't specified, it defaults to -1 (e.g. function will be called just before calling default function)
-        Scope: Client
-    ]]
     MetrostroiExtensions.InjectIntoENTClientFunction(entclass, "UpdateWagonNumber", function_to_inject, priority)
 end
 
 function MetrostroiExtensions.InjectIntoClientThink(entclass, function_to_inject, priority)
-    --[[
-        Injects into default Think client method. Called on every tick
-        Args:
-            * entclass: entity class of train where we should inject into function
-            * function_to_inject: function, that you want to inject. Recieves all arguments of default function.
-            * priority: priority in function inject stack.
-                Functions with negative priority will be called BEFORE default function, and lower values will be called sooner (-100 will be called sooner, than -10)
-                Functions with positive priority will be called AFTER default function, and higher values will be called sooner (100 will be called sooner, than 10)
-                Functions with same priority will be called in order, that they was injected.
-                Priority can't be zero. If priority isn't specified, it defaults to -1 (e.g. function will be called just before calling default function)
-        Scope: Client
-    ]]
     MetrostroiExtensions.InjectIntoENTClientFunction(entclass, "Think", function_to_inject, priority)
 end
 
 function MetrostroiExtensions.AddSpawnerField(entclass, field_data, is_list_random)
-    --[[
-        Adds a new field to ent spawner. Automaticly re-adds this field on reload.
-        Args:
-            * entclass: entity class of train, where we should add a new field. For 717 you probably want to use "gmod_subway_81-717_mvm_custom"
-            * field_data: field data in default metrostroi format
-                [1]* - field name
-                [2]* - display name as translation string (Spawner.{TrainType}.{FieldName}) (can be anything, actually)
-                [3]* - type of field ("List", "Boolean" or "Slider")
-                for list:
-                    [4]* - list items as strings (can be translation strings (and probably should))
-                        If your first list value is random - set is_list_random as true.
-                        This will automaticly get random value for this setting for you.
-                    [5] - default value as index of list item
-                    [6] - callback function, that will be called on every ent in train. Recieves ent, field_value, is_rotated, index_of_wagon, total_wagons 
-                    [7] - settings table
-                for slider:
-                    [4]* - decimal places (see DNumSliders:SetDecimals)
-                    [5]* - min value
-                    [6]* - max value
-                    [7] - default value as number
-                    [8] - callback function. See list [6] for function signature.
-                for boolean:
-                    [4] - default value as true or false
-                    [5] - callback function. See list [6] for function signature.
-                    [6] - callback function for GUI. Called on change of value. Recieves DCheckBox and VGUI.
-                if [1] is number, than break will be added [1] times
-                if field is empty table, break will be added one time
-        Scope: Shared
-    ]]
     spawner = scripted_ents.GetStored(entclass).t.Spawner
     if MetrostroiExtensions.Debug then
         -- check if we have field with same name, remove it if needed
@@ -191,15 +92,6 @@ function MetrostroiExtensions.AddSpawnerField(entclass, field_data, is_list_rand
 end
 
 function MetrostroiExtensions.UpdateModelCallback(ent, clientprop_name, new_modelcallback)
-    --[[
-        Updates modelcallback of existing ClientProp. Use this function for changing existing model.
-        Args:
-            * ent: entity of train where we should update clientprop modelcallback
-            * clientprop_name: clientprop name
-            * new_modelcallback: function, that recieves ent and should return new modelpath for that clientprop.
-                Return nil, if you want to use default value of default modelcallback
-        Scope: Client
-    ]]
     if CLIENT and istable(ent) then
         local old_modelcallback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
         ent.ClientProps[clientprop_name]["modelcallback"] = function(self)
@@ -210,14 +102,6 @@ function MetrostroiExtensions.UpdateModelCallback(ent, clientprop_name, new_mode
 end
 
 function MetrostroiExtensions.UpdateCallback(ent, clientprop_name, new_callback)
-    --[[
-        Inject into callback of existing ClientProp. Use this function for changing spawner prop somehow.
-        Args:
-            * ent: entity of train where we should update clientprop modelcallback
-            * clientprop_name: clientprop name
-            * new_callback: function, that recieves wagon ent and ent of prop.
-        Scope: Client
-    ]]
     if CLIENT and istable(ent) then
         local old_callback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
         ent.ClientProps[clientprop_name]["callback"] = function(self, cent)
@@ -228,32 +112,6 @@ function MetrostroiExtensions.UpdateCallback(ent, clientprop_name, new_callback)
 end
 
 function MetrostroiExtensions.NewClientProp(ent, clientprop_name, clientprop_info, field_name)
-    --[[
-        Adds new clientprop to entity. 
-        Args:
-            * ent: entity of train where we should add new clientprop
-            * clientprop_name: clientprop name
-            * clientprop_info: clientprop info in default metrostroi format
-                model - model of this clientprop
-                modelcallback - callback to change model dynamicly. Recieves wagon ent.
-                    Should return path to a model to use.
-                    If callback returns nil, default model will be used.
-                pos - position of prop local to wagon ent
-                ang - angle of prop local to wagon ent
-                skin - skin of prop (defaults to 0)
-                scale - scale of prop
-                bscale - scale of bone with id=0. See Entity:ManipulateBoneScale
-                bodygroup - table of bodygroups, where key - is bodygroup id, and value - is bodygroup value
-                color - color of prop
-                colora - color of prop with alpha value
-                callback - callback, that recieves wagon ent and newly created prop. Called after creation of prop.
-                nohide - flag to not hide this entity
-                hide - if this value set, it would be used as coef for renderDistance
-                    (in simpler words - from what distance we should hide this ent)
-                hideseat - if this value set, then if player is in seat of other wagon this value would be used same as hide
-            * field_name: if this set, then this model will be reloaded on update of spawner field with field_name
-        Scope: Client
-    ]]
     if CLIENT and istable(ent) then
         ent.ClientProps[clientprop_name] = clientprop_info
     end
