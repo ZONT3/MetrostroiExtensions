@@ -60,7 +60,7 @@ end
 
 function MetrostroiExtensions.InjectIntoENTClientFunction(entclass, function_name, function_to_inject, priority)
     --[[
-        Injects into default ENT client method. You probably want to use some other methods, like InjectIntoClientThink
+        Injects into default ENT client method.
         Args:
             * entclass: entity class of train where we should inject into function
             * function_name: name of function, where you want to inject to
@@ -78,7 +78,7 @@ end
 
 function MetrostroiExtensions.InjectIntoENTServerFunction(entclass, function_name, function_to_inject, priority)
     --[[
-        Injects into default ENT server method. You probably want to use some other methods, like InjectIntoServerThink
+        Injects into default ENT server method.
         Args:
             * entclass: entity class of train where we should inject into function
             * function_name: name of function, where you want to inject to
