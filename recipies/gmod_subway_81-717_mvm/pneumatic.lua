@@ -57,5 +57,5 @@ function RECIPE:Inject(ent, entclass)
     })
     MetrostroiExtensions.InjectIntoClientThink(entclass, function(self)
         self:Animate("UAVALever",   self:GetPackedBool("UAVA") and 1 or 0,0,1, 1,  3,false)
-    end, -1)
+    end, 1)
 end
