@@ -236,6 +236,7 @@ function MetrostroiExtensions.NewClientProp(ent, clientprop_name, clientprop_inf
             * clientprop_info: clientprop info in default metrostroi format
                 model - model of this clientprop
                 modelcallback - callback to change model dynamicly. Recieves wagon ent.
+                    Should return path to a model to use.
                     If callback returns nil, default model will be used.
                 pos - position of prop local to wagon ent
                 ang - angle of prop local to wagon ent
@@ -394,7 +395,7 @@ function getEntsByTrainType(train_type)
         end
     end
     if #ent_classes == 0 then
-        ErrorNoHalt("[MetrostroiExtensions] No entites for "..train_type..". Perhaps an typo?")
+        ErrorNoHalt("[MetrostroiExtensions] No entites for "..train_type..". Perhaps a typo?")
     end
     return ent_classes
 end
