@@ -234,7 +234,11 @@ local train_families = {
 }
 
 function getEntsByTrainType(train_type)
-    -- firstly, try to find it as entity class
+    -- firstly, check for "all" train_type
+    if train_type == "all" then
+        return Metrostroi.TrainClasses
+    end
+    -- then try to find it as entity class
     if table.HasValue(Metrostroi.TrainClasses, train_type) then
         return {train_type}
     end
@@ -258,7 +262,7 @@ function getEntsByTrainType(train_type)
     return ent_classes
 end
 
-function get_train_ent_tables()
+function getTrainEntTables()
     for _, ent_class in pairs(Metrostroi.TrainClasses) do
         local ent_table = scripted_ents.GetStored(ent_class).t
         ent_table.ent_class = ent_class  -- add ent_class for convience
@@ -298,8 +302,14 @@ function inject()
             if ent_class == "gmod_subway_81-717_mvm_custom" then ent_class_inject = "gmod_subway_81-717_mvm" else ent_class_inject = ent_class end
             MetrostroiExtensions.InjectIntoClientFunction(ent_class_inject, "UpdateWagonNumber", function(self)
                 for key, props in pairs(MetrostroiExtensions.ClientPropsToReload[ent_class]) do
+                    if key == "debug_reload" and MetrostroiExtensions.Debug then
+                        for _, prop_name in pairs(props) do
+                            self:RemoveCSEnt(prop_name)
+                        end
+                        continue
+                    end
                     local value = self:GetNW2Int(key, 1)
-                    if self[key] ~= value then
+                    if MetrostroiExtensions.Debug or self[key] ~= value then
                         for _, prop_name in pairs(props) do
                             self:RemoveCSEnt(prop_name)
                         end
@@ -321,6 +331,11 @@ function inject()
                     end
                 end
                 -- maybe compile every func from stack?
+                -- check for missing function from some wagon
+                if not ent_table[function_name] then
+                    ErrorNoHalt("[MetrostroiExtensions] Can't inject into "..ent_class..": function "..function_name.." doesn't exists\n")
+                    continue
+                end
                 if not ent_table["Default"..function_name] then
                     ent_table["Default"..function_name] = ent_table[function_name]
                 end
@@ -361,7 +376,7 @@ end
 -- production uses hook GM:InitPostEntity
 if MetrostroiExtensions.Debug then
     timer.Simple(1.3, function()
-        get_train_ent_tables()
+        getTrainEntTables()
         inject()
     end)
 else
@@ -384,7 +399,7 @@ if SERVER then
         for _, recipe in pairs(MetrostroiExtensions.Recipes) do
             initRecipe(recipe)
         end
-        get_train_ent_tables()
+        getTrainEntTables()
         inject()
     end )
 end
@@ -399,7 +414,7 @@ if CLIENT then
         for _, recipe in pairs(MetrostroiExtensions.Recipes) do
             initRecipe(recipe)
         end
-        get_train_ent_tables()
+        getTrainEntTables()
         inject()
     end )
 end
