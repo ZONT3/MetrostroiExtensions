@@ -54,7 +54,6 @@ function MetrostroiExtensions.MarkClientPropForReload(ent_or_entclass, clientpro
     if not MetrostroiExtensions.ClientPropsToReload[entclass] then
         MetrostroiExtensions.ClientPropsToReload[entclass] = {}
     end
-    if not field_name then field_name = "debug_reload" end
     if not MetrostroiExtensions.ClientPropsToReload[entclass][field_name] then
         MetrostroiExtensions.ClientPropsToReload[entclass][field_name] = {}
     end
@@ -92,7 +91,7 @@ function MetrostroiExtensions.AddSpawnerField(ent_or_entclass, field_data, is_li
 end
 
 function MetrostroiExtensions.UpdateModelCallback(ent, clientprop_name, new_modelcallback)
-    if CLIENT and istable(ent) then
+    if CLIENT then
         local old_modelcallback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
         ent.ClientProps[clientprop_name]["modelcallback"] = function(self)
             local new_modelpath = new_modelcallback(self)
@@ -102,7 +101,7 @@ function MetrostroiExtensions.UpdateModelCallback(ent, clientprop_name, new_mode
 end
 
 function MetrostroiExtensions.UpdateCallback(ent, clientprop_name, new_callback)
-    if CLIENT and istable(ent) then
+    if CLIENT then
         local old_callback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
         ent.ClientProps[clientprop_name]["callback"] = function(self, cent)
             old_callback(self, cent)
@@ -112,7 +111,7 @@ function MetrostroiExtensions.UpdateCallback(ent, clientprop_name, new_callback)
 end
 
 function MetrostroiExtensions.NewClientProp(ent, clientprop_name, clientprop_info, field_name)
-    if CLIENT and istable(ent) then
+    if CLIENT then
         ent.ClientProps[clientprop_name] = clientprop_info
     end
     if field_name then
@@ -120,69 +119,19 @@ function MetrostroiExtensions.NewClientProp(ent, clientprop_name, clientprop_inf
     end
 end
 
-function MetrostroiExtensions.NewButtonMap(ent, buttonmap_name, buttonmap_info)
-    --[[
-        Adds new buttonmap to entity. 
-        Args:
-            * ent: entity of train where we should add new buttonmap
-            * buttonmap_name: clientprop name
-            * buttonmap_info: clientprop info in default metrostroi format
-                pos - position of buttonmap local to wagon ent
-                ang - angle of prop local to wagon ent
-                width - width of buttonmap
-                height - width of buttonmap
-                scale - scale of buttonmap
-                sensor -  ¯\_(ツ)_/¯
-                system -  ¯\_(ツ)_/¯
-                hide - if this value set, it would be used as coef for renderDistance
-                    (in simpler words - from what distance we should hide this ent)
-                hideseat - if this value set, then if player is in seat of other wagon this value would be used same as hide
-                buttons: table of buttons, with format like this:
-                    *ID - id of a button
-                    x - x coordinate of button local to buttonmap
-                    y - y coordinate of button local to buttonmap
-                    radius - interaction radius of button, used if w or h is not set
-                    w - width of interaction zone
-                    h - height of interaction zone
-                    tooltip - fallback tooltip. You probably want to set empty string ("") and provide tooltip in translations
-                    model:
-                        name - name of button model. Defaults to button id
-                        model - model of button. Defaults to models/metrostroi/81-717/button07.mdl
-                        pos - position of button model. Defaults to position of button. 
-                        ang - angle of button model relative to buttonmap. 
-                        color - color of button model
-                        colora - color of button model with alpha value
-                        skin - skin of button model
-                        hide - if this value set, it would be used as coef for renderDistance
-                            (in simpler words - from what distance we should hide this ent)
-                        hideseat - if this value set, then if player is in seat of other wagon this value would be used same as hide
-                        scale - scale of button
-                        bscale - scale of bone with id=0. See Entity:ManipulateBoneScale
-                        vmin - start value of animation used in getfunc
-                        vmax - end value of animation used in getfunc
-                        min - start value of animation
-                        max - end value of animation
-                        speed - speed of animation
-                        damping - damping of animation
-                        stickyness - stickyness of animation
-                        var - NW2 bool, that will be used for animation of this model
-                        getfunc - function, to get bool for animation. Recieves ent, vmin, vmax, var
-                        disable - if current button toggled, than this button will be hidden. Useful for krishki
-                        disableinv - same as disabled, but inverted
-                        disableoff and disableon - if current button is off, than disableoff will be hidden. if current button is on, than disableon will be hidden.
-                        disablevar - if this var is true, then current button will be disabled
-                        sound - id of sound. defaults to ID
-
-
-
-            * field_name: if this set, then this model will be reloaded on update of spawner field with field_name
-        Scope: Client
-    ]]
-    if CLIENT and istable(ent) then
-        ent.ClientProps[clientprop_name] = clientprop_info
+function MetrostroiExtensions.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
+    if CLIENT then
+        local buttonmap = ent.ButtonMap[buttonmap_name]
+        buttonmap.pos = new_pos
+        if new_ang then
+            buttonmap.ang = new_ang
+        end
     end
-    if field_name then
-        MetrostroiExtensions.MarkClientPropForReload(ent.ent_class, clientprop_name, field_name)
+end
+
+function MetrostroiExtensions.NewButtonMap(ent, buttonmap_name, buttonmap_data)
+    if CLIENT then
+        ent.ButtonMap[buttonmap_name] = buttonmap_data
     end
 end
 
@@ -278,7 +227,14 @@ function inject()
         for _, ent_class in pairs(getEntsByTrainType(recipe.TrainType)) do
             recipe:InjectSpawner(ent_class)
             recipe:Inject(MetrostroiExtensions.ent_tables[ent_class], ent_class)
+            if MetrostroiExtensions.Debug then
+                -- call Inject method on all alredy spawner ent that recipe changes (if debug enabled)
+                for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
+                    recipe:Inject(ent, ent_class)
+                end
+            end
         end
+        
     end
     for ent_class, ent_table in pairs(MetrostroiExtensions.ent_tables) do
         if MetrostroiExtensions.RandomFields[ent_class] then
@@ -302,12 +258,6 @@ function inject()
             if ent_class == "gmod_subway_81-717_mvm_custom" then ent_class_inject = "gmod_subway_81-717_mvm" else ent_class_inject = ent_class end
             MetrostroiExtensions.InjectIntoClientFunction(ent_class_inject, "UpdateWagonNumber", function(self)
                 for key, props in pairs(MetrostroiExtensions.ClientPropsToReload[ent_class]) do
-                    if key == "debug_reload" and MetrostroiExtensions.Debug then
-                        for _, prop_name in pairs(props) do
-                            self:RemoveCSEnt(prop_name)
-                        end
-                        continue
-                    end
                     local value = self:GetNW2Int(key, 1)
                     if MetrostroiExtensions.Debug or self[key] ~= value then
                         for _, prop_name in pairs(props) do
@@ -352,6 +302,25 @@ function inject()
                         end
                     end
                     return ret_val
+                end
+                if MetrostroiExtensions.Debug then
+                    -- reinject function on all already spawned ents
+                    for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
+                        ent[function_name] = function(self)
+                            for i = #before_stack, 1, -1 do
+                                for _, inject_function in pairs(before_stack[i]) do
+                                    inject_function(self)
+                                end
+                            end
+                            local ret_val = ent["Default"..function_name](self)
+                            for i = 1, #after_stack do
+                                for _, inject_function in pairs(after_stack[i]) do
+                                    inject_function(self, ret_val)
+                                end
+                            end
+                            return ret_val
+                        end
+                    end
                 end
             end
         end
@@ -416,6 +385,11 @@ if CLIENT then
         end
         getTrainEntTables()
         inject()
+        -- try to reload all spawned trains csents and buttonmaps
+        for k, v in ipairs(ents.FindByClass( "gmod_subway_*" )) do
+            v.ClientPropsInitialized = false
+            v:ClearButtons()
+        end
     end )
 end
 

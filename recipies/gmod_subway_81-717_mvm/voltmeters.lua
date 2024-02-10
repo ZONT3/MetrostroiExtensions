@@ -17,7 +17,7 @@ function RECIPE:Inject(ent, entclass)
         pos = Vector(0,0,0),
         ang = Angle(0,0,0),
         modelcallback = function(ent)
-            -- т.к. вольтметры зависят от значения в спавнере, меняем мо 
+            -- т.к. вольтметры зависят от значения в спавнере, меняем модель
             local voltmeters = {
                 [1] = "voltmeters/Voltmeters_Default.mdl",
                 [2] = "voltmeters/Voltmeters_Round1.mdl"
@@ -54,6 +54,18 @@ function RECIPE:Inject(ent, entclass)
         self.PanelLights = self:GetPackedBool("PanelLights")
         self:ShowHide("voltmeter_glow",self.PanelLights and self:GetNW2Int("VoltmeterType", 1) == 2)
     end)
+    MetrostroiExtensions.NewButtonMap(ent, "HVMeters_Type2", {
+        pos = Vector(454.8,-25.9,18.1),
+        ang = Angle(0,-120,90),
+        width = 138,
+        height = 68,
+        scale = 0.0625,
+
+        buttons = {
+            {ID = "!EnginesCurrent", x=74, y=0, w=68, h=64, tooltip=""},
+            {ID = "!HighVoltage", x=0, y=0, w=68, h=64, tooltip=""},
+        }
+    })
     MetrostroiExtensions.InjectIntoClientFunction(ent, "UpdateWagonNumber", function(self)
         if self:GetNW2Int("VoltmeterType", 1) == 2 then
             self.Lights[44].brightness = 0
@@ -64,5 +76,7 @@ function RECIPE:Inject(ent, entclass)
         end
         self:SetLightPower(44,self:GetPackedBool("PanelLights"), 0)
         self:SetLightPower(45,self:GetPackedBool("PanelLights"), 0)
+        self:HidePanel("HVMeters", self:GetNW2Int("VoltmeterType", 1) == 2)
+        self:HidePanel("HVMeters_Type2", self:GetNW2Int("VoltmeterType", 1) == 1)
     end)
 end
