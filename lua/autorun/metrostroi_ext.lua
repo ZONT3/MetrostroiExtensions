@@ -32,7 +32,7 @@ function logDebug(msg)
     end
 end
 function logError(msg)
-    ErrorNoHaltWithStack(LOG_PREFIX .. "Error!:" .. msg .. "\n")
+    ErrorNoHaltWithStack(LOG_PREFIX .. "Error!: " .. msg .. "\n")
 end
 
 -- helper methods
@@ -145,6 +145,10 @@ function loadRecipe(filename, ent_type)
     RECIPE.Init = RECIPE.Init or function() end
     RECIPE.Inject = RECIPE.Inject or function() end
     RECIPE.InjectSpawner = RECIPE.InjectSpawner or function() end
+    if MEL.Recipes[RECIPE_NAME] then
+        logError("Recipies with name \"" .. RECIPE_NAME .. "\" already exists. Refusing to load it.")
+        return
+    end
     MEL.Recipes[RECIPE_NAME] = RECIPE
     -- initialize recipe
     initRecipe(RECIPE)
@@ -191,6 +195,119 @@ function getTrainEntTables()
     end
 end
 
+
+function injectRandomFieldHelper(ent_class)
+    if MEL.RandomFields[ent_class] then
+        -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
+        -- hack. iknowiknowiknow its bad
+        if ent_class == "gmod_subway_81-717_mvm_custom" then
+            ent_class_inject = "gmod_subway_81-717_mvm"
+        else
+            ent_class_inject = ent_class
+        end
+
+        MEL.InjectIntoServerFunction(ent_class_inject, "TrainSpawnerUpdate", function(self)
+            for _, data in pairs(MEL.RandomFields[ent_class]) do
+                local key = data[1]
+                local amount_of_values = data[2]
+                local value = self:GetNW2Int(key, 1)
+                if value == 1 then value = math.random(2, amount_of_values) end
+                self:SetNW2Int(key, value - 1)
+            end
+        end)
+    end
+end
+
+function injectFieldUpdateHelper(ent_class)
+    if MEL.ClientPropsToReload[ent_class] then
+        -- add helper inject to server UpdateWagonNumber in order to reload all models, that we should
+        if ent_class == "gmod_subway_81-717_mvm_custom" then
+            ent_class_inject = "gmod_subway_81-717_mvm"
+        else
+            ent_class_inject = ent_class
+        end
+
+        MEL.InjectIntoClientFunction(ent_class_inject, "UpdateWagonNumber", function(self)
+            for key, props in pairs(MEL.ClientPropsToReload[ent_class]) do
+                local value = self:GetNW2Int(key, 1)
+                if MEL.Debug or self[key] ~= value then
+                    for _, prop_name in pairs(props) do
+                        self:RemoveCSEnt(prop_name)
+                    end
+
+                    self[key] = value
+                end
+            end
+        end)
+    end
+end
+
+function injectFunction(ent_class, ent_table)
+    if MEL.FunctionInjectStack[ent_class] then
+        -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
+        for function_name, priorities in pairs(MEL.FunctionInjectStack[ent_class]) do
+            local before_stack = {}
+            local after_stack = {}
+            for priority, function_stack in SortedPairs(priorities) do
+                if priority < 0 then
+                    table.insert(before_stack, function_stack)
+                elseif priority > 0 then
+                    table.insert(after_stack, function_stack)
+                end
+            end
+
+            -- maybe compile every func from stack?
+            -- check for missing function from some wagon
+            if not ent_table[function_name] then
+                logError("can't inject into " .. ent_class .. ": function " .. function_name .. " doesn't exists")
+                continue
+            end
+
+            if not ent_table["Default" .. function_name] then ent_table["Default" .. function_name] = ent_table[function_name] end
+            ent_table[function_name] = function(self)
+                for i = #before_stack, 1, -1 do
+                    for _, inject_function in pairs(before_stack[i]) do
+                        inject_function(self)
+                    end
+                end
+
+                local ret_val = ent_table["Default" .. function_name](self)
+                for i = 1, #after_stack do
+                    for _, inject_function in pairs(after_stack[i]) do
+                        inject_function(self, ret_val)
+                    end
+                end
+                return ret_val
+            end
+
+            injectFunctionDebug(ent_class, function_name, before_stack, after_stack)
+        end
+    end
+end
+
+function injectFunctionDebug(ent_class, function_name, before_stack, after_stack)
+    if MEL.Debug then
+        -- reinject function on all already spawned ents
+        for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
+            ent[function_name] = function(self)
+                for i = #before_stack, 1, -1 do
+                    for _, inject_function in pairs(before_stack[i]) do
+                        inject_function(self)
+                    end
+                end
+
+                local ret_val = ent["Default" .. function_name](self)
+                for i = 1, #after_stack do
+                    for _, inject_function in pairs(after_stack[i]) do
+                        inject_function(self, ret_val)
+                    end
+                end
+                return ret_val
+            end
+        end
+    end
+end
+
 function inject()
     -- method that finalizes inject on all trains. called after init of recipies
     for i = 1, MEL.InjectStack:Size() do
@@ -209,107 +326,9 @@ function inject()
     end
 
     for ent_class, ent_table in pairs(MEL.ent_tables) do
-        if MEL.RandomFields[ent_class] then
-            -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
-            -- hack. iknowiknowiknow its bad
-            if ent_class == "gmod_subway_81-717_mvm_custom" then
-                ent_class_inject = "gmod_subway_81-717_mvm"
-            else
-                ent_class_inject = ent_class
-            end
-
-            MEL.InjectIntoServerFunction(ent_class_inject, "TrainSpawnerUpdate", function(self)
-                for _, data in pairs(MEL.RandomFields[ent_class]) do
-                    local key = data[1]
-                    local amount_of_values = data[2]
-                    local value = self:GetNW2Int(key, 1)
-                    if value == 1 then value = math.random(2, amount_of_values) end
-                    self:SetNW2Int(key, value - 1)
-                end
-            end)
-        end
-
-        if MEL.ClientPropsToReload[ent_class] then
-            -- add helper inject to server UpdateWagonNumber in order to reload all models, that we should
-            if ent_class == "gmod_subway_81-717_mvm_custom" then
-                ent_class_inject = "gmod_subway_81-717_mvm"
-            else
-                ent_class_inject = ent_class
-            end
-
-            MEL.InjectIntoClientFunction(ent_class_inject, "UpdateWagonNumber", function(self)
-                for key, props in pairs(MEL.ClientPropsToReload[ent_class]) do
-                    local value = self:GetNW2Int(key, 1)
-                    if MEL.Debug or self[key] ~= value then
-                        for _, prop_name in pairs(props) do
-                            self:RemoveCSEnt(prop_name)
-                        end
-
-                        self[key] = value
-                    end
-                end
-            end)
-        end
-
-        if MEL.FunctionInjectStack[ent_class] then
-            -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
-            for function_name, priorities in pairs(MEL.FunctionInjectStack[ent_class]) do
-                local before_stack = {}
-                local after_stack = {}
-                for priority, function_stack in SortedPairs(priorities) do
-                    if priority < 0 then
-                        table.insert(before_stack, function_stack)
-                    elseif priority > 0 then
-                        table.insert(after_stack, function_stack)
-                    end
-                end
-
-                -- maybe compile every func from stack?
-                -- check for missing function from some wagon
-                if not ent_table[function_name] then
-                    logError("can't inject into " .. ent_class .. ": function " .. function_name .. " doesn't exists")
-                    continue
-                end
-
-                if not ent_table["Default" .. function_name] then ent_table["Default" .. function_name] = ent_table[function_name] end
-                ent_table[function_name] = function(self)
-                    for i = #before_stack, 1, -1 do
-                        for _, inject_function in pairs(before_stack[i]) do
-                            inject_function(self)
-                        end
-                    end
-
-                    local ret_val = ent_table["Default" .. function_name](self)
-                    for i = 1, #after_stack do
-                        for _, inject_function in pairs(after_stack[i]) do
-                            inject_function(self, ret_val)
-                        end
-                    end
-                    return ret_val
-                end
-
-                if MEL.Debug then
-                    -- reinject function on all already spawned ents
-                    for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
-                        ent[function_name] = function(self)
-                            for i = #before_stack, 1, -1 do
-                                for _, inject_function in pairs(before_stack[i]) do
-                                    inject_function(self)
-                                end
-                            end
-
-                            local ret_val = ent["Default" .. function_name](self)
-                            for i = 1, #after_stack do
-                                for _, inject_function in pairs(after_stack[i]) do
-                                    inject_function(self, ret_val)
-                                end
-                            end
-                            return ret_val
-                        end
-                    end
-                end
-            end
-        end
+        injectRandomFieldHelper(ent_class)
+        injectFieldUpdateHelper(ent_class)
+        injectFunction(ent_class, ent_table)
     end
 end
 
@@ -327,17 +346,10 @@ for _, folder in pairs(folders) do
     end
 end
 
--- injection logic
--- debug uses timers as inject logic
--- production uses hook GM:InitPostEntity
-if MEL.Debug then
-    timer.Simple(1.3, function()
-        getTrainEntTables()
-        inject()
-    end)
-else
-    error("not implemented")
-end
+hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
+    getTrainEntTables()
+    inject()
+end)
 
 -- reload command:
 -- reloads all recipies on client and server
