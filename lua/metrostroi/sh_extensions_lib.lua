@@ -21,6 +21,7 @@ MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extension
 -- (key: entity class, value: table with key as field name and table with props as value)
 MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
 MEL.ent_tables = {}
+MEL.train_classes = {}
 -- logger methods
 local LOG_PREFIX = "[MetrostroiExtensionsLib] "
 function logInfo(msg)
@@ -159,6 +160,7 @@ function initRecipe(recipe)
     recipe:Init()
     -- add it to inject stack
     MEL.InjectStack:Push(recipe)
+    -- add convar that will be able to 
 end
 
 -- lookup table for train families
@@ -169,26 +171,33 @@ local train_families = {
 
 function getEntsByTrainType(train_type)
     -- firstly, check for "all" train_type
-    if train_type == "all" then return Metrostroi.TrainClasses end
+    if train_type == "all" then return MEL.train_classes end
     -- then try to find it as entity class
-    if table.HasValue(Metrostroi.TrainClasses, train_type) then return {train_type} end
+    if table.HasValue(MEL.train_classes, train_type) then return {train_type} end
     -- then try to check it in lookup table
     -- why? just imagine 717: we have 5p, we have some other modifications
     -- and you probably don't want to have a new default 717 cabine in 7175p
     if train_families[train_type] then return train_families[train_type] end
     -- and finally try to find by searching train family in classname
     local ent_classes = {}
-    for _, ent_class in pairs(Metrostroi.TrainClasses) do
+    for _, ent_class in pairs(MEL.train_classes) do
         local contains_train_type, _ = string.find(ent_class, train_type)
         if contains_train_type then table.insert(ent_classes, ent_class) end
     end
 
-    if #ent_classes == 0 then logError("no entites for " .. train_type .. ". Perhaps a typo?") end
+    if #ent_classes == 0 then logError("no entities for " .. train_type .. ". Perhaps a typo?") end
+    PrintTable(MEL.ent_tables)
     return ent_classes
 end
 
 function getTrainEntTables()
-    for _, ent_class in pairs(Metrostroi.TrainClasses) do
+    for name in pairs(scripted_ents.GetList()) do
+        local prefix = "gmod_subway_"
+        if string.sub(name,1,#prefix) == prefix and scripted_ents.Get(name).Base == "gmod_subway_base" then
+            table.insert(MEL.train_classes,name)
+        end
+    end
+    for _, ent_class in pairs(MEL.train_classes) do
         local ent_table = scripted_ents.GetStored(ent_class).t
         ent_table.ent_class = ent_class -- add ent_class for convience
         MEL.ent_tables[ent_class] = ent_table
@@ -324,7 +333,8 @@ function inject()
             end
         end
     end
-
+    RunConsoleCommand("metrostroi_language_reload")
+    -- reload all languages in order to update 
     for ent_class, ent_table in pairs(MEL.ent_tables) do
         injectRandomFieldHelper(ent_class)
         injectFieldUpdateHelper(ent_class)
@@ -346,10 +356,16 @@ for _, folder in pairs(folders) do
     end
 end
 
+-- injection logic
+-- debug uses timers as inject logic
+-- production uses hook GM:InitPostEntity
 hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
-    getTrainEntTables()
-    inject()
+    timer.Simple(1, function()
+        getTrainEntTables()
+        inject()
+    end)
 end)
+
 
 -- reload command:
 -- reloads all recipies on client and server
