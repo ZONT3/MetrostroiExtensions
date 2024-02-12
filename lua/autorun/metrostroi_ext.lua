@@ -146,7 +146,7 @@ function loadRecipe(filename, ent_type)
     RECIPE.Inject = RECIPE.Inject or function() end
     RECIPE.InjectSpawner = RECIPE.InjectSpawner or function() end
     if MEL.Recipes[RECIPE_NAME] then
-        logError("Recipies with name \"" .. RECIPE_NAME .. "\" already exists. Refusing to load it.")
+        logError("Recipe with name \"" .. RECIPE_NAME .. "\" already exists. Refusing to load recipe from " .. filepath .. ".")
         return
     end
     MEL.Recipes[RECIPE_NAME] = RECIPE
