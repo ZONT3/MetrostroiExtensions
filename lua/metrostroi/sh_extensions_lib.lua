@@ -87,7 +87,7 @@ function MEL.InjectIntoServerFunction(ent_or_entclass, function_name, function_t
     injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
 end
 
-function MEL.AddSpawnerField(ent_or_entclass, field_data, is_list_random)
+function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field)
     local entclass = getEntclass(ent_or_entclass)
     if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then
         entclass = "gmod_subway_81-717_mvm_custom"
@@ -101,10 +101,15 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, is_list_random)
         end
     end
 
-    if is_list_random then
+    if is_random_field then
         local entclass_random = getEntclass(ent_or_entclass)
         if not MEL.RandomFields[entclass_random] then MEL.RandomFields[entclass_random] = {} end
-        table.insert(MEL.RandomFields[entclass_random], {field_data[1], #field_data[4]})
+        local field_type = field_data[3]
+        if field_type == "List" then
+            table.insert(MEL.RandomFields[entclass_random], {field_data[1], field_data[3], #field_data[4]})
+        elseif field_type == "Slider" then
+            table.insert(MEL.RandomFields[entclass_random], {field_data[1], field_data[3], field_data[5], field_data[6]})
+        end
     end
 
     table.insert(spawner, field_data)
@@ -228,15 +233,26 @@ end
 
 function injectRandomFieldHelper(ent_class)
     if MEL.RandomFields[ent_class] then
+        print(ent_class)
         -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
         -- hack. iknowiknowiknow its bad
         MEL.InjectIntoServerFunction(ent_class, "TrainSpawnerUpdate", function(self)
+            local custom = self:SetNW2Bool("Custom")
             for _, data in pairs(MEL.RandomFields[ent_class]) do
                 local key = data[1]
-                local amount_of_values = data[2]
-                local value = self:GetNW2Int(key, 1)
-                if value == 1 then value = math.random(2, amount_of_values) end
-                self:SetNW2Int(key, value - 1)
+                local field_type = data[2]
+                if field_type == "List" then
+                    local amount_of_values = data[3]
+                    local value = self:GetNW2Int(key, 1)
+                    if not custom or value == 1 then value = math.random(2, amount_of_values) end
+                    self:SetNW2Int(key, value - 1)
+                elseif field_type == "Slider" then
+                    local min = data[3]
+                    local max = data[4]
+                    local value = self:GetNW2Float(key, min)
+                    if not custom or value == min then self:SetNW2Float(key, math.random(min + 1, max)) end
+                    print()
+                end
             end
         end)
     end
