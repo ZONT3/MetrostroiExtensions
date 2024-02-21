@@ -24,6 +24,16 @@ MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extension
 -- (key: entity class, value: table with key as field name and table with props as value)
 MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
 
+
+-- lookup table for train families
+MEL.TrainFamilies = {
+    -- for 717 we don't need to modify _custom entity, cause it's used just for spawner
+    ["717"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-717_mvm",},
+    ["717_714"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-717_mvm", "gmod_subway_81-714_lvz", "gmod_subway_81-714_mvm"},
+    ["717_714_mvm"] = {"gmod_subway_81-717_mvm", "gmod_subway_81-714_mvm"},
+    ["717_714_lvz"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-714_lvz"},
+}
+
 MEL.ent_tables = {}
 MEL.train_classes = {}
 -- logger methods
@@ -77,9 +87,16 @@ function MEL.InjectIntoServerFunction(ent_or_entclass, function_name, function_t
     injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
 end
 
+-- all entities, where we should modify _custom spawner and not default one
+local all_717_mvm = {""}
+
 function MEL.AddSpawnerField(ent_or_entclass, field_data, is_list_random)
     local entclass = getEntclass(ent_or_entclass)
-    spawner = scripted_ents.GetStored(entclass).t.Spawner
+    if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then
+        entclass = "gmod_subway_81-717_mvm_custom"
+    end
+    local spawner = scripted_ents.GetStored(entclass).t.Spawner
+    if not spawner then return end
     if MEL.Debug then
         -- check if we have field with same name, remove it if needed
         for i, field in pairs(spawner) do
@@ -88,8 +105,9 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, is_list_random)
     end
 
     if is_list_random then
-        if not MEL.RandomFields[entclass] then MEL.RandomFields[entclass] = {} end
-        table.insert(MEL.RandomFields[entclass], {field_data[1], #field_data[4]})
+        local entclass_random = getEntclass(ent_or_entclass)
+        if not MEL.RandomFields[entclass_random] then MEL.RandomFields[entclass_random] = {} end
+        table.insert(MEL.RandomFields[entclass_random], {field_data[1], #field_data[4]})
     end
 
     table.insert(spawner, field_data)
@@ -176,12 +194,6 @@ function initRecipe(recipe)
     end
 end
 
--- lookup table for train families
-local train_families = {
-    -- for 717 we don't need to modify _custom entity, cause it's used just for spawner
-    ["717"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-717_mvm",}
-}
-
 function getEntsByTrainType(train_type)
     -- firstly, check for "all" train_type
     if train_type == "all" then return MEL.train_classes end
@@ -190,7 +202,7 @@ function getEntsByTrainType(train_type)
     -- then try to check it in lookup table
     -- why? just imagine 717: we have 5p, we have some other modifications
     -- and you probably don't want to have a new default 717 cabine in 7175p
-    if train_families[train_type] then return train_families[train_type] end
+    if MEL.TrainFamilies[train_type] then return MEL.TrainFamilies[train_type] end
     -- and finally try to find by searching train family in classname
     local ent_classes = {}
     for _, ent_class in pairs(MEL.train_classes) do
@@ -221,13 +233,7 @@ function injectRandomFieldHelper(ent_class)
     if MEL.RandomFields[ent_class] then
         -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
         -- hack. iknowiknowiknow its bad
-        if ent_class == "gmod_subway_81-717_mvm_custom" then
-            ent_class_inject = "gmod_subway_81-717_mvm"
-        else
-            ent_class_inject = ent_class
-        end
-
-        MEL.InjectIntoServerFunction(ent_class_inject, "TrainSpawnerUpdate", function(self)
+        MEL.InjectIntoServerFunction(ent_class, "TrainSpawnerUpdate", function(self)
             for _, data in pairs(MEL.RandomFields[ent_class]) do
                 local key = data[1]
                 local amount_of_values = data[2]
