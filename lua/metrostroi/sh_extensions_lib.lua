@@ -24,7 +24,7 @@ MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extension
 -- (key: entity class, value: table with key as field name and table with props as value)
 MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
 
-
+MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
 -- lookup table for train families
 MEL.TrainFamilies = {
     -- for 717 we don't need to modify _custom entity, cause it's used just for spawner
@@ -168,7 +168,9 @@ function loadRecipe(filename, ent_type)
     RECIPE.ClassName = name
     RECIPE.Description = RECIPE.Description or "No description"
     RECIPE.TrainType = ent_type
+    RECIPE.Specific = {}
     RECIPE.Init = RECIPE.Init or function() end
+    RECIPE.BeforeInject = RECIPE.BeforeInject or function() end
     RECIPE.Inject = RECIPE.Inject or function() end
     RECIPE.InjectSpawner = RECIPE.InjectSpawner or function() end
     if MEL.Recipes[RECIPE_NAME] then
@@ -193,6 +195,10 @@ function initRecipe(recipe)
     if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then
         -- if recipe enabled, add it to inject stack
         MEL.InjectStack:Push(recipe)
+    end
+    -- add recipe scepific things
+    for key, value in pairs(recipe.Specific) do
+        MEL.RecipeSpecific[key] = value
     end
 end
 
@@ -233,11 +239,10 @@ end
 
 function injectRandomFieldHelper(ent_class)
     if MEL.RandomFields[ent_class] then
-        print(ent_class)
         -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
         -- hack. iknowiknowiknow its bad
         MEL.InjectIntoServerFunction(ent_class, "TrainSpawnerUpdate", function(self)
-            local custom = self:SetNW2Bool("Custom")
+            local custom = self:GetNW2Bool("Custom")
             for _, data in pairs(MEL.RandomFields[ent_class]) do
                 local key = data[1]
                 local field_type = data[2]
@@ -251,7 +256,6 @@ function injectRandomFieldHelper(ent_class)
                     local max = data[4]
                     local value = self:GetNW2Float(key, min)
                     if not custom or value == min then self:SetNW2Float(key, math.random(min + 1, max)) end
-                    print()
                 end
             end
         end)
@@ -354,6 +358,7 @@ function inject()
         local recipe = MEL.InjectStack:Pop()
         -- call Inject method on every ent that recipe changes
         for _, ent_class in pairs(getEntsByTrainType(recipe.TrainType)) do
+            recipe:BeforeInject(ent_class)
             recipe:InjectSpawner(ent_class)
             recipe:Inject(MEL.ent_tables[ent_class], ent_class)
             if MEL.Debug then
