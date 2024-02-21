@@ -15,11 +15,15 @@ MEL = MetrostroiExtensionsLib  -- alias. 23 symbols vs 3. and we name it Metrost
 MEL.Debug = true -- helps with autoreload, but may introduce problems. Disable in production!
 MEL.BaseRecipies = {}
 MEL.Recipes = {}
+MEL.DisabledRecipies = {}
+
 MEL.InjectStack = util.Stack()
 MEL.FunctionInjectStack = {}
+
 MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extensions, that needs to be reloaded on spawner update
 -- (key: entity class, value: table with key as field name and table with props as value)
 MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
+
 MEL.ent_tables = {}
 MEL.train_classes = {}
 -- logger methods
@@ -142,6 +146,7 @@ function loadRecipe(filename, ent_type)
     include(filepath)
     logInfo("loading recipe " .. name .. " from " .. filepath)
     RECIPE.ClassName = name
+    RECIPE.Description = RECIPE.Description or "No description"
     RECIPE.TrainType = ent_type
     RECIPE.Init = RECIPE.Init or function() end
     RECIPE.Inject = RECIPE.Inject or function() end
@@ -158,9 +163,17 @@ end
 
 function initRecipe(recipe)
     recipe:Init()
-    -- add it to inject stack
-    MEL.InjectStack:Push(recipe)
-    -- add convar that will be able to 
+    if not ConVarExists("metrostroi_ext_" .. recipe.ClassName) then
+        -- add convar that will be able to disable that recipe on server
+        CreateConVar("metrostroi_ext_" .. recipe.ClassName,
+                        1, {FCVAR_ARCHIVE, FCVAR_REPLICATED},
+                        "Status of Metrostroi extensions recipe \"" .. recipe.ClassName .. "\": " .. recipe.Description .. ".",
+                        0, 1)
+    end
+    if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then
+        -- if recipe enabled, add it to inject stack
+        MEL.InjectStack:Push(recipe)
+    end
 end
 
 -- lookup table for train families
@@ -186,7 +199,6 @@ function getEntsByTrainType(train_type)
     end
 
     if #ent_classes == 0 then logError("no entities for " .. train_type .. ". Perhaps a typo?") end
-    PrintTable(MEL.ent_tables)
     return ent_classes
 end
 
