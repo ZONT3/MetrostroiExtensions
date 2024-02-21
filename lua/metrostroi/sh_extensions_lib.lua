@@ -87,9 +87,6 @@ function MEL.InjectIntoServerFunction(ent_or_entclass, function_name, function_t
     injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
 end
 
--- all entities, where we should modify _custom spawner and not default one
-local all_717_mvm = {""}
-
 function MEL.AddSpawnerField(ent_or_entclass, field_data, is_list_random)
     local entclass = getEntclass(ent_or_entclass)
     if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then
