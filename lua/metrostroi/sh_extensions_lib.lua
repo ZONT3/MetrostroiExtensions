@@ -158,11 +158,11 @@ function MEL.DefineRecipe(name)
     RECIPE_NAME = name
 end
 
-function loadRecipe(filename, ent_type)
+function loadRecipe(filename, ent_type, side)
     local name = ent_type .. "_" .. string.sub(filename, 1, string.find(filename, "%.lua") - 1)
     local filepath = "recipies/" .. ent_type .. "/" .. filename
     -- load recipe
-    if SERVER then AddCSLuaFile(filepath) end
+    if SERVER and side ~= "sv" then AddCSLuaFile(filepath) end
     include(filepath)
     logInfo("loading recipe " .. name .. " from " .. filepath)
     RECIPE.ClassName = name
@@ -388,7 +388,12 @@ for _, folder in pairs(folders) do
             continue
         end
 
-        loadRecipe(File, train_type)
+        local side = string.sub(File, 1, 2)
+        if side == "sv" and SERVER then -- Чтобы не дай бог не попало клиенту
+            loadRecipe(File, train_type, "sv")
+        else
+            loadRecipe(File, train_type, side)
+        end
     end
 end
 
