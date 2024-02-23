@@ -309,17 +309,16 @@ function injectFunction(ent_class, ent_table)
             end
 
             if not ent_table["Default" .. function_name] then ent_table["Default" .. function_name] = ent_table[function_name] end
-            ent_table[function_name] = function(self)
+            ent_table[function_name] = function(self, ...)
                 for i = #before_stack, 1, -1 do
                     for _, inject_function in pairs(before_stack[i]) do
-                        inject_function(self)
+                        inject_function(self, unpack({...} or {}))
                     end
                 end
-
-                local ret_val = ent_table["Default" .. function_name](self)
+                local ret_val = ent_table["Default" .. function_name](self, unpack({...} or {}))
                 for i = 1, #after_stack do
                     for _, inject_function in pairs(after_stack[i]) do
-                        inject_function(self, ret_val)
+                        inject_function(self, ret_val, unpack({...} or {}))
                     end
                 end
                 return ret_val
