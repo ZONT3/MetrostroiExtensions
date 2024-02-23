@@ -333,17 +333,17 @@ function injectFunctionDebug(ent_class, function_name, before_stack, after_stack
     if MEL.Debug then
         -- reinject function on all already spawned ents
         for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
-            ent[function_name] = function(self)
+            ent[function_name] = function(self, ...)
                 for i = #before_stack, 1, -1 do
                     for _, inject_function in pairs(before_stack[i]) do
-                        inject_function(self)
+                        inject_function(self, unpack({...} or {}))
                     end
                 end
 
-                local ret_val = ent["Default" .. function_name](self)
+                local ret_val = ent["Default" .. function_name](self, unpack({...} or {}))
                 for i = 1, #after_stack do
                     for _, inject_function in pairs(after_stack[i]) do
-                        inject_function(self, ret_val)
+                        inject_function(self, ret_val, unpack({...} or {}))
                     end
                 end
                 return ret_val
