@@ -171,6 +171,7 @@ function loadRecipe(filename, ent_type, side)
     RECIPE.Specific = {}
     RECIPE.Init = RECIPE.Init or function() end
     RECIPE.BeforeInject = RECIPE.BeforeInject or function() end
+    RECIPE.InjectNeeded = RECIPE.InjectNeeded or function() return true end
     RECIPE.Inject = RECIPE.Inject or function() end
     RECIPE.InjectSpawner = RECIPE.InjectSpawner or function() end
     if MEL.Recipes[RECIPE_NAME] then
@@ -359,12 +360,14 @@ function inject()
         -- call Inject method on every ent that recipe changes
         for _, ent_class in pairs(getEntsByTrainType(recipe.TrainType)) do
             recipe:BeforeInject(ent_class)
-            recipe:InjectSpawner(ent_class)
-            recipe:Inject(MEL.ent_tables[ent_class], ent_class)
-            if MEL.Debug then
-                -- call Inject method on all alredy spawner ent that recipe changes (if debug enabled)
-                for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
-                    recipe:Inject(ent, ent_class)
+            if recipe:InjectNeeded(ent_class) then
+                recipe:InjectSpawner(ent_class)
+                recipe:Inject(MEL.ent_tables[ent_class], ent_class)
+                if MEL.Debug then
+                    -- call Inject method on all alredy spawner ent that recipe changes (if debug enabled)
+                    for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
+                        recipe:Inject(ent, ent_class)
+                    end
                 end
             end
         end
