@@ -23,6 +23,7 @@ MEL.FunctionInjectStack = {}
 MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extensions, that needs to be reloaded on spawner update
 -- (key: entity class, value: table with key as field name and table with props as value)
 MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
+MEL.ElementMappings = {} -- mapping per wagon, per field for list elements (key - ent_class, value - (key - field_name, value - (key - name of element, value - index)))
 
 MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
 -- lookup table for train families
@@ -87,14 +88,19 @@ function MEL.InjectIntoServerFunction(ent_or_entclass, function_name, function_t
     injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
 end
 
-function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field)
+function getSpawnerEntclass(ent_or_entclass)
     local entclass = getEntclass(ent_or_entclass)
     if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then
         entclass = "gmod_subway_81-717_mvm_custom"
     end
+    return entclass
+end
+
+function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field, overwrite)
+    local entclass = getSpawnerEntclass(ent_or_entclass)
     local spawner = scripted_ents.GetStored(entclass).t.Spawner
     if not spawner then return end
-    if MEL.Debug then
+    if MEL.Debug or overwrite then
         -- check if we have field with same name, remove it if needed
         for i, field in pairs(spawner) do
             if istable(field) and #field ~= 0 and field[1] == field_data[1] then table.remove(spawner, i) end
@@ -111,8 +117,47 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field)
             table.insert(MEL.RandomFields[entclass_random], {field_data[1], field_data[3], field_data[5], field_data[6]})
         end
     end
-
+    
     table.insert(spawner, field_data)
+end
+
+-- TODO: Document that shit
+function updateMapping(ent_class, field_name, mapping_name, new_index)
+    if not MEL.ElementMappings[ent_class] then
+        MEL.ElementMappings[ent_class] = {}
+    end
+    if not MEL.ElementMappings[ent_class][field_name] then
+        MEL.ElementMappings[ent_class][field_name] = {}
+    end
+    MEL.ElementMappings[ent_class][field_name][mapping_name] = new_index
+end
+
+function MEL.AddSpawnerListElement(ent_or_entclass, field_name, element)
+    local entclass = getSpawnerEntclass(ent_or_entclass)
+    local spawner = scripted_ents.GetStored(entclass).t.Spawner
+    if not spawner then return end
+    for _, field in pairs(spawner) do
+        if field and #field > 0 and field[1] == field_name then
+            -- check if this element already exists, update mapping
+            for i, elem in pairs(field[4]) do
+                if elem == element then
+                    updateMapping(entclass, field_name, element, i)
+                    return
+                end
+            end
+            -- if not exists, then just add it
+            local new_index = table.insert(field[4], element)
+            updateMapping(entclass, field_name, element, new_index)
+        end
+    end
+end
+
+function MEL.GetMappingValue(ent_or_entclass, field_name, element)
+    local entclass = getSpawnerEntclass(ent_or_entclass)
+    if not MEL.ElementMappings[ent_class] or not MEL.ElementMappings[ent_class][field_name] then
+        logError("Tried to access non-existent mapping for field " .. field_name)
+    end
+    return MEL.ElementMappings[entclass][field_name][element]
 end
 
 function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback)

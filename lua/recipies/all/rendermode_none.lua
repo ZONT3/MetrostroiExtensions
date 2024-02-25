@@ -13,9 +13,6 @@ MEL.DefineRecipe("rendermode_none")
 
 RECIPE.Description = "This recipe disables shadows on all seats of all wagons"
 
-function RECIPE:Init()
-end
-
 function RECIPE:Inject(ent, entclass)
     MEL.InjectIntoServerFunction(ent, "Initialize", function(wagon)
         for _, obj in pairs(wagon:GetTable()) do
