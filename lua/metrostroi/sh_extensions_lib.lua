@@ -121,7 +121,7 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field, overw
             table.insert(MEL.RandomFields[entclass_random], {field_data[1], field_data[3], field_data[5], field_data[6]})
         end
     end
-    
+
     table.insert(spawner, field_data)
 end
 
