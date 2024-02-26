@@ -408,13 +408,17 @@ function inject()
             end
         end
     end
-    RunConsoleCommand("metrostroi_language_reload")
-    -- reload all languages in order to update 
     for ent_class, ent_table in pairs(MEL.ent_tables) do
         injectRandomFieldHelper(ent_class)
         injectFieldUpdateHelper(ent_class)
         injectFunction(ent_class, ent_table)
     end
+    -- reload all languages
+    -- why we are just using metrostroi_language_reload?:
+    -- 1. im lazy
+    -- 2. there are a lot of things that can be translatable and injected by recipe: buttonmaps, spawner things, other shit. so metrostroi_language_reload will do everything
+    -- 3. im lazy
+    RunConsoleCommand("metrostroi_language_reload")
 end
 
 -- load all recipies
