@@ -294,24 +294,26 @@ function injectRandomFieldHelper(ent_class)
     if MEL.RandomFields[ent_class] then
         -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
         -- hack. iknowiknowiknow its bad
-        MEL.InjectIntoServerFunction(ent_class, "TrainSpawnerUpdate", function(self)
-            local custom = self:GetNW2Bool("Custom")
+        MEL.InjectIntoServerFunction(ent_class, "TrainSpawnerUpdate", function(wagon, ...)
+            math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
+            local custom = tobool(wagon.CustomSettings or true)
             for _, data in pairs(MEL.RandomFields[ent_class]) do
                 local key = data[1]
                 local field_type = data[2]
                 if field_type == "List" then
                     local amount_of_values = data[3]
-                    local value = self:GetNW2Int(key, 1)
+                    local value = wagon:GetNW2Int(key, 1)
                     if not custom or value == 1 then value = math.random(2, amount_of_values) end
-                    self:SetNW2Int(key, value - 1)
+                    wagon:SetNW2Int(key, value - 1)
                 elseif field_type == "Slider" then
                     local min = data[3]
                     local max = data[4]
-                    local value = self:GetNW2Float(key, min)
-                    if not custom or value == min then self:SetNW2Float(key, math.random(min + 1, max)) end
+                    local value = wagon:GetNW2Float(key, min)
+                    if not custom or value == min then wagon:SetNW2Float(key, math.random(min + 1, max)) end
                 end
             end
-        end)
+            math.randomseed(os.time())
+        end, -10)
     end
 end
 
@@ -361,16 +363,16 @@ function injectFunction(ent_class, ent_table)
             end
 
             if not ent_table["Default" .. function_name] then ent_table["Default" .. function_name] = ent_table[function_name] end
-            ent_table[function_name] = function(self, ...)
+            ent_table[function_name] = function(wagon, ...)
                 for i = #before_stack, 1, -1 do
                     for _, inject_function in pairs(before_stack[i]) do
-                        inject_function(self, unpack({...} or {}))
+                        inject_function(wagon, unpack({...} or {}), true)
                     end
                 end
-                local ret_val = ent_table["Default" .. function_name](self, unpack({...} or {}))
+                local ret_val = ent_table["Default" .. function_name](wagon, unpack({...} or {}))
                 for i = 1, #after_stack do
                     for _, inject_function in pairs(after_stack[i]) do
-                        inject_function(self, ret_val, unpack({...} or {}))
+                        inject_function(wagon, ret_val, unpack({...} or {}), false)
                     end
                 end
                 return ret_val
@@ -385,17 +387,17 @@ function injectFunctionDebug(ent_class, function_name, before_stack, after_stack
     if MEL.Debug then
         -- reinject function on all already spawned ents
         for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
-            ent[function_name] = function(self, ...)
+            ent[function_name] = function(wagon, ...)
                 for i = #before_stack, 1, -1 do
                     for _, inject_function in pairs(before_stack[i]) do
-                        inject_function(self, unpack({...} or {}))
+                        inject_function(wagon, unpack({...} or {}), false)
                     end
                 end
 
-                local ret_val = ent["Default" .. function_name](self, unpack({...} or {}))
+                local ret_val = ent["Default" .. function_name](wagon, unpack({...} or {}))
                 for i = 1, #after_stack do
                     for _, inject_function in pairs(after_stack[i]) do
-                        inject_function(self, ret_val, unpack({...} or {}))
+                        inject_function(wagon, ret_val, unpack({...} or {}), true)
                     end
                 end
                 return ret_val
