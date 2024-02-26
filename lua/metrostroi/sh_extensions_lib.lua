@@ -53,6 +53,9 @@ end
 
 -- helper methods
 function getEntclass(ent_or_entclass)
+    if not ent_or_entclass then
+        logError("For some reason, ent_or_entclass in getEntclass is nil. Please report this error.")
+    end
     -- get entclass from ent table or from str entclass 
     if istable(ent_or_entclass) then return ent_or_entclass.ent_class end
     if isentity(ent_or_entclass) then return ent_or_entclass:GetClass() end
@@ -189,7 +192,7 @@ end
 
 function MEL.NewClientProp(ent, clientprop_name, clientprop_info, field_name)
     if CLIENT then ent.ClientProps[clientprop_name] = clientprop_info end
-    if field_name then MEL.MarkClientPropForReload(ent.ent_class, clientprop_name, field_name) end
+    if field_name then MEL.MarkClientPropForReload(ent, clientprop_name, field_name) end
 end
 
 function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
@@ -363,7 +366,7 @@ function injectFunction(ent_class, ent_table)
             end
 
             if not ent_table["Default" .. function_name] then ent_table["Default" .. function_name] = ent_table[function_name] end
-            ent_table[function_name] = function(wagon, ...)
+            local builded_inject = function(wagon, ...)
                 for i = #before_stack, 1, -1 do
                     for _, inject_function in pairs(before_stack[i]) do
                         inject_function(wagon, unpack({...} or {}), true)
@@ -377,30 +380,9 @@ function injectFunction(ent_class, ent_table)
                 end
                 return ret_val
             end
-
-            injectFunctionDebug(ent_class, function_name, before_stack, after_stack)
-        end
-    end
-end
-
-function injectFunctionDebug(ent_class, function_name, before_stack, after_stack)
-    if MEL.Debug then
-        -- reinject function on all already spawned ents
-        for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
-            ent[function_name] = function(wagon, ...)
-                for i = #before_stack, 1, -1 do
-                    for _, inject_function in pairs(before_stack[i]) do
-                        inject_function(wagon, unpack({...} or {}), false)
-                    end
-                end
-
-                local ret_val = ent["Default" .. function_name](wagon, unpack({...} or {}))
-                for i = 1, #after_stack do
-                    for _, inject_function in pairs(after_stack[i]) do
-                        inject_function(wagon, ret_val, unpack({...} or {}), true)
-                    end
-                end
-                return ret_val
+            ent_table[function_name] = builded_inject
+            for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
+                ent[function_name] = builded_inject
             end
         end
     end
