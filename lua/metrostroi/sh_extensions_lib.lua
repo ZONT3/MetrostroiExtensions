@@ -54,7 +54,8 @@ end
 -- helper methods
 function getEntclass(ent_or_entclass)
     -- get entclass from ent table or from str entclass 
-    if type(ent_or_entclass) == "table" then return ent_or_entclass.ent_class end
+    if istable(ent_or_entclass) then return ent_or_entclass.ent_class end
+    if isentity(ent_or_entclass) then return ent_or_entclass:GetClass() end
     return ent_or_entclass
 end
 
@@ -138,26 +139,32 @@ function MEL.AddSpawnerListElement(ent_or_entclass, field_name, element)
     if not spawner then return end
     for _, field in pairs(spawner) do
         if field and #field > 0 and field[1] == field_name then
-            -- check if this element already exists, update mapping
-            for i, elem in pairs(field[4]) do
-                if elem == element then
-                    updateMapping(entclass, field_name, element, i)
-                    return
-                end
-            end
-            -- if not exists, then just add it
+            -- just add it lol
             local new_index = table.insert(field[4], element)
-            updateMapping(entclass, field_name, element, new_index)
+            -- for god sake, if some shitty inject will insert element and not append it - i would be so mad
+            updateMapping(ent_or_entclass, field_name, element, new_index)
+            return
         end
     end
 end
 
 function MEL.GetMappingValue(ent_or_entclass, field_name, element)
     local entclass = getSpawnerEntclass(ent_or_entclass)
-    if not MEL.ElementMappings[ent_class] or not MEL.ElementMappings[ent_class][field_name] then
-        logError("Tried to access non-existent mapping for field " .. field_name)
+    if MEL.ElementMappings[ent_class] and MEL.ElementMappings[ent_class][field_name] then
+        return MEL.ElementMappings[entclass][field_name][element]
     end
-    return MEL.ElementMappings[entclass][field_name][element]
+    -- try to find index of it, if it non-existent in our ElementMappings cache
+    local spawner = scripted_ents.GetStored(entclass).t.Spawner
+    for _, field in pairs(spawner) do
+        if field and #field > 0 and field[1] == field_name then
+            for i, field_elem in pairs(field[4]) do
+                if field_elem == element then
+                    updateMapping(entclass, field_name, element, i)
+                    return i
+                end
+            end
+        end
+    end
 end
 
 function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback)
