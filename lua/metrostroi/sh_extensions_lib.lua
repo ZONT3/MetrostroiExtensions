@@ -43,7 +43,7 @@ function logInfo(msg)
     print(LOG_PREFIX .. "Info: " .. msg)
 end
 function logDebug(msg)
-    if MetrostroiExtensions.Debug then
+    if MEL.Debug then
         print(LOG_PREFIX .. "Debug: " .. msg)
     end
 end
@@ -123,6 +123,15 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field, overw
     end
 
     table.insert(spawner, field_data)
+end
+
+function MEL.RemoveSpawnerField(ent_or_entclass, field_name)
+    local entclass = getSpawnerEntclass(ent_or_entclass)
+    local spawner = scripted_ents.GetStored(entclass).t.Spawner
+    if not spawner then return end
+    for i, field in pairs(spawner) do
+        if istable(field) and #field ~= 0 and field[1] == field_name then table.remove(spawner, i) end
+    end
 end
 
 -- TODO: Document that shit
@@ -316,7 +325,7 @@ function injectRandomFieldHelper(ent_class)
                 end
             end
             math.randomseed(os.time())
-        end, -10)
+        end, 10)
     end
 end
 
