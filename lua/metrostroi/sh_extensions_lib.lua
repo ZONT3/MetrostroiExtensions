@@ -17,7 +17,7 @@ MEL.BaseRecipies = {}
 MEL.Recipes = {}
 MEL.DisabledRecipies = {}
 
-MEL.InjectStack = util.Stack()
+MEL.InjectStack = {}
 MEL.FunctionInjectStack = {}
 
 MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extensions, that needs to be reloaded on spawner update
@@ -240,7 +240,7 @@ function initRecipe(recipe)
     end
     if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then
         -- if recipe enabled, add it to inject stack
-        MEL.InjectStack:Push(recipe)
+        table.insert(MEL.InjectStack, recipe)
     end
     -- add recipe scepific things
     for key, value in pairs(recipe.Specific) do
@@ -399,11 +399,12 @@ end
 
 function inject()
     -- method that finalizes inject on all trains. called after init of recipies
-    for i = 1, MEL.InjectStack:Size() do
-        local recipe = MEL.InjectStack:Pop()
+    for _, recipe in pairs(MEL.InjectStack) do
+        recipe:BeforeInject()
+    end
+    for _, recipe in pairs(MEL.InjectStack) do
         -- call Inject method on every ent that recipe changes
         for _, ent_class in pairs(getEntsByTrainType(recipe.TrainType)) do
-            recipe:BeforeInject(ent_class)
             if recipe:InjectNeeded(ent_class) then
                 recipe:InjectSpawner(ent_class)
                 recipe:Inject(MEL.ent_tables[ent_class], ent_class)
@@ -464,7 +465,7 @@ if SERVER then
         net.Broadcast()
         logInfo("reloading recipies...")
         -- clear all inject stacks
-        MEL.InjectStack = util.Stack()
+        MEL.InjectStack = {}
         MEL.FunctionInjectStack = {}
         MEL.ClientPropsToReload = {}
         MEL.RandomFields = {}
@@ -481,7 +482,7 @@ if CLIENT then
     net.Receive("MetrostroiExtDoReload", function(len, ply)
         logInfo("reloading recipies...")
         -- clear all inject stacks
-        MEL.InjectStack = util.Stack()
+        MEL.InjectStack = {}
         MEL.FunctionInjectStack = {}
         MEL.ClientPropsToReload = {}
         MEL.RandomFields = {}
