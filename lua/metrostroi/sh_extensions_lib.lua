@@ -33,6 +33,7 @@ MEL.TrainFamilies = {
     ["717_714"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-717_mvm", "gmod_subway_81-714_lvz", "gmod_subway_81-714_mvm"},
     ["717_714_mvm"] = {"gmod_subway_81-717_mvm", "gmod_subway_81-714_mvm"},
     ["717_714_lvz"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-714_lvz"},
+    ["717_kpz"] = {"gmod_subway_81-717_mvm", "gmod_subway_81-717_ars_mp"},
 }
 
 MEL.ent_tables = {}
@@ -89,6 +90,10 @@ end
 
 function MEL.InjectIntoServerFunction(ent_or_entclass, function_name, function_to_inject, priority)
     if CLIENT then return end
+    injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
+end
+
+function MEL.InjectIntoSharedFunction(ent_or_entclass, function_name, function_to_inject, priority)
     injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
 end
 
@@ -308,7 +313,7 @@ function injectRandomFieldHelper(ent_class)
         -- hack. iknowiknowiknow its bad
         MEL.InjectIntoServerFunction(ent_class, "TrainSpawnerUpdate", function(wagon, ...)
             math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
-            local custom = tobool(wagon.CustomSettings or true)
+            local custom = wagon.CustomSettings and true or false
             for _, data in pairs(MEL.RandomFields[ent_class]) do
                 local key = data[1]
                 local field_type = data[2]
