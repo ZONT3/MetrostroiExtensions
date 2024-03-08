@@ -9,7 +9,7 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-MEL.DefineRecipe("salon_seats")
+MEL.DefineRecipe("salon_seats", "717_714_mvm")
 
 RECIPE.Description = "This recipe adds ability to customize salon seats."
 

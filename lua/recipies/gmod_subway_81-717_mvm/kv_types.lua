@@ -9,7 +9,7 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-MEL.DefineRecipe("kv_types")
+MEL.DefineRecipe("kv_types", "gmod_subway_81-717_mvm")
 
 RECIPE.Description = "This recipe adds ability to choose kv's."
 

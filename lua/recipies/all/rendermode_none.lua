@@ -9,7 +9,7 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-MEL.DefineRecipe("rendermode_none")
+MEL.DefineRecipe("rendermode_none", "all")
 
 RECIPE.Description = "This recipe disables shadows on all seats of all wagons"
 

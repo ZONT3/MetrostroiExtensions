@@ -40,13 +40,18 @@ MEL.ent_tables = {}
 MEL.train_classes = {}
 -- logger methods
 local LOG_PREFIX = "[MetrostroiExtensionsLib] "
-function logInfo(msg)
-    print(LOG_PREFIX .. "Info: " .. msg)
-end
+local WARNING_COLOR = Color(255, 255, 0)
+
 function logDebug(msg)
     if MEL.Debug then
         print(LOG_PREFIX .. "Debug: " .. msg)
     end
+end
+function logInfo(msg)
+    print(LOG_PREFIX .. "Info: " .. msg)
+end
+function logWarning(msg)
+    MsgC(WARNING_COLOR, LOG_PREFIX .. "Warning: " .. msg .. "\n")
 end
 function logError(msg)
     ErrorNoHaltWithStack(LOG_PREFIX .. "Error!: " .. msg .. "\n")
@@ -221,33 +226,49 @@ function MEL.NewButtonMap(ent, buttonmap_name, buttonmap_data)
     if CLIENT then ent.ButtonMap[buttonmap_name] = buttonmap_data end
 end
 
-function MEL.DefineRecipe(name)
+function MEL.DefineRecipe(name, train_type)
     if not MEL.BaseRecipies[name] then MEL.BaseRecipies[name] = {} end
     RECIPE = MEL.BaseRecipies[name]
-    RECIPE_NAME = name
+    RECIPE.TrainType = train_type
+    RECIPE.Name = name
 end
 
-function loadRecipe(filename, ent_type, side)
-    local name = ent_type .. "_" .. string.sub(filename, 1, string.find(filename, "%.lua") - 1)
-    local filepath = "recipies/" .. ent_type .. "/" .. filename
+function loadRecipe(filename, scope)
+    local File = string.GetFileFromFilename(filename)
     -- load recipe
-    if SERVER and side ~= "sv" then AddCSLuaFile(filepath) end
-    include(filepath)
-    logInfo("loading recipe " .. name .. " from " .. filepath)
-    RECIPE.ClassName = name
+    if SERVER and scope ~= "sv" then AddCSLuaFile(filename) end
+    include(filename)
+    if not RECIPE then
+        logError("Looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
+        return
+    end
+    if not RECIPE.TrainType then
+        logError("Looks like you forgot to specify train type for " .. filename .. ". Refusing to load it")
+        return
+    end
+    if RECIPE.Name ~= string.sub(File, 1, string.find(File, "%.lua") - 1) then
+        logWarning("Recipe \"" .. RECIPE.Name .. "\" file name and name defined in DefineRecipe differs. Consider renaming your file")
+    end
+    local class_name = nil
+    if istable(RECIPE.TrainType) then
+        class_name = table.concat(RECIPE.TrainType, "-") .. "_" .. RECIPE.Name
+    else
+        class_name = RECIPE.TrainType .. "_" .. RECIPE.Name
+    end
+    logInfo("loading recipe " .. RECIPE.Name .. " from " .. filename)
+    RECIPE.ClassName = class_name
     RECIPE.Description = RECIPE.Description or "No description"
-    RECIPE.TrainType = ent_type
     RECIPE.Specific = {}
     RECIPE.Init = RECIPE.Init or function() end
     RECIPE.BeforeInject = RECIPE.BeforeInject or function() end
     RECIPE.InjectNeeded = RECIPE.InjectNeeded or function() return true end
     RECIPE.Inject = RECIPE.Inject or function() end
     RECIPE.InjectSpawner = RECIPE.InjectSpawner or function() end
-    if MEL.Recipes[RECIPE_NAME] then
-        logError("Recipe with name \"" .. RECIPE_NAME .. "\" already exists. Refusing to load recipe from " .. filepath .. ".")
+    if MEL.Recipes[RECIPE.Name] then
+        logError("Recipe with name \"" .. RECIPE.Name .. "\" already exists. Refusing to load recipe from " .. filename .. ".")
         return
     end
-    MEL.Recipes[RECIPE_NAME] = RECIPE
+    MEL.Recipes[RECIPE.Name] = RECIPE
     -- initialize recipe
     initRecipe(RECIPE)
     RECIPE = nil
@@ -266,13 +287,16 @@ function initRecipe(recipe)
         -- if recipe enabled, add it to inject stack
         table.insert(MEL.InjectStack, recipe)
     end
-    -- add recipe scepific things
+    -- add recipe specific things
     for key, value in pairs(recipe.Specific) do
         MEL.RecipeSpecific[key] = value
     end
 end
 
 function getEntsByTrainType(train_type)
+    if istable(train_type) then
+        return train_type
+    end
     -- firstly, check for "all" train_type
     if train_type == "all" then return MEL.train_classes end
     -- then try to find it as entity class
@@ -438,25 +462,23 @@ end
 -- load all recipies
 local _, folders = file.Find("recipies/*", "LUA")
 for _, folder in pairs(folders) do
-    local train_type = folder
     local files, _ = file.Find("recipies/" .. folder .. "/*.lua", "LUA")
     for _, File in pairs(files) do
         if not File then -- for some reason, File can be nil...
             continue
         end
 
-        local side = string.sub(File, 1, 2)
-        if side == "sv" and SERVER then -- Чтобы не дай бог не попало клиенту
-            loadRecipe(File, train_type, "sv")
+        local scope = string.sub(File, 1, 2)
+        local filename = "recipies/" .. folder .. "/" .. File
+        if scope == "sv" and SERVER then -- Чтобы не дай бог не попало клиенту
+            loadRecipe(filename, train_type, "sv")
         else
-            loadRecipe(File, train_type, side)
+            loadRecipe(filename, train_type, side)
         end
     end
 end
 
 -- injection logic
--- debug uses timers as inject logic
--- production uses hook GM:InitPostEntity
 hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
     timer.Simple(1, function()
         getTrainEntTables()
