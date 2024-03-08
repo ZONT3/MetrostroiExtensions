@@ -209,6 +209,12 @@ function MEL.UpdateCallback(ent, clientprop_name, new_callback)
     end
 end
 
+function MEL.DeleteClientProp(ent, clientprop_name)
+    if CLIENT then
+        ent.ClientProps[clientprop_name] = nil
+    end
+end
+
 function MEL.NewClientProp(ent, clientprop_name, clientprop_info, field_name)
     if CLIENT then ent.ClientProps[clientprop_name] = clientprop_info end
     if field_name then MEL.MarkClientPropForReload(ent, clientprop_name, field_name) end
@@ -368,7 +374,7 @@ function injectFieldUpdateHelper(ent_class)
         end
 
         MEL.InjectIntoClientFunction(ent_class_inject, "UpdateWagonNumber", function(self)
-            for key, props in pairs(MEL.ClientPropsToReload[ent_class]) do
+            for key, props in pairs(MEL.ClientPropsToReload[ent_class] or {}) do
                 local value = self:GetNW2Int(key, 1)
                 if MEL.Debug or self[key] ~= value then
                     for _, prop_name in pairs(props) do
