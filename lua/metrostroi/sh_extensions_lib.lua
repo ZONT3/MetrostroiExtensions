@@ -36,6 +36,8 @@ MEL.TrainFamilies = {
     ["717_kpz"] = {"gmod_subway_81-717_mvm", "gmod_subway_81-717_ars_mp"},
 }
 
+MEL.InjectIntoSpawnedEnt = false -- temp global variable
+
 MEL.ent_tables = {}
 MEL.train_classes = {}
 -- logger methods
@@ -72,6 +74,7 @@ function injectIntoEntFunction(ent_or_entclass, function_name, function_to_injec
     -- negative priority - inject before default function
     -- positive priority - inject after default function
     -- zero - default function priority, error!
+    if MEL.InjectIntoSpawnedEnt then return end
     local entclass = getEntclass(ent_or_entclass)
     if priority == 0 then logError("when injecting function with name " .. function_name .. ": priority couldn't be zero") end
     if not MEL.FunctionInjectStack[entclass] then MEL.FunctionInjectStack[entclass] = {} end
@@ -401,7 +404,6 @@ function injectFunction(ent_class, ent_table)
                     table.insert(after_stack, function_stack)
                 end
             end
-
             -- maybe compile every func from stack?
             -- check for missing function from some wagon
             if not ent_table[function_name] then
@@ -445,9 +447,12 @@ function inject()
                 recipe:Inject(MEL.ent_tables[ent_class], ent_class)
                 if MEL.Debug then
                     -- call Inject method on all alredy spawner ent that recipe changes (if debug enabled)
+                    -- mark this call of inject as for entity (needed for InjectInto*Function)
+                    MEL.InjectIntoSpawnedEnt = true
                     for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
                         recipe:Inject(ent, ent_class)
                     end
+                    MEL.InjectIntoSpawnedEnt = false
                 end
             end
         end
