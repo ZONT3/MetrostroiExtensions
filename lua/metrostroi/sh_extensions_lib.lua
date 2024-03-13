@@ -33,7 +33,7 @@ MEL.TrainFamilies = {
     ["717_714"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-717_mvm", "gmod_subway_81-714_lvz", "gmod_subway_81-714_mvm"},
     ["717_714_mvm"] = {"gmod_subway_81-717_mvm", "gmod_subway_81-714_mvm"},
     ["717_714_lvz"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-714_lvz"},
-    ["717_kpz"] = {"gmod_subway_81-717_mvm", "gmod_subway_81-717_ars_mp"},
+    ["717_novostroi"] = {"gmod_subway_81-717_mvm", "gmod_subway_81-717_ars_mp"},
 }
 
 MEL.InjectIntoSpawnedEnt = false -- temp global variable
@@ -341,30 +341,30 @@ end
 
 
 function injectRandomFieldHelper(ent_class)
-    if MEL.RandomFields[ent_class] then
-        -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
-        -- hack. iknowiknowiknow its bad
-        MEL.InjectIntoServerFunction(ent_class, "TrainSpawnerUpdate", function(wagon, ...)
-            math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
-            local custom = wagon.CustomSettings and true or false
-            for _, data in pairs(MEL.RandomFields[ent_class]) do
-                local key = data[1]
-                local field_type = data[2]
-                if field_type == "List" then
-                    local amount_of_values = data[3]
-                    local value = wagon:GetNW2Int(key, 1)
-                    if not custom or value == 1 then value = math.random(2, amount_of_values) end
-                    wagon:SetNW2Int(key, value - 1)
-                elseif field_type == "Slider" then
-                    local min = data[3]
-                    local max = data[4]
-                    local value = wagon:GetNW2Float(key, min)
-                    if not custom or value == min then wagon:SetNW2Float(key, math.random(min + 1, max)) end
-                end
+    if not MEL.RandomFields[ent_class] then return end
+    
+    -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
+    -- hack. iknowiknowiknow its bad
+    MEL.InjectIntoServerFunction(ent_class, "TrainSpawnerUpdate", function(wagon, ...)
+        math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
+        local custom = wagon.CustomSettings and true or false
+        for _, data in pairs(MEL.RandomFields[ent_class]) do
+            local key = data[1]
+            local field_type = data[2]
+            if field_type == "List" then
+                local amount_of_values = data[3]
+                local value = wagon:GetNW2Int(key, 1)
+                if not custom or value == 1 then value = math.random(2, amount_of_values) end
+                wagon:SetNW2Int(key, value - 1)
+            elseif field_type == "Slider" then
+                local min = data[3]
+                local max = data[4]
+                local value = wagon:GetNW2Float(key, min)
+                if not custom or value == min then wagon:SetNW2Float(key, math.random(min + 1, max)) end
             end
-            math.randomseed(os.time())
-        end, 10)
-    end
+        end
+        math.randomseed(os.time())
+    end, 10)
 end
 
 function injectFieldUpdateHelper(ent_class)
@@ -413,11 +413,14 @@ function injectFunction(ent_class, ent_table)
 
             if not ent_table["Default" .. function_name] then ent_table["Default" .. function_name] = ent_table[function_name] end
             local builded_inject = function(wagon, ...)
+                local closeBaseFunction = true
                 for i = #before_stack, 1, -1 do
                     for _, inject_function in pairs(before_stack[i]) do
-                        inject_function(wagon, unpack({...} or {}), true)
+                        closeBaseFunction = inject_function(wagon, unpack({...} or {}), true)
                     end
                 end
+                print(closeBaseFunction)
+                if closeBaseFunction == false then return closeBaseFunction end
                 local ret_val = ent_table["Default" .. function_name](wagon, unpack({...} or {}))
                 for i = 1, #after_stack do
                     for _, inject_function in pairs(after_stack[i]) do
