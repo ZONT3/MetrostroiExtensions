@@ -164,7 +164,7 @@ end
 
 function MEL.GetMappingValue(ent_or_entclass, field_name, element)
     local entclass = getSpawnerEntclass(ent_or_entclass)
-    if MEL.ElementMappings[entclass] and MEL.ElementMappings[entclass][field_name] then return MEL.ElementMappings[entclass][field_name][element] end
+    if MEL.ElementMappings[entclass] and MEL.ElementMappings[entclass][field_name] and MEL.ElementMappings[entclass][field_name][element] then return MEL.ElementMappings[entclass][field_name][element] end
     -- try to find index of it, if it non-existent in our ElementMappings cache
     local spawner = scripted_ents.GetStored(entclass).t.Spawner
     for _, field in pairs(spawner) do
@@ -403,7 +403,6 @@ local function injectFunction(entclass, ent_table)
                     end
                 end
 
-                print(closeBaseFunction)
                 if closeBaseFunction == false then return closeBaseFunction end
                 local ret_val = ent_table["Default" .. function_name](wagon, unpack({...} or {}))
                 for i = 1, #after_stack do
