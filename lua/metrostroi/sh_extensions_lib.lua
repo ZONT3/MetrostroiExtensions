@@ -33,7 +33,6 @@ MEL.TrainFamilies = {
     ["717_714"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-717_mvm", "gmod_subway_81-714_lvz", "gmod_subway_81-714_mvm"},
     ["717_714_mvm"] = {"gmod_subway_81-717_mvm", "gmod_subway_81-714_mvm"},
     ["717_714_lvz"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-714_lvz"},
-    ["717_novostroi"] = {"gmod_subway_81-717_mvm", "gmod_subway_81-717_ars_mp"},
 }
 
 MEL.InjectIntoSpawnedEnt = false -- temp global variable
