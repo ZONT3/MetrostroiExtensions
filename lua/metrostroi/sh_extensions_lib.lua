@@ -44,23 +44,23 @@ MEL.train_classes = {}
 local LOG_PREFIX = "[MetrostroiExtensionsLib] "
 local WARNING_COLOR = Color(255, 255, 0)
 
-function logDebug(msg)
+local function logDebug(msg)
     if MEL.Debug then
         print(LOG_PREFIX .. "Debug: " .. msg)
     end
 end
-function logInfo(msg)
+local function logInfo(msg)
     print(LOG_PREFIX .. "Info: " .. msg)
 end
-function logWarning(msg)
+local function logWarning(msg)
     MsgC(WARNING_COLOR, LOG_PREFIX .. "Warning: " .. msg .. "\n")
 end
-function logError(msg)
+local function logError(msg)
     ErrorNoHaltWithStack(LOG_PREFIX .. "Error!: " .. msg .. "\n")
 end
 
 -- helper methods
-function getEntclass(ent_or_entclass)
+local function getEntclass(ent_or_entclass)
     if not ent_or_entclass then
         logError("For some reason, ent_or_entclass in getEntclass is nil. Please report this error.")
     end
@@ -70,7 +70,7 @@ function getEntclass(ent_or_entclass)
     return ent_or_entclass
 end
 
-function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
+local function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
     -- negative priority - inject before default function
     -- positive priority - inject after default function
     -- zero - default function priority, error!
@@ -108,7 +108,7 @@ function MEL.InjectIntoSharedFunction(ent_or_entclass, function_name, function_t
     injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
 end
 
-function getSpawnerEntclass(ent_or_entclass)
+local function getSpawnerEntclass(ent_or_entclass)
     local entclass = getEntclass(ent_or_entclass)
     if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then
         entclass = "gmod_subway_81-717_mvm_custom"
@@ -151,7 +151,7 @@ function MEL.RemoveSpawnerField(ent_or_entclass, field_name)
 end
 
 -- TODO: Document that shit
-function updateMapping(ent_class, field_name, mapping_name, new_index)
+local function updateMapping(ent_class, field_name, mapping_name, new_index)
     if not MEL.ElementMappings[ent_class] then
         MEL.ElementMappings[ent_class] = {}
     end
@@ -245,7 +245,26 @@ function MEL.DefineRecipe(name, train_type)
     RECIPE.Name = name
 end
 
-function loadRecipe(filename, scope)
+local function initRecipe(recipe)
+    recipe:Init()
+    if not ConVarExists("metrostroi_ext_" .. recipe.ClassName) then
+        -- add convar that will be able to disable that recipe on server
+        CreateConVar("metrostroi_ext_" .. recipe.ClassName,
+                        1, {FCVAR_ARCHIVE, FCVAR_REPLICATED},
+                        "Status of Metrostroi extensions recipe \"" .. recipe.ClassName .. "\": " .. recipe.Description .. ".",
+                        0, 1)
+    end
+    if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then
+        -- if recipe enabled, add it to inject stack
+        table.insert(MEL.InjectStack, recipe)
+    end
+    -- add recipe specific things
+    for key, value in pairs(recipe.Specific) do
+        MEL.RecipeSpecific[key] = value
+    end
+end
+
+local function loadRecipe(filename, scope)
     local File = string.GetFileFromFilename(filename)
     -- load recipe
     if SERVER and scope ~= "sv" then AddCSLuaFile(filename) end
@@ -286,26 +305,7 @@ function loadRecipe(filename, scope)
     RECIPE = nil
 end
 
-function initRecipe(recipe)
-    recipe:Init()
-    if not ConVarExists("metrostroi_ext_" .. recipe.ClassName) then
-        -- add convar that will be able to disable that recipe on server
-        CreateConVar("metrostroi_ext_" .. recipe.ClassName,
-                        1, {FCVAR_ARCHIVE, FCVAR_REPLICATED},
-                        "Status of Metrostroi extensions recipe \"" .. recipe.ClassName .. "\": " .. recipe.Description .. ".",
-                        0, 1)
-    end
-    if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then
-        -- if recipe enabled, add it to inject stack
-        table.insert(MEL.InjectStack, recipe)
-    end
-    -- add recipe specific things
-    for key, value in pairs(recipe.Specific) do
-        MEL.RecipeSpecific[key] = value
-    end
-end
-
-function getEntsByTrainType(train_type)
+local function getEntsByTrainType(train_type)
     if istable(train_type) then
         return train_type
     end
@@ -328,7 +328,7 @@ function getEntsByTrainType(train_type)
     return ent_classes
 end
 
-function getTrainEntTables()
+local function getTrainEntTables()
     for name in pairs(scripted_ents.GetList()) do
         local prefix = "gmod_subway_"
         if string.sub(name,1,#prefix) == prefix and scripted_ents.Get(name).Base == "gmod_subway_base" then
@@ -343,9 +343,9 @@ function getTrainEntTables()
 end
 
 
-function injectRandomFieldHelper(ent_class)
+local function injectRandomFieldHelper(ent_class)
     if not MEL.RandomFields[ent_class] then return end
-    
+ 
     -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
     -- hack. iknowiknowiknow its bad
     MEL.InjectIntoServerFunction(ent_class, "TrainSpawnerUpdate", function(wagon, ...)
@@ -370,7 +370,7 @@ function injectRandomFieldHelper(ent_class)
     end, 10)
 end
 
-function injectFieldUpdateHelper(ent_class)
+local function injectFieldUpdateHelper(ent_class)
     if MEL.ClientPropsToReload[ent_class] then
         -- add helper inject to server UpdateWagonNumber in order to reload all models, that we should
         if ent_class == "gmod_subway_81-717_mvm_custom" then
@@ -394,7 +394,7 @@ function injectFieldUpdateHelper(ent_class)
     end
 end
 
-function injectFunction(ent_class, ent_table)
+local function injectFunction(ent_class, ent_table)
     if MEL.FunctionInjectStack[ent_class] then
         -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
         for function_name, priorities in pairs(MEL.FunctionInjectStack[ent_class]) do
@@ -440,7 +440,7 @@ function injectFunction(ent_class, ent_table)
     end
 end
 
-function inject()
+local function inject()
     -- method that finalizes inject on all trains. called after init of recipies
     for _, recipe in pairs(MEL.InjectStack) do
         recipe:BeforeInject()
