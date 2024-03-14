@@ -23,7 +23,7 @@ MEL.FunctionInjectStack = {}
 MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extensions, that needs to be reloaded on spawner update
 -- (key: entity class, value: table with key as field name and table with props as value)
 MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
-MEL.ElementMappings = {} -- mapping per wagon, per field for list elements (key - ent_class, value - (key - field_name, value - (key - name of element, value - index)))
+MEL.ElementMappings = {} -- mapping per wagon, per field for list elements (key - entclass, value - (key - field_name, value - (key - name of element, value - index)))
 
 MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
 -- lookup table for train families
@@ -59,16 +59,6 @@ local function logError(msg)
 end
 
 -- helper methods
-local function getEntclass(ent_or_entclass)
-    if not ent_or_entclass then
-        logError("For some reason, ent_or_entclass in getEntclass is nil. Please report this error.")
-    end
-    -- get entclass from ent table or from str entclass 
-    if istable(ent_or_entclass) then return ent_or_entclass.ent_class end
-    if isentity(ent_or_entclass) then return ent_or_entclass:GetClass() end
-    return ent_or_entclass
-end
-
 local function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
     -- negative priority - inject before default function
     -- positive priority - inject after default function
@@ -77,7 +67,7 @@ local function injectIntoEntFunction(ent_or_entclass, function_name, function_to
     -- that shit is not idempotent, so if there would be like 10 wagons spawned and we will reload anything, same code will be called 10*10 times. 
     -- very bad, so that flag helps us just ignore that spawned wagons 
     if MEL.InjectIntoSpawnedEnt then return end
-    local entclass = getEntclass(ent_or_entclass)
+    local entclass = MEL.GetEntclass(ent_or_entclass)
     if priority == 0 then logError("when injecting function with name " .. function_name .. ": priority couldn't be zero") end
     if not MEL.FunctionInjectStack[entclass] then MEL.FunctionInjectStack[entclass] = {} end
     if not MEL.FunctionInjectStack[entclass][function_name] then MEL.FunctionInjectStack[entclass][function_name] = {} end
@@ -86,8 +76,18 @@ local function injectIntoEntFunction(ent_or_entclass, function_name, function_to
     table.insert(MEL.FunctionInjectStack[entclass][function_name][inject_priority], function_to_inject)
 end
 
+function MEL.GetEntclass(ent_or_entclass)
+    if not ent_or_entclass then
+        logError("For some reason, ent_or_entclass in GetEntclass is nil. Please report this error.")
+    end
+    -- get entclass from ent table or from str entclass 
+    if istable(ent_or_entclass) then return ent_or_entclass.entclass end
+    if isentity(ent_or_entclass) then return ent_or_entclass:GetClass() end
+    return ent_or_entclass
+end
+
 function MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name, field_name)
-    local entclass = getEntclass(ent_or_entclass)
+    local entclass = MEL.GetEntclass(ent_or_entclass)
     if not MEL.ClientPropsToReload[entclass] then MEL.ClientPropsToReload[entclass] = {} end
     if not MEL.ClientPropsToReload[entclass][field_name] then MEL.ClientPropsToReload[entclass][field_name] = {} end
     table.insert(MEL.ClientPropsToReload[entclass][field_name], clientprop_name)
@@ -108,7 +108,7 @@ function MEL.InjectIntoSharedFunction(ent_or_entclass, function_name, function_t
 end
 
 local function getSpawnerEntclass(ent_or_entclass)
-    local entclass = getEntclass(ent_or_entclass)
+    local entclass = MEL.GetEntclass(ent_or_entclass)
     if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then
         entclass = "gmod_subway_81-717_mvm_custom"
     end
@@ -127,7 +127,7 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field, overw
     end
 
     if is_random_field then
-        local entclass_random = getEntclass(ent_or_entclass)
+        local entclass_random = MEL.GetEntclass(ent_or_entclass)
         if not MEL.RandomFields[entclass_random] then MEL.RandomFields[entclass_random] = {} end
         local field_type = field_data[3]
         if field_type == "List" then
@@ -150,14 +150,14 @@ function MEL.RemoveSpawnerField(ent_or_entclass, field_name)
 end
 
 -- TODO: Document that shit
-local function updateMapping(ent_class, field_name, mapping_name, new_index)
-    if not MEL.ElementMappings[ent_class] then
-        MEL.ElementMappings[ent_class] = {}
+local function updateMapping(entclass, field_name, mapping_name, new_index)
+    if not MEL.ElementMappings[entclass] then
+        MEL.ElementMappings[entclass] = {}
     end
-    if not MEL.ElementMappings[ent_class][field_name] then
-        MEL.ElementMappings[ent_class][field_name] = {}
+    if not MEL.ElementMappings[entclass][field_name] then
+        MEL.ElementMappings[entclass][field_name] = {}
     end
-    MEL.ElementMappings[ent_class][field_name][mapping_name] = new_index
+    MEL.ElementMappings[entclass][field_name][mapping_name] = new_index
 end
 
 function MEL.AddSpawnerListElement(ent_or_entclass, field_name, element)
@@ -177,7 +177,7 @@ end
 
 function MEL.GetMappingValue(ent_or_entclass, field_name, element)
     local entclass = getSpawnerEntclass(ent_or_entclass)
-    if MEL.ElementMappings[ent_class] and MEL.ElementMappings[ent_class][field_name] then
+    if MEL.ElementMappings[entclass] and MEL.ElementMappings[entclass][field_name] then
         return MEL.ElementMappings[entclass][field_name][element]
     end
     -- try to find index of it, if it non-existent in our ElementMappings cache
@@ -317,14 +317,14 @@ local function getEntsByTrainType(train_type)
     -- and you probably don't want to have a new default 717 cabine in 7175p
     if MEL.TrainFamilies[train_type] then return MEL.TrainFamilies[train_type] end
     -- and finally try to find by searching train family in classname
-    local ent_classes = {}
-    for _, ent_class in pairs(MEL.train_classes) do
-        local contains_train_type, _ = string.find(ent_class, train_type)
-        if contains_train_type then table.insert(ent_classes, ent_class) end
+    local entclasses = {}
+    for _, entclass in pairs(MEL.train_classes) do
+        local contains_train_type, _ = string.find(entclass, train_type)
+        if contains_train_type then table.insert(entclasses, entclass) end
     end
 
-    if #ent_classes == 0 then logError("no entities for " .. train_type .. ". Perhaps a typo?") end
-    return ent_classes
+    if #entclasses == 0 then logError("no entities for " .. train_type .. ". Perhaps a typo?") end
+    return entclasses
 end
 
 local function getTrainEntTables()
@@ -334,23 +334,23 @@ local function getTrainEntTables()
             table.insert(MEL.train_classes,name)
         end
     end
-    for _, ent_class in pairs(MEL.train_classes) do
-        local ent_table = scripted_ents.GetStored(ent_class).t
-        ent_table.ent_class = ent_class -- add ent_class for convience
-        MEL.ent_tables[ent_class] = ent_table
+    for _, entclass in pairs(MEL.train_classes) do
+        local ent_table = scripted_ents.GetStored(entclass).t
+        ent_table.entclass = entclass -- add entclass for convience
+        MEL.ent_tables[entclass] = ent_table
     end
 end
 
 
-local function injectRandomFieldHelper(ent_class)
-    if not MEL.RandomFields[ent_class] then return end
+local function injectRandomFieldHelper(entclass)
+    if not MEL.RandomFields[entclass] then return end
  
     -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
     -- hack. iknowiknowiknow its bad
-    MEL.InjectIntoServerFunction(ent_class, "TrainSpawnerUpdate", function(wagon, ...)
+    MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...)
         math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
         local custom = wagon.CustomSettings and true or false
-        for _, data in pairs(MEL.RandomFields[ent_class]) do
+        for _, data in pairs(MEL.RandomFields[entclass]) do
             local key = data[1]
             local field_type = data[2]
             if field_type == "List" then
@@ -369,17 +369,17 @@ local function injectRandomFieldHelper(ent_class)
     end, 10)
 end
 
-local function injectFieldUpdateHelper(ent_class)
-    if MEL.ClientPropsToReload[ent_class] then
+local function injectFieldUpdateHelper(entclass)
+    if MEL.ClientPropsToReload[entclass] then
         -- add helper inject to server UpdateWagonNumber in order to reload all models, that we should
-        if ent_class == "gmod_subway_81-717_mvm_custom" then
-            ent_class_inject = "gmod_subway_81-717_mvm"
+        if entclass == "gmod_subway_81-717_mvm_custom" then
+            entclass_inject = "gmod_subway_81-717_mvm"
         else
-            ent_class_inject = ent_class
+            entclass_inject = entclass
         end
 
-        MEL.InjectIntoClientFunction(ent_class_inject, "UpdateWagonNumber", function(self)
-            for key, props in pairs(MEL.ClientPropsToReload[ent_class] or {}) do
+        MEL.InjectIntoClientFunction(entclass_inject, "UpdateWagonNumber", function(self)
+            for key, props in pairs(MEL.ClientPropsToReload[entclass] or {}) do
                 local value = self:GetNW2Int(key, 1)
                 if MEL.Debug or self[key] ~= value then
                     for _, prop_name in pairs(props) do
@@ -393,10 +393,10 @@ local function injectFieldUpdateHelper(ent_class)
     end
 end
 
-local function injectFunction(ent_class, ent_table)
-    if MEL.FunctionInjectStack[ent_class] then
+local function injectFunction(entclass, ent_table)
+    if MEL.FunctionInjectStack[entclass] then
         -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
-        for function_name, priorities in pairs(MEL.FunctionInjectStack[ent_class]) do
+        for function_name, priorities in pairs(MEL.FunctionInjectStack[entclass]) do
             local before_stack = {}
             local after_stack = {}
             for priority, function_stack in SortedPairs(priorities) do
@@ -409,7 +409,7 @@ local function injectFunction(ent_class, ent_table)
             -- maybe compile every func from stack?
             -- check for missing function from some wagon
             if not ent_table[function_name] then
-                logError("can't inject into " .. ent_class .. ": function " .. function_name .. " doesn't exists")
+                logError("can't inject into " .. entclass .. ": function " .. function_name .. " doesn't exists")
                 continue
             end
 
@@ -432,7 +432,7 @@ local function injectFunction(ent_class, ent_table)
                 return ret_val
             end
             ent_table[function_name] = builded_inject
-            for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
+            for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
                 ent[function_name] = builded_inject
             end
         end
@@ -446,26 +446,26 @@ local function inject()
     end
     for _, recipe in pairs(MEL.InjectStack) do
         -- call Inject method on every ent that recipe changes
-        for _, ent_class in pairs(getEntsByTrainType(recipe.TrainType)) do
-            if recipe:InjectNeeded(ent_class) then
-                recipe:InjectSpawner(ent_class)
-                recipe:Inject(MEL.ent_tables[ent_class], ent_class)
+        for _, entclass in pairs(getEntsByTrainType(recipe.TrainType)) do
+            if recipe:InjectNeeded(entclass) then
+                recipe:InjectSpawner(entclass)
+                recipe:Inject(MEL.ent_tables[entclass], entclass)
                 if MEL.Debug then
                     -- call Inject method on all alredy spawner ent that recipe changes (if debug enabled)
                     -- mark this call of inject as for entity (needed for InjectInto*Function)
                     MEL.InjectIntoSpawnedEnt = true
-                    for _, ent in ipairs(ents.FindByClass(ent_class) or {}) do
-                        recipe:Inject(ent, ent_class)
+                    for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
+                        recipe:Inject(ent, entclass)
                     end
                     MEL.InjectIntoSpawnedEnt = false
                 end
             end
         end
     end
-    for ent_class, ent_table in pairs(MEL.ent_tables) do
-        injectRandomFieldHelper(ent_class)
-        injectFieldUpdateHelper(ent_class)
-        injectFunction(ent_class, ent_table)
+    for entclass, ent_table in pairs(MEL.ent_tables) do
+        injectRandomFieldHelper(entclass)
+        injectFieldUpdateHelper(entclass)
+        injectFunction(entclass, ent_table)
     end
     -- reload all languages
     -- why we are just using metrostroi_language_reload?:
