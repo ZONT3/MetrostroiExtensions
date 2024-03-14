@@ -74,6 +74,9 @@ function injectIntoEntFunction(ent_or_entclass, function_name, function_to_injec
     -- negative priority - inject before default function
     -- positive priority - inject after default function
     -- zero - default function priority, error!
+
+    -- that shit is not idempotent, so if there would be like 10 wagons spawned and we will reload anything, same code will be called 10*10 times. 
+    -- very bad, so that flag helps us just ignore that spawned wagons 
     if MEL.InjectIntoSpawnedEnt then return end
     local entclass = getEntclass(ent_or_entclass)
     if priority == 0 then logError("when injecting function with name " .. function_name .. ": priority couldn't be zero") end
