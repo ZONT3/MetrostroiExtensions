@@ -145,6 +145,14 @@ function RECIPE:Inject(ent, entclass)
             else
                 return lamp_data.int.model
             end
+        end,
+        callback = function(wagon, cent)
+            local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
+            if string.find(wagon:GetClass(), "717") then
+                if lamp_data.head.callback then lamp_data.head.callback(wagon, cent) end
+            else
+                if lamp_data.int.callback then lamp_data.int.callback(wagon, cent) end
+            end
         end
     }, "SalonLampType")
 
