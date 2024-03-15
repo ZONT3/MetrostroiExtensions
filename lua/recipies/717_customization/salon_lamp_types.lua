@@ -166,14 +166,14 @@ function RECIPE:Inject(ent, entclass)
                 local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
                 if string.find(wagon:GetClass(), "717") then
                     if i > lamp_data.head.glow.count then
-                        cent:SetModelScale(0)
+                        cent:SetNoDraw(true)
                         return
                     end
 
                     if lamp_data.head.glow.callback then lamp_data.head.glow.callback(wagon, cent, i) end
                 else
                     if i > lamp_data.int.glow.count then
-                        cent:SetModelScale(0)
+                        cent:SetNoDraw(true)
                         return
                     end
 
