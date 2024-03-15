@@ -346,7 +346,7 @@ local function injectRandomFieldHelper(entclass)
         end
 
         math.randomseed(os.time())
-    end, 10)
+    end, -100)
 end
 
 local function injectFieldUpdateHelper(entclass)
