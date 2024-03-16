@@ -54,6 +54,10 @@ local function logError(msg)
     ErrorNoHaltWithStack(LOG_PREFIX .. "Error!: " .. msg .. "\n")
 end
 
+function MEL.LogErrorFactory()
+    return function(msg) logError("Error from recipe " .. RECIPE.Name .. ": " .. msg) end
+end
+
 -- helper methods
 local function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
     -- negative priority - inject before default function
