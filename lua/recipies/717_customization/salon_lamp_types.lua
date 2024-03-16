@@ -173,14 +173,14 @@ function RECIPE:Inject(ent, entclass)
             callback = function(wagon, cent)
                 local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
                 if string.find(wagon:GetClass(), "717") then
-                    if i > lamp_data.head.glow.count then
+                    if i > lamp_data.head.glow.count and i != 1 then
                         cent:SetNoDraw(true)
                         return
                     end
 
                     if lamp_data.head.glow.callback then lamp_data.head.glow.callback(wagon, cent, i) end
                 else
-                    if i > lamp_data.int.glow.count then
+                    if i > lamp_data.int.glow.count and i != 1 then
                         cent:SetNoDraw(true)
                         return
                     end
@@ -190,6 +190,29 @@ function RECIPE:Inject(ent, entclass)
             end
         }, "SalonLampType")
     end
+    -- this model used only when count is == 1. 
+    MEL.NewClientProp(ent, "salon_lamps_glow_emergency", {
+        model = MODELS_ROOT .. "lamps/lamp_typ1.mdl",
+        pos = Vector(0, 0, 0),
+        ang = Angle(0, 0, 0),
+        hideseat = 1.1,
+        modelcallback = function(wagon)
+            local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
+            if string.find(wagon:GetClass(), "717") then
+                return lamp_data.head.glow.model_emergency
+            else
+                return lamp_data.int.glow.model_emergency
+            end
+        end,
+        callback = function(wagon, cent)
+            local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
+            if string.find(wagon:GetClass(), "717") and not lamp_data.head.glow.model_emergency then
+                cent:SetNoDraw(true)
+            elseif not lamp_data.int.glow.model_emergency then
+                cent:SetNoDraw(true)
+            end
+        end
+    }, "SalonLampType")
 
     ent.UpdateLampsColors = function(wagon)
         local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
@@ -204,8 +227,15 @@ function RECIPE:Inject(ent, entclass)
         local rand = math.random() > 0.8 and 1 or math.random(0.95, 0.99)
         local colors = {}
         if lamp_data.random_color then colors = lamp_data.random_color(lamp_amount) end
+        local mean_color, mean_count, mean_current_lamp = Vector(), 0, 11
         for i = 1, lamp_amount do
-            wagon:SetNW2Vector("salon_lamp_color" .. i, colors[i] or Vector(255, 255, 255))
+            local color = colors[i] or Vector(255, 255, 255)
+            wagon:SetNW2Vector("SalonLampColor" .. i, color)
+            mean_color = mean_color + color
+            mean_count = mean_count + 1
+            if i % (lamp_amount / 3) < 1 then
+                print("i", lamp_amount, i)
+            end
             wagon.SalonLamps.broken[i] = math.random() > rand and math.random() > 0.7
         end
     end
@@ -214,10 +244,14 @@ function RECIPE:Inject(ent, entclass)
         local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
         local lamp_amount = lamp_data.int.glow.count
         if string.find(wagon:GetClass(), "717") then lamp_amount = lamp_data.head.glow.count end
-        local lightsActive1 = wagon.Panel.EmergencyLights > 0
-        local lightsActive2 = wagon.Panel.MainLights > 0.0
+
+        local emergencyLights = wagon.Panel.EmergencyLights > 0
+        local mainLights = wagon.Panel.MainLights > 0.0
+        wagon:SetPackedBool("EmergencyLights", emergencyLights)
+        wagon:SetPackedBool("MainLights", mainLights)
+        if lamp_amount == 1 then return end
         local mul = 0
-        local Ip = lamp_data.emergency_Ip
+        local Ip = lamp_data.emergency_Ip or 3.6
         if not wagon.SalonLamps then
             wagon.SalonLamps = {
                 broken = {}
@@ -225,7 +259,7 @@ function RECIPE:Inject(ent, entclass)
         end
 
         for i = 1, lamp_amount do
-            if lightsActive2 or (lightsActive1 and math.ceil((i + Ip) % Ip) == 1) then
+            if mainLights or (emergencyLights and math.ceil((i + Ip) % Ip) == 1) then
                 if not wagon.SalonLamps[i] and not wagon.SalonLamps.broken[i] then wagon.SalonLamps[i] = CurTime() + math.Rand(0.1, math.Rand(0.5, 2)) end
             else
                 wagon.SalonLamps[i] = nil
@@ -233,9 +267,9 @@ function RECIPE:Inject(ent, entclass)
 
             if wagon.SalonLamps[i] and CurTime() - wagon.SalonLamps[i] > 0 then
                 mul = mul + 1
-                wagon:SetPackedBool("salon_lamp_enabled" .. i, true)
+                wagon:SetPackedBool("SalonLampEnabled" .. i, true)
             else
-                wagon:SetPackedBool("salon_lamp_enabled" .. i, false)
+                wagon:SetPackedBool("SalonLampEnabled" .. i, false)
             end
         end
 
@@ -248,10 +282,17 @@ function RECIPE:Inject(ent, entclass)
         local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
         local lamp_amount = lamp_data.int.glow.count
         if string.find(wagon:GetClass(), "717") then lamp_amount = lamp_data.head.glow.count end
+        if lamp_amount == 1 then
+            local emergencyLights = wagon:GetPackedBool("EmergencyLights")
+            local mainLights = wagon:GetPackedBool("MainLights")
+            wagon:ShowHide("salon_lamps_glow_emergency", emergencyLights and not mainLights)
+            wagon:ShowHide("salon_lamps_glow1", mainLights)
+            return
+        end
         for i = 1, lamp_amount do
-            local colV = wagon:GetNW2Vector("salon_lamp_color" .. i)
+            local colV = wagon:GetNW2Vector("SalonLampColor" .. i)
             local col = Color(colV.x, colV.y, colV.z)
-            wagon:ShowHideSmooth("salon_lamps_glow" .. i, wagon:Animate("Salon_lamps_glow" .. i, wagon:GetPackedBool("salon_lamp_enabled" .. i) and 1 or 0, 0, 1, 6, false), col)
+            wagon:ShowHideSmooth("salon_lamps_glow" .. i, wagon:Animate("SalonLampsGlow" .. i, wagon:GetPackedBool("SalonLampEnabled" .. i) and 1 or 0, 0, 1, 6, false), col)
         end
     end)
 end
