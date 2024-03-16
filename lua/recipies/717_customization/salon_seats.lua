@@ -60,6 +60,8 @@ function RECIPE:InjectSpawner(entclass)
 end
 
 function RECIPE:Inject(ent, entclass)
+    MEL.DeleteClientProp(ent, "seats_new")
+    MEL.DeleteClientProp(ent, "seats_new_cap")
     if string.find(entclass, "717") then
         MEL.UpdateModelCallback(ent, "seats_old", function(wagon)
             return MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatType", 1)].head.model
@@ -85,6 +87,7 @@ function RECIPE:Inject(ent, entclass)
             wagon:SetNW2Bool("NewSeats", false)
         end, 100)
     else
+        MEL.DeleteClientProp(ent, "seats_new_cap_o")
         MEL.UpdateModelCallback(ent, "seats_old", function(wagon)
             return MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatType", 1)].int.model
         end)
