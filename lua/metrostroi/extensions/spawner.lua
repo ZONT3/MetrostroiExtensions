@@ -13,7 +13,6 @@ MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extension
 -- (key: entity class, value: table with key as field name and table with props as value)
 MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
 MEL.ElementMappings = {} -- mapping per wagon, per field for list elements (key - entclass, value - (key - field_name, value - (key - name of element, value - index)))
-
 local function getSpawnerEntclass(ent_or_entclass)
     local entclass = MEL.GetEntclass(ent_or_entclass)
     if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then entclass = "gmod_subway_81-717_mvm_custom" end

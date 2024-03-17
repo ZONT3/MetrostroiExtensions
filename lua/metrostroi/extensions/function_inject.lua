@@ -10,7 +10,6 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.FunctionInjectStack = {}
-
 local function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
     -- negative priority - inject before default function
     -- positive priority - inject after default function
@@ -26,8 +25,6 @@ local function injectIntoEntFunction(ent_or_entclass, function_name, function_to
     if not MEL.FunctionInjectStack[entclass][function_name][inject_priority] then MEL.FunctionInjectStack[entclass][function_name][inject_priority] = {} end
     table.insert(MEL.FunctionInjectStack[entclass][function_name][inject_priority], function_to_inject)
 end
-
-
 
 function MEL.InjectIntoClientFunction(ent_or_entclass, function_name, function_to_inject, priority)
     if SERVER then return end

@@ -1,4 +1,3 @@
-
 -- Copyright (c) Anatoly Raev, 2024. All right reserved
 -- 
 -- Unauthorized copying of any file in this repository, via any medium is strictly prohibited. 
@@ -10,8 +9,6 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-
-
 function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback)
     if CLIENT then
         local old_modelcallback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end

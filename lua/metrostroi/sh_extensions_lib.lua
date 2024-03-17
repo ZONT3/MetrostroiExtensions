@@ -18,7 +18,6 @@ MEL.Recipes = {}
 MEL.DisabledRecipies = {}
 MEL.InjectStack = {}
 MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
-
 -- lookup table for train families
 MEL.TrainFamilies = {
     -- for 717 we don't need to modify _custom entity, cause it's used just for spawner
@@ -29,22 +28,34 @@ MEL.TrainFamilies = {
 }
 
 MEL.InjectIntoSpawnedEnt = false -- temp global variable
-MEL.ent_tables = {}
-MEL.train_classes = {}
+MEL.EntTables = {}
+MEL.TrainClasses = {}
 -- logger methods
+local function printPrefix()
+    if SERVER then
+        MsgC(Color(0, 0, 255), "[Metrostroi", Color(0, 255, 0), "ExtensionsLib] ", color_white)
+    else
+        MsgC(Color(72, 120, 164), "[Metrostroi", Color(44, 131, 61), "ExtensionsLib] ", color_white)
+    end
+end
 local LOG_PREFIX = "[MetrostroiExtensionsLib] "
 local WARNING_COLOR = Color(255, 255, 0)
 
 local function logDebug(msg)
-    if MEL.Debug then print(LOG_PREFIX .. "Debug: " .. msg) end
+    if MEL.Debug then
+        printPrefix()
+        MsgC(Format("Debug: %s\n", msg))
+    end
 end
 
 local function logInfo(msg)
-    print(LOG_PREFIX .. "Info: " .. msg)
+    printPrefix()
+    MsgC(Format("Info: %s\n", msg))
 end
 
 local function logWarning(msg)
-    MsgC(WARNING_COLOR, LOG_PREFIX .. "Warning: " .. msg .. "\n")
+    printPrefix()
+    MsgC(WARNING_COLOR, Format("Warning: %s\n", msg))
 end
 
 local function logError(msg)
@@ -73,8 +84,7 @@ function MEL.GetEntclass(ent_or_entclass)
 end
 
 -- load all methods
-local methodModules = file.Find("metrostroi/extensions/*.lua","LUA")
-
+local methodModules = file.Find("metrostroi/extensions/*.lua", "LUA")
 for _, moduleName in pairs(methodModules) do
     if SERVER then
         include("metrostroi/extensions/" .. moduleName)
@@ -85,11 +95,46 @@ for _, moduleName in pairs(methodModules) do
 end
 
 
+function MEL.GetEntsByTrainType(trainType)
+    -- firstly, check if our train_type is table
+    if istable(trainType) then return trainType end
+    -- then check if our trainType is all
+    if trainType == "all" then return MEL.TrainClasses end
+    -- then try to find it as entity class
+    if table.HasValue(MEL.TrainClasses, trainType) then return {trainType} end
+    -- then try to check it in lookup table
+    -- why? just imagine 717: we have 5p, we have some other modifications
+    -- and you probably don't want to have a new default 717 cabine in 7175p
+    if MEL.TrainFamilies[trainType] then return MEL.TrainFamilies[trainType] end
+    -- and finally try to find by searching train family in classname
+    local entclasses = {}
+    for _, entclass in pairs(MEL.TrainClasses) do
+        local containsTrainTypes, _ = string.find(entclass, trainType)
+        if containsTrainTypes then table.insert(entclasses, entclass) end
+    end
+
+    if #entclasses == 0 then logError("no entities for " .. trainType .. ". Perhaps a typo?") end
+    return entclasses
+end
+
 function MEL.DefineRecipe(name, train_type)
     if not MEL.BaseRecipies[name] then MEL.BaseRecipies[name] = {} end
     RECIPE = MEL.BaseRecipies[name]
     RECIPE.TrainType = train_type
     RECIPE.Name = name
+end
+
+local function findRecipeFiles(folder, recipe_files)
+    local found_files, found_folders = file.Find(folder .. "/*", "LUA")
+    for _, recipe_file in pairs(found_files) do
+        table.insert(recipe_files, folder .. "/" .. recipe_file)
+    end
+
+    if found_folders and #found_folders > 0 then
+        for _, found_folder in pairs(found_folders) do
+            findRecipeFiles(folder .. "/" .. found_folder, recipe_files)
+        end
+    end
 end
 
 local function initRecipe(recipe)
@@ -100,15 +145,16 @@ local function initRecipe(recipe)
     end
 
     if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then
-        -- if recipe enabled, add it to inject stack
+        -- if recipe enabled: 
+        -- add it to inject stack
         table.insert(MEL.InjectStack, recipe)
-    end
-
-    -- add recipe specific things
-    for key, value in pairs(recipe.Specific) do
-        MEL.RecipeSpecific[key] = value
+        -- add recipe specific things
+        for key, value in pairs(recipe.Specific) do
+            MEL.RecipeSpecific[key] = value
+        end
     end
 end
+
 
 local function loadRecipe(filename, scope)
     local File = string.GetFileFromFilename(filename)
@@ -153,46 +199,46 @@ local function loadRecipe(filename, scope)
     RECIPE = nil
 end
 
-local function getEntsByTrainType(train_type)
-    if istable(train_type) then return train_type end
-    -- firstly, check for "all" train_type
-    if train_type == "all" then return MEL.train_classes end
-    -- then try to find it as entity class
-    if table.HasValue(MEL.train_classes, train_type) then return {train_type} end
-    -- then try to check it in lookup table
-    -- why? just imagine 717: we have 5p, we have some other modifications
-    -- and you probably don't want to have a new default 717 cabine in 7175p
-    if MEL.TrainFamilies[train_type] then return MEL.TrainFamilies[train_type] end
-    -- and finally try to find by searching train family in classname
-    local entclasses = {}
-    for _, entclass in pairs(MEL.train_classes) do
-        local contains_train_type, _ = string.find(entclass, train_type)
-        if contains_train_type then table.insert(entclasses, entclass) end
-    end
+local function discoverRecipies()
+    -- load all recipies recursively
+    logInfo("loading recipies...")
+    local recipe_files = {}
 
-    if #entclasses == 0 then logError("no entities for " .. train_type .. ". Perhaps a typo?") end
-    return entclasses
+    findRecipeFiles("recipies", recipe_files)
+    for _, recipe_file in pairs(recipe_files) do
+        if not recipe_file then -- for some reason, recipe_file can be nil...
+            continue
+        end
+
+        -- todo: think about scope
+        local scope = string.sub(string.GetFileFromFilename(recipe_file), 1, 2)
+        if scope == "sv" and SERVER then -- Чтобы не дай бог не попало клиенту
+            loadRecipe(recipe_file, train_type, "sv")
+        else
+            loadRecipe(recipe_file, train_type, side)
+        end
+    end
 end
 
 local function getTrainEntTables()
-    for name in pairs(scripted_ents.GetList()) do
-        local prefix = "gmod_subway_"
-        if string.sub(name, 1, #prefix) == prefix and scripted_ents.Get(name).Base == "gmod_subway_base" then table.insert(MEL.train_classes, name) end
-    end
-
-    for _, entclass in pairs(MEL.train_classes) do
-        local ent_table = scripted_ents.GetStored(entclass).t
-        ent_table.entclass = entclass -- add entclass for convience
-        MEL.ent_tables[entclass] = ent_table
+    -- we are using this method cause default metrotroi table caused problems
+    local prefix = "gmod_subway_"
+    for entclass in pairs(scripted_ents.GetList()) do
+        if string.sub(entclass, 1, #prefix) == prefix and scripted_ents.Get(entclass).Base == "gmod_subway_base" then
+            table.insert(MEL.TrainClasses, entclass)
+            local ent_table = scripted_ents.GetStored(entclass).t
+            ent_table.entclass = entclass -- add entclass for convience
+            MEL.EntTables[entclass] = ent_table
+        end
     end
 end
+
 
 local function injectRandomFieldHelper(entclass)
     if not MEL.RandomFields[entclass] then return end
     -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
-    -- hack. iknowiknowiknow its bad
     MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...)
-        math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
+        math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType) -- i dont really n
         local custom = wagon.CustomSettings and true or false
         for _, data in pairs(MEL.RandomFields[entclass]) do
             local key = data[1]
@@ -215,73 +261,68 @@ local function injectRandomFieldHelper(entclass)
 end
 
 local function injectFieldUpdateHelper(entclass)
-    if MEL.ClientPropsToReload[entclass] then
-        -- add helper inject to server UpdateWagonNumber in order to reload all models, that we should
-        if entclass == "gmod_subway_81-717_mvm_custom" then
-            entclass_inject = "gmod_subway_81-717_mvm"
-        else
-            entclass_inject = entclass
-        end
-
-        MEL.InjectIntoClientFunction(entclass_inject, "UpdateWagonNumber", function(self)
-            for key, props in pairs(MEL.ClientPropsToReload[entclass] or {}) do
-                local value = self:GetNW2Int(key, 1)
-                if MEL.Debug or self[key] ~= value then
-                    for _, prop_name in pairs(props) do
-                        self:RemoveCSEnt(prop_name)
-                    end
-
-                    self[key] = value
+    if not MEL.ClientPropsToReload[entclass] then return end
+    -- add helper inject to server UpdateWagonNumber in order to reload all models, that should be reloaded
+    -- todo: do we really need this class check?
+    local entclass_inject = entclass
+    if entclass == "gmod_subway_81-717_mvm_custom" then entclass_inject = "gmod_subway_81-717_mvm" end
+    MEL.InjectIntoClientFunction(entclass_inject, "UpdateWagonNumber", function(wagon)
+        for key, props in pairs(MEL.ClientPropsToReload[entclass]) do
+            local value = wagon:GetNW2Int(key, 1)
+            if MEL.Debug or wagon[key] ~= value then
+                for _, prop_name in pairs(props) do
+                    wagon:RemoveCSEnt(prop_name)
                 end
+
+                wagon[key] = value
             end
-        end)
-    end
+        end
+    end)
 end
 
-local function injectFunction(entclass, ent_table)
-    if MEL.FunctionInjectStack[entclass] then
-        -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
-        for function_name, priorities in pairs(MEL.FunctionInjectStack[entclass]) do
-            local before_stack = {}
-            local after_stack = {}
-            for priority, function_stack in SortedPairs(priorities) do
-                if priority < 0 then
-                    table.insert(before_stack, function_stack)
-                elseif priority > 0 then
-                    table.insert(after_stack, function_stack)
+local function injectFunction(entclass, entTable)
+    if not MEL.FunctionInjectStack[entclass] then return end
+    -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
+    for functionName, priorities in pairs(MEL.FunctionInjectStack[entclass]) do
+        local beforeStack = {}
+        local afterStack = {}
+        for priority, functionStack in SortedPairs(priorities) do
+            if priority < 0 then
+                table.insert(beforeStack, functionStack)
+            elseif priority > 0 then
+                table.insert(afterStack, functionStack)
+            end
+        end
+
+        -- check for missing function from some wagon
+        if not entTable[functionName] then
+            logError("can't inject into " .. entclass .. ": function " .. functionName .. " doesn't exists!")
+            continue
+        end
+
+        if not entTable["Default" .. functionName] then entTable["Default" .. functionName] = entTable[functionName] end
+        local buildedInject = function(wagon, ...)
+            -- todo: remove that and add normal control flow
+            local closeBaseFunction = true
+            for i = #beforeStack, 1, -1 do
+                for _, functionToInject in pairs(beforeStack[i]) do
+                    closeBaseFunction = functionToInject(wagon, unpack({...} or {}), true)
                 end
             end
 
-            -- maybe compile every func from stack?
-            -- check for missing function from some wagon
-            if not ent_table[function_name] then
-                logError("can't inject into " .. entclass .. ": function " .. function_name .. " doesn't exists!")
-                continue
-            end
-
-            if not ent_table["Default" .. function_name] then ent_table["Default" .. function_name] = ent_table[function_name] end
-            local builded_inject = function(wagon, ...)
-                local closeBaseFunction = true
-                for i = #before_stack, 1, -1 do
-                    for _, inject_function in pairs(before_stack[i]) do
-                        closeBaseFunction = inject_function(wagon, unpack({...} or {}), true)
-                    end
+            if closeBaseFunction == false then return closeBaseFunction end
+            local returnValue = entTable["Default" .. functionName](wagon, unpack({...} or {}))
+            for i = 1, #afterStack do
+                for _, functionToInject in pairs(afterStack[i]) do
+                    functionToInject(wagon, returnValue, unpack({...} or {}), false)
                 end
-
-                if closeBaseFunction == false then return closeBaseFunction end
-                local ret_val = ent_table["Default" .. function_name](wagon, unpack({...} or {}))
-                for i = 1, #after_stack do
-                    for _, inject_function in pairs(after_stack[i]) do
-                        inject_function(wagon, ret_val, unpack({...} or {}), false)
-                    end
-                end
-                return ret_val
             end
-
-            ent_table[function_name] = builded_inject
-            for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
-                ent[function_name] = builded_inject
-            end
+            return returnValue
+        end
+        entTable[functionName] = buildedInject
+        -- reinject this function on already spawned wagons
+        for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
+            ent[functionName] = buildedInject
         end
     end
 end
@@ -294,28 +335,26 @@ local function inject()
 
     for _, recipe in pairs(MEL.InjectStack) do
         -- call Inject method on every ent that recipe changes
-        for _, entclass in pairs(getEntsByTrainType(recipe.TrainType)) do
+        for _, entclass in pairs(MEL.GetEntsByTrainType(recipe.TrainType)) do
             if recipe:InjectNeeded(entclass) then
                 recipe:InjectSpawner(entclass)
-                recipe:Inject(MEL.ent_tables[entclass], entclass)
-                if MEL.Debug then
-                    -- call Inject method on all alredy spawner ent that recipe changes (if debug enabled)
-                    -- mark this call of inject as for entity (needed for InjectInto*Function)
-                    MEL.InjectIntoSpawnedEnt = true
-                    for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
-                        recipe:Inject(ent, entclass)
-                    end
-
-                    MEL.InjectIntoSpawnedEnt = false
+                recipe:Inject(MEL.EntTables[entclass], entclass)
+                -- call Inject method on all alredy spawner ent that recipe changes (for example, if we are loaded on server where trains were already spawned)
+                -- mark this call of inject as for entity (needed for InjectInto*Function)
+                MEL.InjectIntoSpawnedEnt = true
+                -- yup, this is slow
+                for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
+                    recipe:Inject(ent, entclass)
                 end
+                MEL.InjectIntoSpawnedEnt = false
             end
         end
     end
 
-    for entclass, ent_table in pairs(MEL.ent_tables) do
+    for entclass, entTable in pairs(MEL.EntTables) do
         injectRandomFieldHelper(entclass)
         injectFieldUpdateHelper(entclass)
-        injectFunction(entclass, ent_table)
+        injectFunction(entclass, entTable)
     end
 
     -- reload all languages
@@ -326,35 +365,7 @@ local function inject()
     RunConsoleCommand("metrostroi_language_reload")
 end
 
--- load all recipies recursively
-logInfo("loading recipies...")
-local recipe_files = {}
-local function findRecipies(folder)
-    print(folder)
-    local found_files, found_folders = file.Find(folder .. "/*", "LUA")
-    for _, recipe_file in pairs(found_files) do
-        table.insert(recipe_files, folder .. "/" .. recipe_file)
-    end
-    if found_folders and #found_folders > 0 then
-        for _, found_folder in pairs(found_folders) do
-            findRecipies(folder .. "/" .. found_folder)
-        end
-    end
-end
-
-findRecipies("recipies")
-for _, recipe_file in pairs(recipe_files) do
-    if not recipe_file then -- for some reason, File can be nil...
-        continue
-    end
-
-    local scope = string.sub(string.GetFileFromFilename(recipe_file), 1, 2)
-    if scope == "sv" and SERVER then -- Чтобы не дай бог не попало клиенту
-        loadRecipe(recipe_file, train_type, "sv")
-    else
-        loadRecipe(recipe_file, train_type, side)
-    end
-end
+discoverRecipies()
 -- injection logic
 hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
     timer.Simple(1, function()
@@ -372,14 +383,14 @@ if SERVER then
         net.Broadcast()
         logInfo("reloading recipies...")
         -- clear all inject stacks
+        MEL.BaseRecipies = {}
+        MEL.Recipes = {}
+        MEL.DisabledRecipies = {}
         MEL.InjectStack = {}
-        MEL.FunctionInjectStack = {}
-        MEL.ClientPropsToReload = {}
-        MEL.RandomFields = {}
-        for _, recipe in pairs(MEL.Recipes) do
-            initRecipe(recipe)
-        end
-
+        MEL.RecipeSpecific = {}
+        MEL.EntTables = {}
+        MEL.TrainClasses = {}
+        discoverRecipies()
         getTrainEntTables()
         inject()
     end)
@@ -389,14 +400,14 @@ if CLIENT then
     net.Receive("MetrostroiExtDoReload", function(len, ply)
         logInfo("reloading recipies...")
         -- clear all inject stacks
+        MEL.BaseRecipies = {}
+        MEL.Recipes = {}
+        MEL.DisabledRecipies = {}
         MEL.InjectStack = {}
-        MEL.FunctionInjectStack = {}
-        MEL.ClientPropsToReload = {}
-        MEL.RandomFields = {}
-        for _, recipe in pairs(MEL.Recipes) do
-            initRecipe(recipe)
-        end
-
+        MEL.RecipeSpecific = {}
+        MEL.EntTables = {}
+        MEL.TrainClasses = {}
+        discoverRecipies()
         getTrainEntTables()
         inject()
         -- try to reload all spawned trains csents and buttonmaps

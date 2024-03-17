@@ -9,8 +9,6 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-
-
 function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
     if CLIENT then
         local buttonmap = ent.ButtonMap[buttonmap_name]
