@@ -18,6 +18,8 @@ MEL.Recipes = {}
 MEL.DisabledRecipies = {}
 MEL.InjectStack = {}
 MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
+MEL.Return = "MEL_RETURN" -- flag, that we need to escape outer function.
+
 -- lookup table for train families
 MEL.TrainFamilies = {
     -- for 717 we don't need to modify _custom entity, cause it's used just for spawner
@@ -297,19 +299,22 @@ local function injectFunction(entclass, entTable)
 
         if not entTable["Default" .. functionName] then entTable["Default" .. functionName] = entTable[functionName] end
         local buildedInject = function(wagon, ...)
-            -- todo: remove that and add normal control flow
-            local closeBaseFunction = true
             for i = #beforeStack, 1, -1 do
                 for _, functionToInject in pairs(beforeStack[i]) do
-                    closeBaseFunction = functionToInject(wagon, unpack({...} or {}), true)
+                    injectReturnValue = functionToInject(wagon, unpack({...} or {}), true)
+                    if injectReturnValue[#injectReturnValue] == MEL.Return then
+                        return unpack(injectReturnValue, 1, #injectReturnValue - 1)
+                    end
                 end
             end
 
-            if closeBaseFunction == false then return closeBaseFunction end
             local returnValue = entTable["Default" .. functionName](wagon, unpack({...} or {}))
             for i = 1, #afterStack do
                 for _, functionToInject in pairs(afterStack[i]) do
-                    functionToInject(wagon, returnValue, unpack({...} or {}), false)
+                    injectReturnValue = functionToInject(wagon, returnValue, unpack({...} or {}), false)
+                    if injectReturnValue[#injectReturnValue] == MEL.Return then
+                        return unpack(injectReturnValue, 1, #injectReturnValue - 1)
+                    end
                 end
             end
             return returnValue

@@ -10,6 +10,7 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.FunctionInjectStack = {}
+
 local function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
     -- negative priority - inject before default function
     -- positive priority - inject after default function
