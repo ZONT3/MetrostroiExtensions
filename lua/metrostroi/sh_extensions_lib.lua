@@ -38,6 +38,7 @@ MEL.train_classes = {}
 -- logger methods
 local LOG_PREFIX = "[MetrostroiExtensionsLib] "
 local WARNING_COLOR = Color(255, 255, 0)
+
 local function logDebug(msg)
     if MEL.Debug then print(LOG_PREFIX .. "Debug: " .. msg) end
 end
@@ -65,23 +66,8 @@ end
 function MEL.LogInfoFactory()
     return function(msg) logInfo("Info from recipe " .. RECIPE.Name .. ": " .. msg) end
 end
--- helper methods
-local function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
-    -- negative priority - inject before default function
-    -- positive priority - inject after default function
-    -- zero - default function priority, error!
-    -- that shit is not idempotent, so if there would be like 10 wagons spawned and we will reload anything, same code will be called 10*10 times. 
-    -- very bad, so that flag helps us just ignore that spawned wagons 
-    if MEL.InjectIntoSpawnedEnt then return end
-    local entclass = MEL.GetEntclass(ent_or_entclass)
-    if priority == 0 then logError("when injecting function with name " .. function_name .. ": priority couldn't be zero") end
-    if not MEL.FunctionInjectStack[entclass] then MEL.FunctionInjectStack[entclass] = {} end
-    if not MEL.FunctionInjectStack[entclass][function_name] then MEL.FunctionInjectStack[entclass][function_name] = {} end
-    local inject_priority = priority or -1
-    if not MEL.FunctionInjectStack[entclass][function_name][inject_priority] then MEL.FunctionInjectStack[entclass][function_name][inject_priority] = {} end
-    table.insert(MEL.FunctionInjectStack[entclass][function_name][inject_priority], function_to_inject)
-end
 
+-- helper methods
 function MEL.GetEntclass(ent_or_entclass)
     if not ent_or_entclass then logError("For some reason, ent_or_entclass in GetEntclass is nil. Please report this error.") end
     -- get entclass from ent table or from str entclass 
@@ -90,146 +76,18 @@ function MEL.GetEntclass(ent_or_entclass)
     return ent_or_entclass
 end
 
-function MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name, field_name)
-    local entclass = MEL.GetEntclass(ent_or_entclass)
-    if not MEL.ClientPropsToReload[entclass] then MEL.ClientPropsToReload[entclass] = {} end
-    if not MEL.ClientPropsToReload[entclass][field_name] then MEL.ClientPropsToReload[entclass][field_name] = {} end
-    table.insert(MEL.ClientPropsToReload[entclass][field_name], clientprop_name)
-end
+-- load all methods
+local methodModules = file.Find("metrostroi/extensions/*.lua","LUA")
 
-function MEL.InjectIntoClientFunction(ent_or_entclass, function_name, function_to_inject, priority)
-    if SERVER then return end
-    injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
-end
-
-function MEL.InjectIntoServerFunction(ent_or_entclass, function_name, function_to_inject, priority)
-    if CLIENT then return end
-    injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
-end
-
-function MEL.InjectIntoSharedFunction(ent_or_entclass, function_name, function_to_inject, priority)
-    injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
-end
-
-local function getSpawnerEntclass(ent_or_entclass)
-    local entclass = MEL.GetEntclass(ent_or_entclass)
-    if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then entclass = "gmod_subway_81-717_mvm_custom" end
-    return entclass
-end
-
-function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field, overwrite)
-    local entclass = getSpawnerEntclass(ent_or_entclass)
-    local spawner = scripted_ents.GetStored(entclass).t.Spawner
-    if not spawner then return end
-    if MEL.Debug or overwrite then
-        -- check if we have field with same name, remove it if needed
-        for i, field in pairs(spawner) do
-            if istable(field) and #field ~= 0 and field[1] == field_data[1] then table.remove(spawner, i) end
-        end
-    end
-
-    if is_random_field then
-        local entclass_random = MEL.GetEntclass(ent_or_entclass)
-        if not MEL.RandomFields[entclass_random] then MEL.RandomFields[entclass_random] = {} end
-        local field_type = field_data[3]
-        if field_type == "List" then
-            table.insert(MEL.RandomFields[entclass_random], {field_data[1], field_data[3], #field_data[4]})
-        elseif field_type == "Slider" then
-            table.insert(MEL.RandomFields[entclass_random], {field_data[1], field_data[3], field_data[5], field_data[6]})
-        end
-    end
-
-    table.insert(spawner, field_data)
-end
-
-function MEL.RemoveSpawnerField(ent_or_entclass, field_name)
-    local entclass = getSpawnerEntclass(ent_or_entclass)
-    local spawner = scripted_ents.GetStored(entclass).t.Spawner
-    if not spawner then return end
-    for i, field in pairs(spawner) do
-        if istable(field) and #field ~= 0 and field[1] == field_name then table.remove(spawner, i) end
+for _, moduleName in pairs(methodModules) do
+    if SERVER then
+        include("metrostroi/extensions/" .. moduleName)
+        AddCSLuaFile("metrostroi/extensions/" .. moduleName)
+    else
+        include("metrostroi/extensions/" .. moduleName)
     end
 end
 
--- TODO: Document that shit
-local function updateMapping(entclass, field_name, mapping_name, new_index)
-    if not MEL.ElementMappings[entclass] then MEL.ElementMappings[entclass] = {} end
-    if not MEL.ElementMappings[entclass][field_name] then MEL.ElementMappings[entclass][field_name] = {} end
-    MEL.ElementMappings[entclass][field_name][mapping_name] = new_index
-end
-
-function MEL.AddSpawnerListElement(ent_or_entclass, field_name, element)
-    local entclass = getSpawnerEntclass(ent_or_entclass)
-    local spawner = scripted_ents.GetStored(entclass).t.Spawner
-    if not spawner then return end
-    for _, field in pairs(spawner) do
-        if field and #field > 0 and field[1] == field_name then
-            -- just add it lol
-            local new_index = table.insert(field[4], element)
-            -- for god sake, if some shitty inject will insert element and not append it - i would be so mad
-            updateMapping(ent_or_entclass, field_name, element, new_index)
-            return
-        end
-    end
-end
-
-function MEL.GetMappingValue(ent_or_entclass, field_name, element)
-    local entclass = getSpawnerEntclass(ent_or_entclass)
-    if MEL.ElementMappings[entclass] and MEL.ElementMappings[entclass][field_name] and MEL.ElementMappings[entclass][field_name][element] then return MEL.ElementMappings[entclass][field_name][element] end
-    -- try to find index of it, if it non-existent in our ElementMappings cache
-    local spawner = scripted_ents.GetStored(entclass).t.Spawner
-    for _, field in pairs(spawner) do
-        if field and #field > 0 and field[1] == field_name then
-            for i, field_elem in pairs(field[4]) do
-                if field_elem == element then
-                    updateMapping(entclass, field_name, element, i)
-                    return i
-                end
-            end
-        end
-    end
-end
-
-function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback)
-    if CLIENT then
-        local old_modelcallback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
-        ent.ClientProps[clientprop_name]["modelcallback"] = function(self)
-            local new_modelpath = new_modelcallback(self)
-            return new_modelpath or old_modelcallback(self)
-        end
-    end
-end
-
-function MEL.UpdateCallback(ent, clientprop_name, new_callback)
-    if CLIENT then
-        local old_callback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
-        ent.ClientProps[clientprop_name]["callback"] = function(self, cent)
-            old_callback(self, cent)
-            new_callback(self, cent)
-        end
-    end
-end
-
-function MEL.DeleteClientProp(ent, clientprop_name)
-    if CLIENT then ent.ClientProps[clientprop_name] = nil end
-end
-
-function MEL.NewClientProp(ent, clientprop_name, clientprop_info, field_name)
-    if CLIENT then ent.ClientProps[clientprop_name] = clientprop_info end
-    if field_name then MEL.MarkClientPropForReload(ent, clientprop_name, field_name) end
-end
-
-function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
-    if CLIENT then
-        local buttonmap = ent.ButtonMap[buttonmap_name]
-        buttonmap.pos = new_pos
-        if new_ang then buttonmap.ang = new_ang end
-    end
-end
-
-function MEL.NewButtonMap(ent, buttonmap_name, buttonmap_data)
-    if CLIENT then ent.ButtonMap[buttonmap_name] = buttonmap_data end
-end
 
 function MEL.DefineRecipe(name, train_type)
     if not MEL.BaseRecipies[name] then MEL.BaseRecipies[name] = {} end
