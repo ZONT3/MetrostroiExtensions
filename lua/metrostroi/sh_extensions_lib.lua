@@ -302,7 +302,7 @@ local function injectFunction(entclass, entTable)
             for i = #beforeStack, 1, -1 do
                 for _, functionToInject in pairs(beforeStack[i]) do
                     injectReturnValue = functionToInject(wagon, unpack({...} or {}), true)
-                    if injectReturnValue[#injectReturnValue] == MEL.Return then
+                    if injectReturnValue and injectReturnValue[#injectReturnValue] == MEL.Return then
                         return unpack(injectReturnValue, 1, #injectReturnValue - 1)
                     end
                 end
@@ -312,7 +312,7 @@ local function injectFunction(entclass, entTable)
             for i = 1, #afterStack do
                 for _, functionToInject in pairs(afterStack[i]) do
                     injectReturnValue = functionToInject(wagon, returnValue, unpack({...} or {}), false)
-                    if injectReturnValue[#injectReturnValue] == MEL.Return then
+                    if injectReturnValue and injectReturnValue[#injectReturnValue] == MEL.Return then
                         return unpack(injectReturnValue, 1, #injectReturnValue - 1)
                     end
                 end
