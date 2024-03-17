@@ -17,12 +17,8 @@ MEL.BaseRecipies = {}
 MEL.Recipes = {}
 MEL.DisabledRecipies = {}
 MEL.InjectStack = {}
-MEL.FunctionInjectStack = {}
-MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extensions, that needs to be reloaded on spawner update
--- (key: entity class, value: table with key as field name and table with props as value)
-MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
-MEL.ElementMappings = {} -- mapping per wagon, per field for list elements (key - entclass, value - (key - field_name, value - (key - name of element, value - index)))
 MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
+
 -- lookup table for train families
 MEL.TrainFamilies = {
     -- for 717 we don't need to modify _custom entity, cause it's used just for spawner
@@ -56,20 +52,20 @@ local function logError(msg)
 end
 
 function MEL.LogErrorFactory()
-    return function(msg) logError("Error from recipe " .. RECIPE.Name .. ": " .. msg) end
+    return function(msg) logError("error from recipe " .. RECIPE.Name .. ": " .. msg) end
 end
 
 function MEL.LogWarningFactory()
-    return function(msg) logWarning("Warning from recipe " .. RECIPE.Name .. ": " .. msg) end
+    return function(msg) logWarning("warning from recipe " .. RECIPE.Name .. ": " .. msg) end
 end
 
 function MEL.LogInfoFactory()
-    return function(msg) logInfo("Info from recipe " .. RECIPE.Name .. ": " .. msg) end
+    return function(msg) logInfo("info from recipe " .. RECIPE.Name .. ": " .. msg) end
 end
 
 -- helper methods
 function MEL.GetEntclass(ent_or_entclass)
-    if not ent_or_entclass then logError("For some reason, ent_or_entclass in GetEntclass is nil. Please report this error.") end
+    if not ent_or_entclass then logError("for some reason, ent_or_entclass in GetEntclass is nil. Please report this error.") end
     -- get entclass from ent table or from str entclass 
     if istable(ent_or_entclass) then return ent_or_entclass.entclass end
     if isentity(ent_or_entclass) then return ent_or_entclass:GetClass() end
@@ -120,16 +116,16 @@ local function loadRecipe(filename, scope)
     if SERVER and scope ~= "sv" then AddCSLuaFile(filename) end
     include(filename)
     if not RECIPE then
-        logError("Looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
+        logError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
         return
     end
 
     if not RECIPE.TrainType then
-        logError("Looks like you forgot to specify train type for " .. filename .. ". Refusing to load it")
+        logError("looks like you forgot to specify train type for " .. filename .. ". Refusing to load it.")
         return
     end
 
-    if RECIPE.Name ~= string.sub(File, 1, string.find(File, "%.lua") - 1) then logWarning("Recipe \"" .. RECIPE.Name .. "\" file name and name defined in DefineRecipe differs. Consider renaming your file") end
+    if RECIPE.Name ~= string.sub(File, 1, string.find(File, "%.lua") - 1) then logWarning("recipe \"" .. RECIPE.Name .. "\" file name and name defined in DefineRecipe differs. Consider renaming your file.") end
     local class_name = nil
     if istable(RECIPE.TrainType) then
         class_name = table.concat(RECIPE.TrainType, "-") .. "_" .. RECIPE.Name
@@ -147,7 +143,7 @@ local function loadRecipe(filename, scope)
     RECIPE.Inject = RECIPE.Inject or function() end
     RECIPE.InjectSpawner = RECIPE.InjectSpawner or function() end
     if MEL.Recipes[RECIPE.Name] then
-        logError("Recipe with name \"" .. RECIPE.Name .. "\" already exists. Refusing to load recipe from " .. filename .. ".")
+        logError("recipe with name \"" .. RECIPE.Name .. "\" already exists. Refusing to load recipe from " .. filename .. ".")
         return
     end
 
@@ -259,7 +255,7 @@ local function injectFunction(entclass, ent_table)
             -- maybe compile every func from stack?
             -- check for missing function from some wagon
             if not ent_table[function_name] then
-                logError("can't inject into " .. entclass .. ": function " .. function_name .. " doesn't exists")
+                logError("can't inject into " .. entclass .. ": function " .. function_name .. " doesn't exists!")
                 continue
             end
 
@@ -330,25 +326,35 @@ local function inject()
     RunConsoleCommand("metrostroi_language_reload")
 end
 
--- load all recipies
-local _, folders = file.Find("recipies/*", "LUA")
-for _, folder in pairs(folders) do
-    local files, _ = file.Find("recipies/" .. folder .. "/*.lua", "LUA")
-    for _, File in pairs(files) do
-        if not File then -- for some reason, File can be nil...
-            continue
-        end
-
-        local scope = string.sub(File, 1, 2)
-        local filename = "recipies/" .. folder .. "/" .. File
-        if scope == "sv" and SERVER then -- Чтобы не дай бог не попало клиенту
-            loadRecipe(filename, train_type, "sv")
-        else
-            loadRecipe(filename, train_type, side)
+-- load all recipies recursively
+logInfo("loading recipies...")
+local recipe_files = {}
+local function findRecipies(folder)
+    print(folder)
+    local found_files, found_folders = file.Find(folder .. "/*", "LUA")
+    for _, recipe_file in pairs(found_files) do
+        table.insert(recipe_files, folder .. "/" .. recipe_file)
+    end
+    if found_folders and #found_folders > 0 then
+        for _, found_folder in pairs(found_folders) do
+            findRecipies(folder .. "/" .. found_folder)
         end
     end
 end
 
+findRecipies("recipies")
+for _, recipe_file in pairs(recipe_files) do
+    if not recipe_file then -- for some reason, File can be nil...
+        continue
+    end
+
+    local scope = string.sub(string.GetFileFromFilename(recipe_file), 1, 2)
+    if scope == "sv" and SERVER then -- Чтобы не дай бог не попало клиенту
+        loadRecipe(recipe_file, train_type, "sv")
+    else
+        loadRecipe(recipe_file, train_type, side)
+    end
+end
 -- injection logic
 hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
     timer.Simple(1, function()
