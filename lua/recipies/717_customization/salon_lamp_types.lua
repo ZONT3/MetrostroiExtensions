@@ -248,6 +248,7 @@ function RECIPE:Inject(ent, entclass)
                     wagon:SetLightPower(mean_current_lamp_id, false)
                     local mean_color = (mean_color_sum / mean_count) / 255
                     wagon.Lights[mean_current_lamp_id][4] = Vector(mean_color.r, mean_color.g ^ 3, mean_color.b ^ 3) * 255
+                    wagon.Lights[mean_current_lamp_id].brightness = lamp_data.light_brightness or 3
                     mean_color_sum, mean_count = Vector(), 0
                     mean_current_lamp_id = mean_current_lamp_id + 1
                 end
@@ -272,6 +273,7 @@ function RECIPE:Inject(ent, entclass)
             for i = 11, 13 do
                 wagon:SetLightPower(i, false)
                 wagon.Lights[i][4] = Vector(mean_color.r, mean_color.g ^ 3, mean_color.b ^ 3) * 255
+                wagon.Lights[i].brightness = lamp_data.light_brightness or 3
             end
         end
     end
