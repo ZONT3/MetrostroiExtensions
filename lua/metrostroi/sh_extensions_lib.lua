@@ -161,6 +161,7 @@ local function loadRecipe(filename, scope)
     -- load recipe
     if SERVER and scope ~= "sv" then AddCSLuaFile(filename) end
     include(filename)
+    
     if not RECIPE then
         logError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
         return
@@ -172,6 +173,7 @@ local function loadRecipe(filename, scope)
     end
 
     if RECIPE.Name ~= string.sub(File, 1, string.find(File, "%.lua") - 1) then logWarning("recipe \"" .. RECIPE.Name .. "\" file name and name defined in DefineRecipe differs. Consider renaming your file.") end
+    
     local class_name = nil
     if istable(RECIPE.TrainType) then
         class_name = table.concat(RECIPE.TrainType, "-") .. "_" .. RECIPE.Name
@@ -180,6 +182,7 @@ local function loadRecipe(filename, scope)
     end
 
     logInfo("loading recipe " .. RECIPE.Name .. " from " .. filename)
+
     RECIPE.ClassName = class_name
     RECIPE.Description = RECIPE.Description or "No description"
     RECIPE.Specific = {}
@@ -194,6 +197,7 @@ local function loadRecipe(filename, scope)
     end
 
     MEL.Recipes[RECIPE.Name] = RECIPE
+    
     -- initialize recipe
     initRecipe(RECIPE)
     RECIPE = nil
@@ -214,7 +218,7 @@ local function discoverRecipies()
         if scope == "sv" and SERVER then -- Чтобы не дай бог не попало клиенту
             loadRecipe(recipe_file, train_type, "sv")
         else
-            loadRecipe(recipe_file, train_type, side)
+            loadRecipe(recipe_file, train_type, scope)
         end
     end
 end
