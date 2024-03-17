@@ -288,7 +288,7 @@ function RECIPE:Inject(ent, entclass)
         wagon:SetPackedBool("MainLights", mainLights)
         if lamp_amount == 1 then return end
         local mul = 0
-        local Ip = lamp_data.emergency_Ip or 3.6
+        local Ip = lamp_data.emergency_Ip or 1
         if not wagon.SalonLamps then
             wagon.SalonLamps = {
                 broken = {}

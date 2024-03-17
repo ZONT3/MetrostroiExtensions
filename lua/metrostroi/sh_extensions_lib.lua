@@ -38,9 +38,9 @@ local function printPrefix()
         MsgC(Color(72, 120, 164), "[Metrostroi", Color(44, 131, 61), "ExtensionsLib] ", color_white)
     end
 end
+
 local LOG_PREFIX = "[MetrostroiExtensionsLib] "
 local WARNING_COLOR = Color(255, 255, 0)
-
 local function logDebug(msg)
     if MEL.Debug then
         printPrefix()
@@ -93,7 +93,6 @@ for _, moduleName in pairs(methodModules) do
         include("metrostroi/extensions/" .. moduleName)
     end
 end
-
 
 function MEL.GetEntsByTrainType(trainType)
     -- firstly, check if our train_type is table
@@ -155,7 +154,6 @@ local function initRecipe(recipe)
     end
 end
 
-
 local function loadRecipe(filename, scope)
     local File = string.GetFileFromFilename(filename)
     -- load recipe
@@ -203,7 +201,6 @@ local function discoverRecipies()
     -- load all recipies recursively
     logInfo("loading recipies...")
     local recipe_files = {}
-
     findRecipeFiles("recipies", recipe_files)
     for _, recipe_file in pairs(recipe_files) do
         if not recipe_file then -- for some reason, recipe_file can be nil...
@@ -232,7 +229,6 @@ local function getTrainEntTables()
         end
     end
 end
-
 
 local function injectRandomFieldHelper(entclass)
     if not MEL.RandomFields[entclass] then return end
@@ -263,7 +259,6 @@ end
 local function injectFieldUpdateHelper(entclass)
     if not MEL.ClientPropsToReload[entclass] then return end
     -- add helper inject to server UpdateWagonNumber in order to reload all models, that should be reloaded
-    -- todo: do we really need this class check?
     local entclass_inject = entclass
     if entclass == "gmod_subway_81-717_mvm_custom" then entclass_inject = "gmod_subway_81-717_mvm" end
     MEL.InjectIntoClientFunction(entclass_inject, "UpdateWagonNumber", function(wagon)
@@ -319,6 +314,7 @@ local function injectFunction(entclass, entTable)
             end
             return returnValue
         end
+
         entTable[functionName] = buildedInject
         -- reinject this function on already spawned wagons
         for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
@@ -346,6 +342,7 @@ local function inject()
                 for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
                     recipe:Inject(ent, entclass)
                 end
+
                 MEL.InjectIntoSpawnedEnt = false
             end
         end
