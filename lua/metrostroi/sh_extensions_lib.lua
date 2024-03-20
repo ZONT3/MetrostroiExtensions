@@ -279,6 +279,7 @@ end
 local function injectFunction(key, tbl)
     if not MEL.FunctionInjectStack[key] then return end
     -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
+    -- TODO: probably optimize it - it will cause problems if there would be a lot of ents and systems 
     for functionName, priorities in pairs(MEL.FunctionInjectStack[key]) do
         local beforeStack = {}
         local afterStack = {}
@@ -354,6 +355,11 @@ local function inject()
         injectRandomFieldHelper(entclass)
         injectFieldUpdateHelper(entclass)
         injectFunction(entclass, entTable)
+    end
+
+    -- inject into systems
+    for systemClass, systemTable in pairs(Metrostroi.BaseSystems) do
+        injectFunction(systemClass, systemTable)
     end
 
     -- reload all languages
