@@ -18,7 +18,7 @@ MEL.Recipes = {}
 MEL.DisabledRecipies = {}
 MEL.InjectStack = {}
 MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
-MEL.Return = "MEL_RETURN" -- flag, that we need to escape outer function.
+
 -- lookup table for train families
 MEL.TrainFamilies = {
     -- for 717 we don't need to modify _custom entity, cause it's used just for spawner
@@ -186,6 +186,7 @@ local function loadRecipe(filename, scope)
     RECIPE.BeforeInject = RECIPE.BeforeInject or function() end
     RECIPE.InjectNeeded = RECIPE.InjectNeeded or function() return true end
     RECIPE.Inject = RECIPE.Inject or function() end
+    RECIPE.InjectSystem = RECIPE.InjectSystem or function() end
     RECIPE.InjectSpawner = RECIPE.InjectSpawner or function() end
     if MEL.Recipes[RECIPE.Name] then
         logError("recipe with name \"" .. RECIPE.Name .. "\" already exists. Refusing to load recipe from " .. filename .. ".")
@@ -296,8 +297,11 @@ local function injectFunction(key, tbl)
             logError(Format("can't inject into %s: function %s doesn't exists!", key, functionName))
             continue
         end
+        if not MEL.FunctionDefaults[key] then MEL.FunctionDefaults[key] = {} end
+        if not MEL.FunctionDefaults[key][functionName] then MEL.FunctionDefaults[key][functionName] = tbl[functionName] end
 
-        if not tbl["Default" .. functionName] then tbl["Default" .. functionName] = tbl[functionName] end
+        local defaultFunction = MEL.FunctionDefaults[key][functionName]
+
         local buildedInject = function(wagon, ...)
             for i = #beforeStack, 1, -1 do
                 for _, functionToInject in pairs(beforeStack[i]) do
@@ -306,7 +310,7 @@ local function injectFunction(key, tbl)
                 end
             end
 
-            local returnValue = tbl["Default" .. functionName](wagon, unpack({...} or {}))
+            local returnValue = MEL.FunctionDefaults[key][functionName](wagon, unpack({...} or {}))
             for i = 1, #afterStack do
                 for _, functionToInject in pairs(afterStack[i]) do
                     injectReturnValue = functionToInject(wagon, returnValue, unpack({...} or {}), false)
@@ -318,8 +322,8 @@ local function injectFunction(key, tbl)
 
         tbl[functionName] = buildedInject
 
-        -- reinject this function on already spawned wagons
         if string.StartsWith(key, "sys_") then return end
+        -- reinject this function on already spawned wagons
         for _, ent in ipairs(ents.FindByClass(key) or {}) do
             ent[functionName] = buildedInject
         end
@@ -349,6 +353,7 @@ local function inject()
                 MEL.InjectIntoSpawnedEnt = false
             end
         end
+        recipe:InjectSystem()
     end
 
     for entclass, entTable in pairs(MEL.EntTables) do
@@ -357,11 +362,14 @@ local function inject()
         injectFunction(entclass, entTable)
     end
 
+    
     -- inject into systems
     for systemClass, systemTable in pairs(Metrostroi.BaseSystems) do
-        injectFunction(systemClass, systemTable)
+        injectFunction(Format("sys_%s", systemClass), systemTable)
+        -- injectFunction(Format("sys_%s", systemClass), Metrostroi.BaseSystems)
     end
-
+    
+    -- PrintTable(MEL.FunctionDefaults)
     -- reload all languages
     -- why we are just using metrostroi_language_reload?:
     -- 1. im lazy
@@ -395,6 +403,7 @@ if SERVER then
         MEL.RecipeSpecific = {}
         MEL.EntTables = {}
         MEL.TrainClasses = {}
+        MEL.FunctionInjectStack = {}
         discoverRecipies()
         getTrainEntTables()
         inject()
@@ -412,6 +421,7 @@ if CLIENT then
         MEL.RecipeSpecific = {}
         MEL.EntTables = {}
         MEL.TrainClasses = {}
+        MEL.FunctionInjectStack = {}
         discoverRecipies()
         getTrainEntTables()
         inject()

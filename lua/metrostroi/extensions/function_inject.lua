@@ -10,6 +10,11 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.FunctionInjectStack = {}
+MEL.Return = "MEL_RETURN" -- flag, that we need to escape outer function.
+if not MEL.FunctionDefaults then
+    -- DO NOT overwrite this!!!! IT WILL CAUSE PROBLEMS!
+    MEL.FunctionDefaults = {} -- used in function inject, contains default functions (key - function inject key, value - table: (key - name of function, value - default function))
+end
 
 local function injectIntoFunction(key, function_name, function_to_inject, priority)
     -- negative priority - inject before default function
