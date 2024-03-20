@@ -11,20 +11,24 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.FunctionInjectStack = {}
 
-local function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
+local function injectIntoFunction(key, function_name, function_to_inject, priority)
     -- negative priority - inject before default function
     -- positive priority - inject after default function
     -- zero - default function priority, error!
+    if priority == 0 then logError("when injecting function with name " .. function_name .. ": priority couldn't be zero") end
+    if not MEL.FunctionInjectStack[key] then MEL.FunctionInjectStack[key] = {} end
+    if not MEL.FunctionInjectStack[key][function_name] then MEL.FunctionInjectStack[key][function_name] = {} end
+    local inject_priority = priority or -1
+    if not MEL.FunctionInjectStack[key][function_name][inject_priority] then MEL.FunctionInjectStack[key][function_name][inject_priority] = {} end
+    table.insert(MEL.FunctionInjectStack[key][function_name][inject_priority], function_to_inject)
+end
+
+local function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
     -- that shit is not idempotent, so if there would be like 10 wagons spawned and we will reload anything, same code will be called 10*10 times. 
     -- very bad, so that flag helps us just ignore that spawned wagons 
     if MEL.InjectIntoSpawnedEnt then return end
     local entclass = MEL.GetEntclass(ent_or_entclass)
-    if priority == 0 then logError("when injecting function with name " .. function_name .. ": priority couldn't be zero") end
-    if not MEL.FunctionInjectStack[entclass] then MEL.FunctionInjectStack[entclass] = {} end
-    if not MEL.FunctionInjectStack[entclass][function_name] then MEL.FunctionInjectStack[entclass][function_name] = {} end
-    local inject_priority = priority or -1
-    if not MEL.FunctionInjectStack[entclass][function_name][inject_priority] then MEL.FunctionInjectStack[entclass][function_name][inject_priority] = {} end
-    table.insert(MEL.FunctionInjectStack[entclass][function_name][inject_priority], function_to_inject)
+    injectIntoFunction(entclass, function_name, function_to_inject, priority)
 end
 
 function MEL.InjectIntoClientFunction(ent_or_entclass, function_name, function_to_inject, priority)
@@ -39,4 +43,8 @@ end
 
 function MEL.InjectIntoSharedFunction(ent_or_entclass, function_name, function_to_inject, priority)
     injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
+end
+
+function MEL.InjectIntoSystemFunction(system_name, function_name, function_to_inject, priority)
+    injectIntoFunction(Format("sys_%s", system_name), function_name, function_to_inject, priority)
 end

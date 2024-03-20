@@ -19,7 +19,6 @@ MEL.DisabledRecipies = {}
 MEL.InjectStack = {}
 MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
 MEL.Return = "MEL_RETURN" -- flag, that we need to escape outer function.
-
 -- lookup table for train families
 MEL.TrainFamilies = {
     -- for 717 we don't need to modify _custom entity, cause it's used just for spawner
@@ -161,7 +160,6 @@ local function loadRecipe(filename, scope)
     -- load recipe
     if SERVER and scope ~= "sv" then AddCSLuaFile(filename) end
     include(filename)
-    
     if not RECIPE then
         logError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
         return
@@ -173,7 +171,6 @@ local function loadRecipe(filename, scope)
     end
 
     if RECIPE.Name ~= string.sub(File, 1, string.find(File, "%.lua") - 1) then logWarning("recipe \"" .. RECIPE.Name .. "\" file name and name defined in DefineRecipe differs. Consider renaming your file.") end
-    
     local class_name = nil
     if istable(RECIPE.TrainType) then
         class_name = table.concat(RECIPE.TrainType, "-") .. "_" .. RECIPE.Name
@@ -182,7 +179,6 @@ local function loadRecipe(filename, scope)
     end
 
     logInfo("loading recipe " .. RECIPE.Name .. " from " .. filename)
-
     RECIPE.ClassName = class_name
     RECIPE.Description = RECIPE.Description or "No description"
     RECIPE.Specific = {}
@@ -197,7 +193,6 @@ local function loadRecipe(filename, scope)
     end
 
     MEL.Recipes[RECIPE.Name] = RECIPE
-    
     -- initialize recipe
     initRecipe(RECIPE)
     RECIPE = nil
@@ -281,10 +276,10 @@ local function injectFieldUpdateHelper(entclass)
     end)
 end
 
-local function injectFunction(entclass, entTable)
-    if not MEL.FunctionInjectStack[entclass] then return end
+local function injectFunction(key, tbl)
+    if not MEL.FunctionInjectStack[key] then return end
     -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
-    for functionName, priorities in pairs(MEL.FunctionInjectStack[entclass]) do
+    for functionName, priorities in pairs(MEL.FunctionInjectStack[key]) do
         local beforeStack = {}
         local afterStack = {}
         for priority, functionStack in SortedPairs(priorities) do
@@ -295,38 +290,36 @@ local function injectFunction(entclass, entTable)
             end
         end
 
-        -- check for missing function from some wagon
-        if not entTable[functionName] then
-            logError("can't inject into " .. entclass .. ": function " .. functionName .. " doesn't exists!")
+        -- check for missing function from some table
+        if not tbl[functionName] then
+            logError(Format("can't inject into %s: function %s doesn't exists!", key, functionName))
             continue
         end
 
-        if not entTable["Default" .. functionName] then entTable["Default" .. functionName] = entTable[functionName] end
+        if not tbl["Default" .. functionName] then tbl["Default" .. functionName] = tbl[functionName] end
         local buildedInject = function(wagon, ...)
             for i = #beforeStack, 1, -1 do
                 for _, functionToInject in pairs(beforeStack[i]) do
                     injectReturnValue = functionToInject(wagon, unpack({...} or {}), true)
-                    if injectReturnValue and injectReturnValue[#injectReturnValue] == MEL.Return then
-                        return unpack(injectReturnValue, 1, #injectReturnValue - 1)
-                    end
+                    if injectReturnValue and injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
                 end
             end
 
-            local returnValue = entTable["Default" .. functionName](wagon, unpack({...} or {}))
+            local returnValue = tbl["Default" .. functionName](wagon, unpack({...} or {}))
             for i = 1, #afterStack do
                 for _, functionToInject in pairs(afterStack[i]) do
                     injectReturnValue = functionToInject(wagon, returnValue, unpack({...} or {}), false)
-                    if injectReturnValue and injectReturnValue[#injectReturnValue] == MEL.Return then
-                        return unpack(injectReturnValue, 1, #injectReturnValue - 1)
-                    end
+                    if injectReturnValue and injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
                 end
             end
             return returnValue
         end
 
-        entTable[functionName] = buildedInject
+        tbl[functionName] = buildedInject
+
         -- reinject this function on already spawned wagons
-        for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
+        if string.StartsWith(key, "sys_") then return end
+        for _, ent in ipairs(ents.FindByClass(key) or {}) do
             ent[functionName] = buildedInject
         end
     end
