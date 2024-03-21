@@ -11,6 +11,7 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback)
     if CLIENT then
+        if not ent.ClientProps[clientprop_name] then return end
         local old_modelcallback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
         ent.ClientProps[clientprop_name]["modelcallback"] = function(self)
             local new_modelpath = new_modelcallback(self)
@@ -21,6 +22,7 @@ end
 
 function MEL.UpdateCallback(ent, clientprop_name, new_callback)
     if CLIENT then
+        if not ent.ClientProps[clientprop_name] then return end
         local old_callback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
         ent.ClientProps[clientprop_name]["callback"] = function(self, cent)
             old_callback(self, cent)
@@ -30,7 +32,10 @@ function MEL.UpdateCallback(ent, clientprop_name, new_callback)
 end
 
 function MEL.DeleteClientProp(ent, clientprop_name)
-    if CLIENT then ent.ClientProps[clientprop_name] = nil end
+    if CLIENT then
+        if not ent.ClientProps[clientprop_name] then return end
+        ent.ClientProps[clientprop_name] = nil
+    end
 end
 
 function MEL.NewClientProp(ent, clientprop_name, clientprop_info, field_name)

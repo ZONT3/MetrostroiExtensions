@@ -18,7 +18,6 @@ MEL.Recipes = {}
 MEL.DisabledRecipies = {}
 MEL.InjectStack = {}
 MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
-
 -- lookup table for train families
 MEL.TrainFamilies = {
     -- for 717 we don't need to modify _custom entity, cause it's used just for spawner
@@ -297,11 +296,9 @@ local function injectFunction(key, tbl)
             logError(Format("can't inject into %s: function %s doesn't exists!", key, functionName))
             continue
         end
+
         if not MEL.FunctionDefaults[key] then MEL.FunctionDefaults[key] = {} end
         if not MEL.FunctionDefaults[key][functionName] then MEL.FunctionDefaults[key][functionName] = tbl[functionName] end
-
-        local defaultFunction = MEL.FunctionDefaults[key][functionName]
-
         local buildedInject = function(wagon, ...)
             for i = #beforeStack, 1, -1 do
                 for _, functionToInject in pairs(beforeStack[i]) do
@@ -321,7 +318,6 @@ local function injectFunction(key, tbl)
         end
 
         tbl[functionName] = buildedInject
-
         if string.StartsWith(key, "sys_") then return end
         -- reinject this function on already spawned wagons
         for _, ent in ipairs(ents.FindByClass(key) or {}) do
@@ -353,6 +349,7 @@ local function inject()
                 MEL.InjectIntoSpawnedEnt = false
             end
         end
+
         recipe:InjectSystem()
     end
 
@@ -362,13 +359,12 @@ local function inject()
         injectFunction(entclass, entTable)
     end
 
-    
     -- inject into systems
     for systemClass, systemTable in pairs(Metrostroi.BaseSystems) do
         injectFunction(Format("sys_%s", systemClass), systemTable)
         -- injectFunction(Format("sys_%s", systemClass), Metrostroi.BaseSystems)
     end
-    
+
     -- PrintTable(MEL.FunctionDefaults)
     -- reload all languages
     -- why we are just using metrostroi_language_reload?:
