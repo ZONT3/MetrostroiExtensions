@@ -227,7 +227,7 @@ local function getTrainEntTables()
     }
 
     for entclass in pairs(scripted_ents.GetList()) do
-        if prefixes[tring.sub(entclass, 1, #prefix)] then
+        if prefixes[string.sub(entclass, 1, #prefix)] then
             table.insert(MEL.TrainClasses, entclass)
             local ent_table = scripted_ents.GetStored(entclass).t
             ent_table.entclass = entclass -- add entclass for convience
