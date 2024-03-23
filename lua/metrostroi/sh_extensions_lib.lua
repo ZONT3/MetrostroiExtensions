@@ -29,6 +29,7 @@ MEL.TrainFamilies = {
 
 MEL.InjectIntoSpawnedEnt = false -- temp global variable
 MEL.EntTables = {}
+MEL.MetrostroiClasses = {}
 MEL.TrainClasses = {}
 -- logger methods
 local function printPrefix()
@@ -59,7 +60,10 @@ local function logWarning(msg)
 end
 
 local function logError(msg)
-    ErrorNoHaltWithStack(LOG_PREFIX .. "Error!: " .. msg .. "\n")
+    if RECIPE then
+        ErrorNoHaltWithStack(Format("%s Error from recipe %s!: %s\n", LOG_PREFIX, RECIPE.Name, msg))
+    end
+    ErrorNoHaltWithStack(Format("%s Error!: %s\n", LOG_PREFIX, msg))
 end
 
 function MEL.LogErrorFactory()
@@ -100,14 +104,14 @@ function MEL.GetEntsByTrainType(trainType)
     -- then check if our trainType is all
     if trainType == "all" then return MEL.TrainClasses end
     -- then try to find it as entity class
-    if table.HasValue(MEL.TrainClasses, trainType) then return {trainType} end
+    if table.HasValue(MEL.MetrostroiClasses, trainType) then return {trainType} end
     -- then try to check it in lookup table
     -- why? just imagine 717: we have 5p, we have some other modifications
     -- and you probably don't want to have a new default 717 cabine in 7175p
     if MEL.TrainFamilies[trainType] then return MEL.TrainFamilies[trainType] end
     -- and finally try to find by searching train family in classname
     local entclasses = {}
-    for _, entclass in pairs(MEL.TrainClasses) do
+    for _, entclass in pairs(MEL.MetrostroiClasses) do
         local containsTrainTypes, _ = string.find(entclass, trainType)
         if containsTrainTypes then table.insert(entclasses, entclass) end
     end
@@ -218,7 +222,7 @@ local function discoverRecipies()
     end
 end
 
-local function getTrainEntTables()
+local function getEntTables()
     -- we are using this method cause default metrotroi table caused problems
     local prefixes = {
         ["gmod_subway"] = true,
@@ -226,11 +230,15 @@ local function getTrainEntTables()
         ["gmod_track_"] = true
     }
     for entclass in pairs(scripted_ents.GetList()) do
-        if prefixes[string.sub(entclass, 1, 11)] then
-            table.insert(MEL.TrainClasses, entclass)
+        local prefix = string.sub(entclass, 1, 11)
+        if prefixes[prefix] then
+            table.insert(MEL.MetrostroiClasses, entclass)
             local ent_table = scripted_ents.GetStored(entclass).t
             ent_table.entclass = entclass -- add entclass for convience
             MEL.EntTables[entclass] = ent_table
+        end
+        if prefix == prefixes[1] then
+            table.insert(MEL.TrainClasses, entclass)
         end
     end
 end
@@ -382,7 +390,7 @@ discoverRecipies()
 -- injection logic
 hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
     timer.Simple(1, function()
-        getTrainEntTables()
+        getEntTables()
         inject()
     end)
 end)
@@ -405,7 +413,7 @@ if SERVER then
         MEL.TrainClasses = {}
         MEL.FunctionInjectStack = {}
         discoverRecipies()
-        getTrainEntTables()
+        getEntTables()
         inject()
     end)
 end
@@ -423,7 +431,7 @@ if CLIENT then
         MEL.TrainClasses = {}
         MEL.FunctionInjectStack = {}
         discoverRecipies()
-        getTrainEntTables()
+        getEntTables()
         inject()
         -- try to reload all spawned trains csents and buttonmaps
         for k, v in ipairs(ents.FindByClass("gmod_subway_*")) do
