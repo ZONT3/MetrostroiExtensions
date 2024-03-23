@@ -221,13 +221,13 @@ end
 local function getTrainEntTables()
     -- we are using this method cause default metrotroi table caused problems
     local prefixes = {
-        ["gmod_subway_"] = true,
+        ["gmod_subwa_"] = true,
         ["gmod_train_"] = true,
         ["gmod_track_"] = true
     }
-
+    
     for entclass in pairs(scripted_ents.GetList()) do
-        if prefixes[string.sub(entclass, 1, #prefix)] then
+        if prefixes[string.sub(entclass, 1, 11)] then
             table.insert(MEL.TrainClasses, entclass)
             local ent_table = scripted_ents.GetStored(entclass).t
             ent_table.entclass = entclass -- add entclass for convience
