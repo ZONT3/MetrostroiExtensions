@@ -411,6 +411,7 @@ if SERVER then
         MEL.RecipeSpecific = {}
         MEL.EntTables = {}
         MEL.TrainClasses = {}
+        MEL.MetrostroiClasses = {}
         MEL.FunctionInjectStack = {}
         discoverRecipies()
         getEntTables()
@@ -429,6 +430,7 @@ if CLIENT then
         MEL.RecipeSpecific = {}
         MEL.EntTables = {}
         MEL.TrainClasses = {}
+        MEL.MetrostroiClasses = {}
         MEL.FunctionInjectStack = {}
         discoverRecipies()
         getEntTables()
