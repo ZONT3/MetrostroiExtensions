@@ -237,7 +237,7 @@ local function getEntTables()
             ent_table.entclass = entclass -- add entclass for convience
             MEL.EntTables[entclass] = ent_table
         end
-        if prefix == prefixes[1] then
+        if prefixes[prefix] then
             table.insert(MEL.TrainClasses, entclass)
         end
     end
