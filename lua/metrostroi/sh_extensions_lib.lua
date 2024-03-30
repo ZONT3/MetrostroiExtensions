@@ -99,6 +99,10 @@ for _, moduleName in pairs(methodModules) do
 end
 
 function MEL.GetEntsByTrainType(trainType)
+    if not trainType then
+        logError("trainType in GetEntsByTrainType is nil! Check your recipies.")
+        return
+    end
     -- firstly, check if our train_type is table
     if istable(trainType) then return trainType end
     -- then check if our trainType is all
