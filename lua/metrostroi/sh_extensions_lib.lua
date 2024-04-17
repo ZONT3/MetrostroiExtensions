@@ -386,7 +386,7 @@ local function inject()
     -- 1. im lazy
     -- 2. there are a lot of things that can be translatable and injected by recipe: buttonmaps, spawner things, other shit. so metrostroi_language_reload will do everything
     -- 3. im lazy
-    RunConsoleCommand("metrostroi_language_reload")
+    MEL.LoadLanguage(Metrostroi.ChoosedLang)
 end
 
 discoverRecipies()

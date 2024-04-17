@@ -1,14 +1,14 @@
--- Copyright (c) Anatoly Raev, 2024. All right reserved
--- 
--- Unauthorized copying of any file in this repository, via any medium is strictly prohibited. 
--- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
--- Proprietary and confidential.
--- ------------
--- Авторские права принадлежат Раеву Анатолию Анатольевичу.
--- 
--- Копирование любого файла, через любой носитель абсолютно запрещено.
--- Все авторские права защищены на основании ГК РФ Глава 70.
--- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
+    -- Copyright (c) Anatoly Raev, 2024. All right reserved
+    -- 
+    -- Unauthorized copying of any file in this repository, via any medium is strictly prohibited. 
+    -- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
+    -- Proprietary and confidential.
+    -- ------------
+    -- Авторские права принадлежат Раеву Анатолию Анатольевичу.
+    -- 
+    -- Копирование любого файла, через любой носитель абсолютно запрещено.
+    -- Все авторские права защищены на основании ГК РФ Глава 70.
+    -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extensions, that needs to be reloaded on spawner update
 -- (key: entity class, value: table with key as field name and table with props as value)
 MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
