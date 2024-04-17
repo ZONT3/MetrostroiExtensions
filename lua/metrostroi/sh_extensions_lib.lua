@@ -60,9 +60,7 @@ local function logWarning(msg)
 end
 
 local function logError(msg)
-    if RECIPE then
-        ErrorNoHaltWithStack(Format("%s Error from recipe %s!: %s\n", LOG_PREFIX, RECIPE.Name, msg))
-    end
+    if RECIPE then ErrorNoHaltWithStack(Format("%s Error from recipe %s!: %s\n", LOG_PREFIX, RECIPE.Name, msg)) end
     ErrorNoHaltWithStack(Format("%s Error!: %s\n", LOG_PREFIX, msg))
 end
 
@@ -103,6 +101,7 @@ function MEL.GetEntsByTrainType(trainType)
         logError("trainType in GetEntsByTrainType is nil! Check your recipies.")
         return
     end
+
     -- firstly, check if our train_type is table
     if istable(trainType) then return trainType end
     -- then check if our trainType is all
@@ -233,6 +232,7 @@ local function getEntTables()
         ["gmod_train_"] = true,
         ["gmod_track_"] = true
     }
+
     for entclass in pairs(scripted_ents.GetList()) do
         local prefix = string.sub(entclass, 1, 11)
         if prefixes[prefix] then
@@ -241,9 +241,8 @@ local function getEntTables()
             ent_table.entclass = entclass -- add entclass for convience
             MEL.EntTables[entclass] = ent_table
         end
-        if prefixes[prefix] then
-            table.insert(MEL.TrainClasses, entclass)
-        end
+
+        if prefix == "gmod_train_" and entclass ~= "gmod_train_spawner" then table.insert(MEL.TrainClasses, entclass) end
     end
 end
 
@@ -270,7 +269,7 @@ local function injectRandomFieldHelper(entclass)
         end
 
         math.randomseed(os.time())
-    end, -100)
+    end, -1000)
 end
 
 local function injectFieldUpdateHelper(entclass)
@@ -335,7 +334,7 @@ local function injectFunction(key, tbl)
 
         tbl[functionName] = buildedInject
         if string.StartsWith(key, "sys_") then return end
-        -- reinject this function on already spawned wagons
+        -- -- reinject this function on already spawned wagons
         for _, ent in ipairs(ents.FindByClass(key) or {}) do
             ent[functionName] = buildedInject
         end
@@ -408,6 +407,7 @@ if SERVER then
         net.Broadcast()
         logInfo("reloading recipies...")
         -- clear all inject stacks
+        MEL.FunctionInjectStack = {}
         MEL.BaseRecipies = {}
         MEL.Recipes = {}
         MEL.DisabledRecipies = {}
@@ -415,8 +415,8 @@ if SERVER then
         MEL.RecipeSpecific = {}
         MEL.EntTables = {}
         MEL.TrainClasses = {}
+        MEL.RandomFields = {}
         MEL.MetrostroiClasses = {}
-        MEL.FunctionInjectStack = {}
         discoverRecipies()
         getEntTables()
         inject()
@@ -427,6 +427,7 @@ if CLIENT then
     net.Receive("MetrostroiExtDoReload", function(len, ply)
         logInfo("reloading recipies...")
         -- clear all inject stacks
+        MEL.FunctionInjectStack = {}
         MEL.BaseRecipies = {}
         MEL.Recipes = {}
         MEL.DisabledRecipies = {}
@@ -434,8 +435,8 @@ if CLIENT then
         MEL.RecipeSpecific = {}
         MEL.EntTables = {}
         MEL.TrainClasses = {}
+        MEL.RandomFields = {}
         MEL.MetrostroiClasses = {}
-        MEL.FunctionInjectStack = {}
         discoverRecipies()
         getEntTables()
         inject()
