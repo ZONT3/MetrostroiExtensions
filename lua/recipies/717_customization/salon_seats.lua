@@ -18,7 +18,7 @@ local MODELS_ROOT = "models/metrostroi_train/81-717/"
 function RECIPE:Init()
     self.Specific.SalonSeatList = {
         {
-            name = "Spawner.717.Common.Old",
+            name = "Old",
             head = {
                 model = MODELS_ROOT .. "couch_old.mdl",
                 cap_model = MODELS_ROOT .. "couch_cap_l.mdl"
@@ -29,7 +29,7 @@ function RECIPE:Init()
             }
         },
         {
-            name = "Spawner.717.Common.New",
+            name = "New",
             head = {
                 model = MODELS_ROOT .. "couch_new.mdl",
                 cap_model = MODELS_ROOT .. "couch_new_cap.mdl"
@@ -43,7 +43,7 @@ function RECIPE:Init()
 end
 
 function RECIPE:InjectSpawner(entclass)
-    local fields = {"Spawner.717.Common.Random"}
+    local fields = {"Random"}
     for key, value in pairs(MEL.RecipeSpecific.SalonSeatList) do
        table.insert(fields, value.name)
     end

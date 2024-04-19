@@ -19,7 +19,7 @@ function RECIPE:Init()
     -- Я не стал трогать дефолт рандомы, так что снизу говнокод, предупреждаю)
     self.Specific.SalonLampList = {
         {
-            name = "Spawner.717.SalonLampType.Type1",
+            name = "Type1",
             head = {
                 model = MODELS_ROOT .. "lamps_type1.mdl",
                 glow = {
@@ -55,7 +55,7 @@ function RECIPE:Init()
             emergency_Ip = 3.6
         },
         {
-            name = "Spawner.717.SalonLampType.Type2",
+            name = "Type2",
             head = {
                 model = MODELS_ROOT .. "lamps_type2.mdl",
                 glow = {
@@ -109,7 +109,7 @@ function RECIPE:Init()
 end
 
 function RECIPE:InjectSpawner(entclass)
-    local fields = {"Spawner.717.Common.Random"}
+    local fields = {"Random"}
     for key, value in pairs(MEL.RecipeSpecific.SalonLampList) do
         table.insert(fields, value.name)
     end

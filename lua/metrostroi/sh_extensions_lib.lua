@@ -242,7 +242,7 @@ local function getEntTables()
             MEL.EntTables[entclass] = ent_table
         end
 
-        if prefix == "gmod_train_" and entclass ~= "gmod_train_spawner" then table.insert(MEL.TrainClasses, entclass) end
+        if prefix == "gmod_subway" then table.insert(MEL.TrainClasses, entclass) end
     end
 end
 
@@ -342,6 +342,7 @@ local function injectFunction(key, tbl)
 end
 
 local function inject()
+    MEL._LoadHelpers()
     -- method that finalizes inject on all trains. called after init of recipies
     for _, recipe in pairs(MEL.InjectStack) do
         recipe:BeforeInject()
@@ -377,16 +378,10 @@ local function inject()
     -- inject into systems
     for systemClass, systemTable in pairs(Metrostroi.BaseSystems) do
         injectFunction(Format("sys_%s", systemClass), systemTable)
-        -- injectFunction(Format("sys_%s", systemClass), Metrostroi.BaseSystems)
     end
 
-    -- PrintTable(MEL.FunctionDefaults)
     -- reload all languages
-    -- why we are just using metrostroi_language_reload?:
-    -- 1. im lazy
-    -- 2. there are a lot of things that can be translatable and injected by recipe: buttonmaps, spawner things, other shit. so metrostroi_language_reload will do everything
-    -- 3. im lazy
-    MEL.LoadLanguage(Metrostroi.ChoosedLang)
+    MEL.UpdateLanguages()
 end
 
 discoverRecipies()

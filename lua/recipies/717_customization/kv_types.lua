@@ -17,15 +17,15 @@ local MODELS_ROOT = "models/metrostroi_train/81-717/"
 
 function RECIPE:Init()
     self.Specific.KVList = {
-        {"Spawner.717.KvTypeCustom.Black", MODELS_ROOT .. "kv_black.mdl"},
-        {"Spawner.717.KvTypeCustom.White", MODELS_ROOT .. "kv_white.mdl"},
-        {"Spawner.717.KvTypeCustom.Wood", MODELS_ROOT .. "kv_wood.mdl"},
-        {"Spawner.717.KvTypeCustom.Yellow", MODELS_ROOT .. "kv_yellow.mdl"},
+        {"Black", MODELS_ROOT .. "kv_black.mdl"},
+        {"White", MODELS_ROOT .. "kv_white.mdl"},
+        {"Wood", MODELS_ROOT .. "kv_wood.mdl"},
+        {"Yellow", MODELS_ROOT .. "kv_yellow.mdl"},
     }
 end
 
 function RECIPE:InjectSpawner(entclass)
-    local fields = {"Spawner.717.Common.Random"}
+    local fields = {"Random"}
     for key, value in pairs(MEL.RecipeSpecific.KVList) do
        table.insert(fields, value[1])
     end
