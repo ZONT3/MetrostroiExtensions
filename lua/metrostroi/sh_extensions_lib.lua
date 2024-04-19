@@ -379,9 +379,6 @@ local function inject()
     for systemClass, systemTable in pairs(Metrostroi.BaseSystems) do
         injectFunction(Format("sys_%s", systemClass), systemTable)
     end
-
-    -- reload all languages
-    MEL.UpdateLanguages()
 end
 
 discoverRecipies()
@@ -390,6 +387,8 @@ hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
     timer.Simple(1, function()
         getEntTables()
         inject()
+        -- reload all languages
+        MEL.UpdateLanguages()
     end)
 end)
 
@@ -415,6 +414,8 @@ if SERVER then
         discoverRecipies()
         getEntTables()
         inject()
+        -- reload all languages
+        MEL.UpdateLanguages()
     end)
 end
 
@@ -440,5 +441,7 @@ if CLIENT then
             v.ClientPropsInitialized = false
             v:ClearButtons()
         end
+        -- reload all languages
+        MEL.UpdateLanguages()
     end)
 end

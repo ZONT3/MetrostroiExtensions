@@ -34,7 +34,9 @@ local function handle_spawner(id_parts, phrase, ent_table, ent_class)
         field[ENTITY_SPAWNER_FIELDTRANSLATION_INDEX] = phrase
     elseif field[ENTITY_SPAWNER_FIELDTYPE_INDEX] == ENTITY_SPAWNER_FIELDTYPE_LIST and istable(field[ENTITY_SPAWNER_LISTELEMENTS_INDEX]) then
         for i, list_elem in pairs(field[ENTITY_SPAWNER_LISTELEMENTS_INDEX]) do
-            if list_elem == field_value then field[ENTITY_SPAWNER_LISTELEMENTS_INDEX][i] = phrase end
+            if list_elem == field_value then
+                field[ENTITY_SPAWNER_LISTELEMENTS_INDEX][i] = phrase
+             end
         end
     end
 end
@@ -44,10 +46,10 @@ local ENTITY_HANDLERS = {
     ["Spawner"] = handle_spawner
 }
 
-function MEL.UpdateLanguages()
-    if SERVER then return end
-    local lang = Metrostroi.ChoosedLang
-    if not Metrostroi.Languages[lang] then return end
+function MEL.UpdateLanguages(lang)
+    local lang = lang or Metrostroi.ChoosedLang
+    if not Metrostroi or not Metrostroi.Languages or not Metrostroi.Languages[lang] then return end
+    Metrostroi.CurrentLanguageTable = Metrostroi.Languages[lang] or {}
     for id, phrase in pairs(Metrostroi.CurrentLanguageTable) do
         if id == "lang" then continue end
         if string.StartsWith(id, ID_ENTITY_PREFIX) then
@@ -60,6 +62,10 @@ function MEL.UpdateLanguages()
         end
     end
 end
+
+cvars.AddChangeCallback("metrostroi_language", function(cvar, old, value)
+    MEL.UpdateLanguages(value)
+end, "ext_language")
 --     if id:sub(1, 9) == "Entities." then
 --         local tbl = string.Explode(".", id:sub(10, -1))
 --         if tbl[1] == "Category" then
