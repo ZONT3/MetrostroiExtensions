@@ -11,17 +11,24 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 
 
-MEL.SpawnerByFields = {}  -- constains lookup table for accessing spawner fields by name
+MEL.SpawnerByFields = {}  -- lookup table for accessing spawner fields by name and list elements by default, non-translated name
 
-local ENTITY_SPAWNER_FIELDNAME_INDEX = 1
+local SpawnerC = MEL.Constants.Spawner
+
 local function populateSpawnerByFields()
     for _, train_class in pairs(MEL.TrainClasses) do
         local ent_table = MEL.EntTables[train_class]
         if not ent_table.Spawner then continue end
         MEL.SpawnerByFields[train_class] = {}
-        for i, field in pairs(ent_table.Spawner) do
-            if istable(field) and isstring(field[ENTITY_SPAWNER_FIELDNAME_INDEX]) then
-                MEL.SpawnerByFields[train_class][field[ENTITY_SPAWNER_FIELDNAME_INDEX]] = i
+        for field_i, field in pairs(ent_table.Spawner) do
+            if istable(field) and isstring(field[SpawnerC.NAME]) then
+                local field_name = field[SpawnerC.NAME]
+                MEL.SpawnerByFields[train_class][field_name] = {index = field_i, list_elements = {}}
+                if field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
+                    for list_i, name in pairs(field[SpawnerC.List.ELEMENTS]) do
+                        MEL.SpawnerByFields[train_class][field_name].list_elements[name] = list_i
+                    end
+                end
             end
         end
     end
