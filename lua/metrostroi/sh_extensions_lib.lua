@@ -395,6 +395,7 @@ local function injectFunction(key, tbl)
 end
 
 local function inject()
+    MEL._LoadHelpers()
     -- method that finalizes inject on all trains. called after init of recipies
     for _, recipe in pairs(MEL.InjectStack) do
         recipe:BeforeInject()

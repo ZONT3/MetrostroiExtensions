@@ -11,23 +11,34 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 
 
-MEL.SpawnerByFields = {}  -- lookup table for accessing spawner fields by name and list elements by default, non-translated name
-
+MEL.SpawnerFieldMappings = {}  -- lookup table for accessing spawner fields by name and list elements by default, non-translated name
+-- (key: train_class, value: (key: field_name, value: {index = index_of_field, list_elements = (key: name of list element, value: index)}))
 local SpawnerC = MEL.Constants.Spawner
 
-local function populateSpawnerByFields()
+MEL.Helpers = {}
+function MEL.Helpers.getListElementIndex(field_table, element_name)
+    if field_table[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field_table[SpawnerC.List.ELEMENTS]) then
+        for list_i, name in pairs(field_table[SpawnerC.List.ELEMENTS]) do
+            if name == element_name then
+                return list_i
+            end
+        end
+    end
+end
+
+local function populateSpawnerFieldMappings()
     for _, train_class in pairs(MEL.TrainClasses) do
         local ent_table = MEL.EntTables[train_class]
         if not ent_table.Spawner then continue end
-        MEL.SpawnerByFields[train_class] = {}
+        MEL.SpawnerFieldMappings[train_class] = {}
         for field_i, field in pairs(ent_table.Spawner) do
             if istable(field) and isstring(field[SpawnerC.NAME]) then
                 local field_name = field[SpawnerC.NAME]
-                if MEL.SpawnerByFields[train_class][field_name] then continue end
-                MEL.SpawnerByFields[train_class][field_name] = {index = field_i, list_elements = {}}
+                if MEL.SpawnerFieldMappings[train_class][field_name] then continue end
+                MEL.SpawnerFieldMappings[train_class][field_name] = {index = field_i, list_elements = {}}
                 if field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
                     for list_i, name in pairs(field[SpawnerC.List.ELEMENTS]) do
-                        MEL.SpawnerByFields[train_class][field_name].list_elements[name] = list_i
+                        MEL.SpawnerFieldMappings[train_class][field_name].list_elements[name] = list_i
                     end
                 end
             end
@@ -36,5 +47,5 @@ local function populateSpawnerByFields()
 end
 
 function MEL._LoadHelpers()
-    populateSpawnerByFields()
+    populateSpawnerFieldMappings()
 end

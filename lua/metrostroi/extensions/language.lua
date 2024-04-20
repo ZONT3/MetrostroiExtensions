@@ -17,7 +17,6 @@ local function handle_buttons(id_parts, id, phrase, ent_table, ent_class)
     for _, button in pairs(ent_table.ButtonMap[name].buttons) do
         if button.ID == tbl[LanguageIDC.Buttons.ID] then
             button.tooltip = phrase
-            button = v
             return
         end
     end
@@ -26,16 +25,16 @@ end
 local SpawnerC = MEL.Constants.Spawner
 local function handle_spawner(id_parts, id, phrase, ent_table, ent_class)
     if not ent_table.Spawner then return end
-    local field_lookup = MEL.SpawnerByFields[ent_class][id_parts[LanguageIDC.Spawner.NAME]]
-    if not field_lookup then return end
-    local field_index = field_lookup.index
+    local field_mapping = MEL.SpawnerFieldMappings[ent_class][id_parts[LanguageIDC.Spawner.NAME]]
+    if not field_mapping then return end
+    local field_index = field_mapping.index
     local field = ent_table.Spawner[field_index]
     local field_value = id_parts[LanguageIDC.Spawner.VALUE]
     if field_value == LanguageIDC.Spawner.VALUE_NAME then
         field[SpawnerC.TRANSLATION] = phrase
     elseif field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
-        if field_lookup.list_elements[field_value] then
-            field[SpawnerC.List.ELEMENTS][field_lookup.list_elements[field_value]] = phrase
+        if field_mapping.list_elements[field_value] then
+            field[SpawnerC.List.ELEMENTS][field_mapping.list_elements[field_value]] = phrase
         elseif isnumber(tonumber(field_value)) then
             local number_value = tonumber(field_value)
             local elements = field[SpawnerC.List.ELEMENTS]

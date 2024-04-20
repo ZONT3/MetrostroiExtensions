@@ -1,18 +1,17 @@
-    -- Copyright (c) Anatoly Raev, 2024. All right reserved
-    -- 
-    -- Unauthorized copying of any file in this repository, via any medium is strictly prohibited. 
-    -- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
-    -- Proprietary and confidential.
-    -- ------------
-    -- Авторские права принадлежат Раеву Анатолию Анатольевичу.
-    -- 
-    -- Копирование любого файла, через любой носитель абсолютно запрещено.
-    -- Все авторские права защищены на основании ГК РФ Глава 70.
-    -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
+-- Copyright (c) Anatoly Raev, 2024. All right reserved
+-- 
+-- Unauthorized copying of any file in this repository, via any medium is strictly prohibited. 
+-- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
+-- Proprietary and confidential.
+-- ------------
+-- Авторские права принадлежат Раеву Анатолию Анатольевичу.
+-- 
+-- Копирование любого файла, через любой носитель абсолютно запрещено.
+-- Все авторские права защищены на основании ГК РФ Глава 70.
+-- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extensions, that needs to be reloaded on spawner update
 -- (key: entity class, value: table with key as field name and table with props as value)
 MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries}) 
-MEL.ElementMappings = {} -- mapping per wagon, per field for list elements (key - entclass, value - (key - field_name, value - (key - name of element, value - index)))
 local function getSpawnerEntclass(ent_or_entclass)
     local entclass = MEL.GetEntclass(ent_or_entclass)
     if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then entclass = "gmod_subway_81-717_mvm_custom" end
@@ -61,39 +60,39 @@ function MEL.RemoveSpawnerField(ent_or_entclass, field_name)
 end
 
 -- TODO: Document that shit
-local function updateMapping(entclass, field_name, mapping_name, new_index)
-    if not MEL.ElementMappings[entclass] then MEL.ElementMappings[entclass] = {} end
-    if not MEL.ElementMappings[entclass][field_name] then MEL.ElementMappings[entclass][field_name] = {} end
-    MEL.ElementMappings[entclass][field_name][mapping_name] = new_index
-end
-
-function MEL.AddSpawnerListElement(ent_or_entclass, field_name, element)
-    local entclass = getSpawnerEntclass(ent_or_entclass)
-    local spawner = scripted_ents.GetStored(entclass).t.Spawner
-    if not spawner then return end
-    for _, field in pairs(spawner) do
-        if field and #field > 0 and field[1] == field_name then
-            -- just add it lol
-            local new_index = table.insert(field[4], element)
-            -- for god sake, if some shitty inject will insert element and not append it - i would be so mad
-            updateMapping(ent_or_entclass, field_name, element, new_index)
-            return
-        end
-    end
-end
+-- local function updateMapping(entclass, field_name, mapping_name, new_index)
+--     if not MEL.ElementMappings[entclass] then MEL.ElementMappings[entclass] = {} end
+--     if not MEL.ElementMappings[entclass][field_name] then MEL.ElementMappings[entclass][field_name] = {} end
+--     MEL.ElementMappings[entclass][field_name][mapping_name] = new_index
+-- end
+-- function MEL.AddSpawnerListElement(ent_or_entclass, field_name, element)
+--     local entclass = getSpawnerEntclass(ent_or_entclass)
+--     local spawner = scripted_ents.GetStored(entclass).t.Spawner
+--     if not spawner then return end
+--     for _, field in pairs(spawner) do
+--         if field and #field > 0 and field[1] == field_name then
+--             -- just add it lol
+--             local new_index = table.insert(field[4], element)
+--             -- for god sake, if some shitty inject will insert element and not append it - i would be so mad
+--             updateMapping(ent_or_entclass, field_name, element, new_index)
+--             return
+--         end
+--     end
+-- end
 
 function MEL.GetMappingValue(ent_or_entclass, field_name, element)
-    local entclass = getSpawnerEntclass(ent_or_entclass)
-    if MEL.ElementMappings[entclass] and MEL.ElementMappings[entclass][field_name] and MEL.ElementMappings[entclass][field_name][element] then return MEL.ElementMappings[entclass][field_name][element] end
-    -- try to find index of it, if it non-existent in our ElementMappings cache
-    local spawner = scripted_ents.GetStored(entclass).t.Spawner
-    for _, field in pairs(spawner) do
-        if istable(field) and #field > 0 and field[1] == field_name then
-            for i, field_elem in pairs(field[4]) do
-                if field_elem == element then
-                    updateMapping(entclass, field_name, element, i)
-                    return i
-                end
+    local ent_class = getSpawnerEntclass(ent_or_entclass)
+    if MEL.SpawnerFieldMappings[ent_class] and MEL.SpawnerFieldMappings[ent_class][field_name] and MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] then return MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] end
+    -- try to find index of it, if it non-existent in our SpawnerFieldMappings cache
+    for field_i, field in pairs(ent_table.Spawner) do
+        if istable(field) and isstring(field[SpawnerC.NAME]) and field[SpawnerC.NAME] == field_name then
+            if MEL.SpawnerFieldMappings[train_class][field_name] and field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST then 
+                -- just update list_elements and try to find it
+                MEL.SpawnerFieldMappings[train_class][field_name].list_elements[element] = MEL.Helpers.getListElementIndex(field, element)
+            end
+            MEL.SpawnerFieldMappings[train_class][field_name] = {index = field_i, list_elements = {}}
+            if field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
+                MEL.SpawnerFieldMappings[train_class][field_name].list_elements[element] = MEL.Helpers.getListElementIndex(field, element)
             end
         end
     end
