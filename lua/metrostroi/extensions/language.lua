@@ -35,7 +35,6 @@ local function handle_spawner(id_parts, id, phrase, ent_table, ent_class)
         field[SpawnerC.TRANSLATION] = phrase
     elseif field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
         if field_lookup.list_elements[field_value] then
-            print(phrase)
             field[SpawnerC.List.ELEMENTS][field_lookup.list_elements[field_value]] = phrase
         elseif isnumber(tonumber(field_value)) then
             local number_value = tonumber(field_value)
@@ -84,7 +83,6 @@ function MEL.ReplaceLoadLanguage()
         local choosed_lang = lang or Metrostroi.ChoosedLang
         if not Metrostroi.Languages or not Metrostroi.Languages[choosed_lang] then return end
         Metrostroi.CurrentLanguageTable = Metrostroi.Languages[lang] or {}
-        print(lang)
         local ent_list = list.GetForEdit("SpawnableEntities")
         local swep_list = list.GetForEdit("Weapon")
         for id, phrase in pairs(Metrostroi.CurrentLanguageTable) do
