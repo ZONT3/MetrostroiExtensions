@@ -23,6 +23,7 @@ local function populateSpawnerByFields()
         for field_i, field in pairs(ent_table.Spawner) do
             if istable(field) and isstring(field[SpawnerC.NAME]) then
                 local field_name = field[SpawnerC.NAME]
+                if MEL.SpawnerByFields[train_class][field_name] then continue end
                 MEL.SpawnerByFields[train_class][field_name] = {index = field_i, list_elements = {}}
                 if field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
                     for list_i, name in pairs(field[SpawnerC.List.ELEMENTS]) do

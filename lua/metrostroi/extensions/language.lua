@@ -10,10 +10,20 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 local LanguageIDC = MEL.Constants.LanguageID
-local SpawnerC = MEL.Constants.Spawner
-local function handle_buttons(id_parts, phrase, enttable)
+local function handle_buttons(id_parts, id, phrase, ent_table, ent_class)
+    local name = id_parts[LanguageIDC.Buttons.NAME]
+    if not ent_table[name] then return end
+    if not ent_table[name].buttons then return end
+    for _, button in pairs(ent_table.ButtonMap[name].buttons) do
+        if button.ID == tbl[LanguageIDC.Buttons.ID] then
+            button.tooltip = phrase
+            button = v
+            return
+        end
+    end
 end
 
+local SpawnerC = MEL.Constants.Spawner
 local function handle_spawner(id_parts, id, phrase, ent_table, ent_class)
     if not ent_table.Spawner then return end
     local field_lookup = MEL.SpawnerByFields[ent_class][id_parts[LanguageIDC.Spawner.NAME]]
@@ -23,32 +33,88 @@ local function handle_spawner(id_parts, id, phrase, ent_table, ent_class)
     local field_value = id_parts[LanguageIDC.Spawner.VALUE]
     if field_value == LanguageIDC.Spawner.VALUE_NAME then
         field[SpawnerC.TRANSLATION] = phrase
-    elseif field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) and field_lookup.list_elements[field_value] then
-        field[SpawnerC.List.ELEMENTS][field_lookup.list_elements[field_value]] = Metrostroi.GetPhrase(id)
-    end
-end
-
-local ENTITY_HANDLERS = {
-    ["Buttons"] = handle_buttons,
-    ["Spawner"] = handle_spawner
-}
-
-function MEL.UpdateLanguages(lang)
-    if SERVER then return end
-
-    local choosed_lang = lang or Metrostroi.ChoosedLang
-    if not Metrostroi or not Metrostroi.Languages or not Metrostroi.Languages[choosed_lang] then return end
-    for id, phrase in pairs(Metrostroi.CurrentLanguageTable) do
-        if id == "lang" then continue end
-        if string.StartsWith(id, LanguageIDC.Entity.PREFIX) then
-            local id_parts = string.Explode(".", id:sub(#LanguageIDC.Entity.PREFIX + 1, -1))
-            if id_parts[LanguageIDC.Entity.CLASS] == "Category" then continue end
-            local ent_class = id_parts[LanguageIDC.Entity.CLASS]
-            local ent_table = MEL.EntTables[ent_class]
-            local handler = ENTITY_HANDLERS[id_parts[LanguageIDC.Entity.TYPE]]
-            if handler then handler(id_parts, id, phrase, ent_table, ent_class) end
+    elseif field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
+        if field_lookup.list_elements[field_value] then
+            print(phrase)
+            field[SpawnerC.List.ELEMENTS][field_lookup.list_elements[field_value]] = phrase
+        elseif isnumber(tonumber(field_value)) then
+            local number_value = tonumber(field_value)
+            local elements = field[SpawnerC.List.ELEMENTS]
+            if number_value > #elements or number_value < 1 then return end
+            field[SpawnerC.List.ELEMENTS][tonumber(field_value)] = phrase
         end
     end
 end
 
-cvars.AddChangeCallback("metrostroi_language", function(cvar, old, value) MEL.UpdateLanguages(value) end, "ext_language")
+local ENTITY_HANDLERS = {
+    ["Name"] = function(id_parts, id, phrase, ent_table, ent_class, ent_list)
+        if not ent_list[class] then
+            if ent_table.Spawner then ent_table.Spawner.Name = phrase end
+            return
+        end
+
+        ent_list[ent_class].PrintName = phrase
+    end,
+    ["Buttons"] = handle_buttons,
+    ["Spawner"] = handle_spawner,
+}
+
+local WEAPON_HANDLERS = {
+    ["Name"] = function(swep_table, swep_list, swep_class, phrase)
+        swep_table.PrintName = phrase
+        swep_list[swep_class].PrintName = phrase
+    end,
+    ["Purpose"] = function(swep_table, swep_list, swep_class, phrase)
+        swep_table.Purpose = phrase
+    end,
+    ["Instructions"] = function(swep_table, swep_list, swep_class, phrase)
+        swep_table.Instructions = phrase
+    end,
+}
+
+
+local metrostroi_language_softreload = GetConVar("metrostroi_language_softreload")
+function MEL.ReplaceLoadLanguage()
+    if SERVER then return end
+    -- zachem? (вхай?)
+    -- в дефолт мс говнокод. вопросы остаются?
+    -- а ещё это работает быстрее!! O(N) vs O((N+M)^2)
+    -- TODO: сообщения об ошибках
+    function Metrostroi.LoadLanguage(lang, force)
+        local choosed_lang = lang or Metrostroi.ChoosedLang
+        if not Metrostroi.Languages or not Metrostroi.Languages[choosed_lang] then return end
+        Metrostroi.CurrentLanguageTable = Metrostroi.Languages[lang] or {}
+        print(lang)
+        local ent_list = list.GetForEdit("SpawnableEntities")
+        local swep_list = list.GetForEdit("Weapon")
+        for id, phrase in pairs(Metrostroi.CurrentLanguageTable) do
+            if id == "lang" then continue end
+            local id_parts = string.Explode(".", id)
+            if string.StartsWith(id, LanguageIDC.Entity.PREFIX) then
+                if id_parts[LanguageIDC.Entity.CLASS] == "Category" then continue end
+                local ent_class = id_parts[LanguageIDC.Entity.CLASS]
+                local ent_table = MEL.EntTables[ent_class]
+                if not ent_table then continue end
+                local handler = ENTITY_HANDLERS[id_parts[LanguageIDC.Entity.TYPE]]
+                if handler then handler(id_parts, id, phrase, ent_table, ent_class, ent_list) end
+            elseif string.StartsWith(id, LanguageIDC.Weapons.PREFIX) then
+                local swep_class = id_parts[LanguageIDC.Weapons.CLASS]
+                local swep_table = weapons.GetStored(swep_class)
+                if not swep_table then
+                    continue
+                end
+                WEAPON_HANDLERS[id_parts[LanguageIDC.Weapons.TYPE]](swep_table, swep_list, swep_class, phrase)
+            end
+        end
+
+        if force or metrostroi_language_softreload:GetInt() ~= 1 then
+            RunConsoleCommand("spawnmenu_reload")
+            hook.Run("GameContentChanged")
+        end
+    end
+end
+
+cvars.AddChangeCallback("metrostroi_language", function(cvar, old, value)
+    if SERVER then return end
+    Metrostroi.LoadLanguage(value, true)
+end, "ext_language")

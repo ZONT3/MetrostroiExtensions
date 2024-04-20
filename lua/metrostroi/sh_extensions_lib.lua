@@ -63,14 +63,23 @@ MEL.Constants = {
     },
     LanguageID = {
         Entity = {
-            CLASS = 1,
-            TYPE = 2,
+            CLASS = 2,
+            TYPE = 3,
             PREFIX = "Entities.",
         },
         Spawner = {
-            NAME = 3,
-            VALUE = 4,
+            NAME = 4,
+            VALUE = 5,
             VALUE_NAME = "Name",
+        },
+        Buttons = {
+            NAME = 4,
+            ID = 5,
+        },
+        Weapons = {
+            PREFIX = "Weapons.",
+            CLASS = 2,
+            TYPE = 3,
         }
     }
 }
@@ -386,7 +395,6 @@ local function injectFunction(key, tbl)
 end
 
 local function inject()
-    MEL._LoadHelpers()
     -- method that finalizes inject on all trains. called after init of recipies
     for _, recipe in pairs(MEL.InjectStack) do
         recipe:BeforeInject()
@@ -423,6 +431,10 @@ local function inject()
     for systemClass, systemTable in pairs(Metrostroi.BaseSystems) do
         injectFunction(Format("sys_%s", systemClass), systemTable)
     end
+
+    MEL._LoadHelpers()
+    MEL.ReplaceLoadLanguage()
+    RunConsoleCommand("metrostroi_language_reload")
 end
 
 discoverRecipies()
@@ -431,8 +443,6 @@ hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
     timer.Simple(1, function()
         getEntTables()
         inject()
-        -- reload all languages
-        MEL.UpdateLanguages()
     end)
 end)
 
@@ -458,8 +468,6 @@ if SERVER then
         discoverRecipies()
         getEntTables()
         inject()
-        -- reload all languages
-        MEL.UpdateLanguages()
     end)
 end
 
@@ -485,7 +493,5 @@ if CLIENT then
             v.ClientPropsInitialized = false
             v:ClearButtons()
         end
-        -- reload all languages
-        MEL.UpdateLanguages()
     end)
 end
