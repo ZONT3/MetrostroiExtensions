@@ -31,7 +31,6 @@ MEL.InjectIntoSpawnedEnt = false -- temp global variable
 MEL.EntTables = {}
 MEL.MetrostroiClasses = {}
 MEL.TrainClasses = {}
-
 -- constants
 -- TODO: move this to another file
 MEL.Constants = {
@@ -370,11 +369,8 @@ local function injectFunction(key, tbl)
         local buildedInject = function(wagon, ...)
             for i = #beforeStack, 1, -1 do
                 for _, functionToInject in pairs(beforeStack[i]) do
-                    injectReturnValue = functionToInject(wagon, unpack({...} or {}), true)
-                    injectReturnValuePacked = {injectReturnValue}
-                    if injectReturnValue and injectReturnValue == MEL.Return then
-                        return
-                    elseif istable(injectReturnValue) and injectReturnValuePacked[1][#injectReturnValuePacked] == MEL.Return then
+                    injectReturnValue = {functionToInject(wagon, unpack({...} or {}), true)}
+                    if injectReturnValue[#injectReturnValue] == MEL.Return then
                         return unpack(injectReturnValue, 1, #injectReturnValue - 1)
                     end
                 end
@@ -383,13 +379,8 @@ local function injectFunction(key, tbl)
             local returnValue = MEL.FunctionDefaults[key][functionName](wagon, unpack({...} or {}))
             for i = 1, #afterStack do
                 for _, functionToInject in pairs(afterStack[i]) do
-                    injectReturnValue = functionToInject(wagon, returnValue, unpack({...} or {}), false)
-                    injectReturnValuePacked = {injectReturnValue}
-                    if injectReturnValue and injectReturnValue == MEL.Return then
-                        return
-                    elseif istable(injectReturnValue) and injectReturnValuePacked[1][#injectReturnValuePacked] == MEL.Return then
-                        return unpack(injectReturnValue, 1, #injectReturnValue - 1)
-                    end
+                    injectReturnValue = {functionToInject(wagon, returnValue, unpack({...} or {}), false)}
+                    if istable(injectReturnValue) and injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
                 end
             end
             return returnValue
