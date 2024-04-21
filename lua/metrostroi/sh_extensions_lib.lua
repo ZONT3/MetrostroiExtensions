@@ -370,9 +370,7 @@ local function injectFunction(key, tbl)
             for i = #beforeStack, 1, -1 do
                 for _, functionToInject in pairs(beforeStack[i]) do
                     injectReturnValue = {functionToInject(wagon, unpack({...} or {}), true)}
-                    if injectReturnValue[#injectReturnValue] == MEL.Return then
-                        return unpack(injectReturnValue, 1, #injectReturnValue - 1)
-                    end
+                    if injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
                 end
             end
 
@@ -380,7 +378,7 @@ local function injectFunction(key, tbl)
             for i = 1, #afterStack do
                 for _, functionToInject in pairs(afterStack[i]) do
                     injectReturnValue = {functionToInject(wagon, returnValue, unpack({...} or {}), false)}
-                    if istable(injectReturnValue) and injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
+                    if injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
                 end
             end
             return returnValue
