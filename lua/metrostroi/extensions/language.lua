@@ -78,7 +78,7 @@ function MEL.ReplaceLoadLanguage()
     -- в дефолт мс говнокод. вопросы остаются?
     -- а ещё это работает быстрее!! O(N) vs O((N+M)^2)
     -- TODO: сообщения об ошибках
-    function Metrostroi.LoadLanguage(lang, force)
+    Metrostroi.LoadLanguage = function(lang, force)
         local choosed_lang = lang or Metrostroi.ChoosedLang
         if not Metrostroi.Languages or not Metrostroi.Languages[choosed_lang] then return end
         Metrostroi.CurrentLanguageTable = Metrostroi.Languages[lang] or {}
