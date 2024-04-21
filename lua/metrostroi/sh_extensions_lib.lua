@@ -434,7 +434,7 @@ local function inject()
 
     MEL._LoadHelpers()
     MEL.ReplaceLoadLanguage()
-    RunConsoleCommand("metrostroi_language_reload")
+    if CLIENT then Metrostroi.LoadLanguage(Metrostroi.ChoosedLang) end
 end
 
 discoverRecipies()
