@@ -302,21 +302,27 @@ local function injectRandomFieldHelper(entclass)
     if not MEL.RandomFields[entclass] then return end
     -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
     MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...)
-        math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType) -- i dont really n
+        math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
         local custom = wagon.CustomSettings and true or false
         for _, data in pairs(MEL.RandomFields[entclass]) do
-            local key = data[1]
-            local field_type = data[2]
-            if field_type == "List" then
-                local amount_of_values = data[3]
-                local value = wagon:GetNW2Int(key, 1)
-                if not custom or value == 1 then value = math.random(2, amount_of_values) end
-                wagon:SetNW2Int(key, value - 1)
-            elseif field_type == "Slider" then
-                local min = data[3]
-                local max = data[4]
-                local value = wagon:GetNW2Float(key, min)
-                if not custom or value == min then wagon:SetNW2Float(key, math.random(min + 1, max)) end
+            local name = data.name
+            if data.type_ == "List" then
+                local elements_length = data.elements_length
+                local value = wagon:GetNW2Int(name, 1)
+                if not custom or value == 1 then value = math.random(2, elements_length) end
+                wagon:SetNW2Int(name, value - 1)
+            elseif data.type_ == "Slider" then
+                local min = data.min
+                local max = data.max
+                local decimals = data.decimals
+                local value = wagon:GetNW2Float(name, min)
+                if not custom or value == min then
+                    if decimals > 0 then
+                        wagon:SetNW2Float(name, math.Rand(min + (1 / decimals), max))
+                    else
+                        wagon:SetNW2Float(name, math.random(min + 1, max))
+                    end
+                end
             end
         end
 
