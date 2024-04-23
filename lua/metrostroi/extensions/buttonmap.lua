@@ -15,9 +15,7 @@ function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang, reload_name)
         buttonmap.pos = new_pos
         if new_ang then buttonmap.ang = new_ang end
         if not buttonmap.buttons then return end
-        local ent_class = MEL.GetEntclass(ent)
-        local saved_buttonmap = MEL.ButtonMaps[ent_class][buttonmap_name]
-        for _, button in pairs(saved_buttonmap.buttons) do
+        for _, button in pairs(buttonmap.buttons) do
             MEL.UpdateCallback(ent, button.ID, function(wagon, cent)
                 cent:SetPos(wagon:LocalToWorld(Metrostroi.PositionFromPanel(buttonmap_name, button.ID, 0, 0, 0, wagon)))
             end)
