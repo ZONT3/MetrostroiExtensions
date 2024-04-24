@@ -446,7 +446,9 @@ function RECIPE:Inject(ent, entclass)
                     local pos = wagon:LocalToWorld(lightData[2])
                     local visibility = util.PixelVisible(pos, lightData.size or 5, vHandle) --math.max(0,util.PixelVisible(pos, 5, vHandle)-0.25)/0.75
                     if visibility > 0 then
-                        render.SetMaterial(lightData.mat)
+                        if lightData.mat then
+                            render.SetMaterial(lightData.mat)
+                        end
                         render.DrawSprite(pos, 128 * lightData.scale, 128 * (lightData.vscale or lightData.scale), colAlpha(lightData[4] or Color(255, 255, 255), visibility * br))
                     end
                 end
