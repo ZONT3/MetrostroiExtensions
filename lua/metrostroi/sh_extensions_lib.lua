@@ -147,7 +147,7 @@ for _, moduleName in pairs(methodModules) do
         include("metrostroi/extensions/" .. moduleName)
     end
 end
-
+MEL.ApplyBackports()
 function MEL.GetEntsByTrainType(trainType)
     if not trainType then
         logError("trainType in GetEntsByTrainType is nil! Check your recipies.")
@@ -277,14 +277,14 @@ local function discoverRecipies()
     end
 end
 
+
+local prefixes = {
+    ["gmod_subway"] = true,
+    ["gmod_train_"] = true,
+    ["gmod_track_"] = true
+}
 local function getEntTables()
     -- we are using this method cause default metrotroi table caused problems
-    local prefixes = {
-        ["gmod_subway"] = true,
-        ["gmod_train_"] = true,
-        ["gmod_track_"] = true
-    }
-
     for entclass in pairs(scripted_ents.GetList()) do
         local prefix = string.sub(entclass, 1, 11)
         if prefixes[prefix] then
@@ -459,6 +459,7 @@ if SERVER then
     concommand.Add("metrostroi_ext_reload", function(ply, cmd, args)
         net.Start("MetrostroiExtDoReload")
         net.Broadcast()
+        MEL.ApplyBackports()
         logInfo("reloading recipies...")
         -- clear all inject stacks
         MEL.FunctionInjectStack = {}
@@ -480,6 +481,7 @@ end
 if CLIENT then
     net.Receive("MetrostroiExtDoReload", function(len, ply)
         logInfo("reloading recipies...")
+        MEL.ApplyBackports()
         -- clear all inject stacks
         MEL.FunctionInjectStack = {}
         MEL.BaseRecipies = {}
