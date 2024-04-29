@@ -20,7 +20,7 @@ local function injectIntoFunction(key, function_name, function_to_inject, priori
     -- negative priority - inject before default function
     -- positive priority - inject after default function
     -- zero - default function priority, error!
-    if priority == 0 then logError("when injecting function with name " .. function_name .. ": priority couldn't be zero") end
+    if priority == 0 then MEL._LogError(Format("can't injecto into function with name %s: priority can't be zero", function_name)) end
     if not MEL.FunctionInjectStack[key] then MEL.FunctionInjectStack[key] = {} end
     if not MEL.FunctionInjectStack[key][function_name] then MEL.FunctionInjectStack[key][function_name] = {} end
     local inject_priority = priority or -1

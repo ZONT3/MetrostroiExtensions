@@ -101,36 +101,36 @@ local function logDebug(msg)
     end
 end
 
-local function logInfo(msg)
+function MEL._LogInfo(msg)
     printPrefix()
     MsgC(Format("Info: %s\n", msg))
 end
 
-local function logWarning(msg)
+function MEL._LogWarning(msg)
     printPrefix()
     MsgC(WARNING_COLOR, Format("Warning: %s\n", msg))
 end
 
-local function logError(msg)
+function MEL._LogError(msg)
     if RECIPE then ErrorNoHaltWithStack(Format("%s Error from recipe %s!: %s\n", LOG_PREFIX, RECIPE.Name, msg)) end
     ErrorNoHaltWithStack(Format("%s Error!: %s\n", LOG_PREFIX, msg))
 end
 
 function MEL.LogErrorFactory()
-    return function(msg) logError("error from recipe " .. RECIPE.Name .. ": " .. msg) end
+    return function(msg) MEL._LogError("error from recipe " .. RECIPE.Name .. ": " .. msg) end
 end
 
 function MEL.LogWarningFactory()
-    return function(msg) logWarning("warning from recipe " .. RECIPE.Name .. ": " .. msg) end
+    return function(msg) MEL._LogWarning("warning from recipe " .. RECIPE.Name .. ": " .. msg) end
 end
 
 function MEL.LogInfoFactory()
-    return function(msg) logInfo("info from recipe " .. RECIPE.Name .. ": " .. msg) end
+    return function(msg) MEL._LogInfo("info from recipe " .. RECIPE.Name .. ": " .. msg) end
 end
 
 -- helper methods
 function MEL.GetEntclass(ent_or_entclass)
-    if not ent_or_entclass then logError("for some reason, ent_or_entclass in GetEntclass is nil. Please report this error.") end
+    if not ent_or_entclass then MEL._LogError("for some reason, ent_or_entclass in GetEntclass is nil. Please report this error.") end
     -- get entclass from ent table or from str entclass 
     if istable(ent_or_entclass) then return ent_or_entclass.entclass end
     if isentity(ent_or_entclass) then return ent_or_entclass:GetClass() end
@@ -150,7 +150,7 @@ end
 MEL.ApplyBackports()
 function MEL.GetEntsByTrainType(trainType)
     if not trainType then
-        logError("trainType in GetEntsByTrainType is nil! Check your recipies.")
+        MEL._LogError("trainType in GetEntsByTrainType is nil! Check your recipies.")
         return
     end
 
@@ -171,7 +171,7 @@ function MEL.GetEntsByTrainType(trainType)
         if containsTrainTypes then table.insert(entclasses, entclass) end
     end
 
-    if #entclasses == 0 then logError("no entities for " .. trainType .. ". Perhaps a typo?") end
+    if #entclasses == 0 then MEL._LogError("no entities for " .. trainType .. ". Perhaps a typo?") end
     return entclasses
 end
 
@@ -219,16 +219,16 @@ local function loadRecipe(filename, scope)
     if SERVER and scope ~= "sv" then AddCSLuaFile(filename) end
     include(filename)
     if not RECIPE then
-        logError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
+        MEL._LogError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
         return
     end
 
     if not RECIPE.TrainType then
-        logError("looks like you forgot to specify train type for " .. filename .. ". Refusing to load it.")
+        MEL._LogError("looks like you forgot to specify train type for " .. filename .. ". Refusing to load it.")
         return
     end
 
-    if RECIPE.Name ~= string.sub(File, 1, string.find(File, "%.lua") - 1) then logWarning("recipe \"" .. RECIPE.Name .. "\" file name and name defined in DefineRecipe differs. Consider renaming your file.") end
+    if RECIPE.Name ~= string.sub(File, 1, string.find(File, "%.lua") - 1) then MEL._LogWarning("recipe \"" .. RECIPE.Name .. "\" file name and name defined in DefineRecipe differs. Consider renaming your file.") end
     local class_name = nil
     if istable(RECIPE.TrainType) then
         class_name = table.concat(RECIPE.TrainType, "-") .. "_" .. RECIPE.Name
@@ -236,7 +236,7 @@ local function loadRecipe(filename, scope)
         class_name = RECIPE.TrainType .. "_" .. RECIPE.Name
     end
 
-    logInfo("loading recipe " .. RECIPE.Name .. " from " .. filename)
+    MEL._LogInfo("loading recipe " .. RECIPE.Name .. " from " .. filename)
     RECIPE.ClassName = class_name
     RECIPE.Description = RECIPE.Description or "No description"
     RECIPE.Specific = {}
@@ -247,7 +247,7 @@ local function loadRecipe(filename, scope)
     RECIPE.InjectSystem = RECIPE.InjectSystem or function() end
     RECIPE.InjectSpawner = RECIPE.InjectSpawner or function() end
     if MEL.Recipes[RECIPE.Name] then
-        logError("recipe with name \"" .. RECIPE.Name .. "\" already exists. Refusing to load recipe from " .. filename .. ".")
+        MEL._LogError("recipe with name \"" .. RECIPE.Name .. "\" already exists. Refusing to load recipe from " .. filename .. ".")
         return
     end
 
@@ -259,7 +259,7 @@ end
 
 local function discoverRecipies()
     -- load all recipies recursively
-    logInfo("loading recipies...")
+    MEL._LogInfo("loading recipies...")
     local recipe_files = {}
     findRecipeFiles("recipies", recipe_files)
     for _, recipe_file in pairs(recipe_files) do
@@ -366,7 +366,7 @@ local function injectFunction(key, tbl)
 
         -- check for missing function from some table
         if not tbl[functionName] then
-            logError(Format("can't inject into %s: function %s doesn't exists!", key, functionName))
+            MEL._LogError(Format("can't inject into %s: function %s doesn't exists!", key, functionName))
             continue
         end
 
@@ -460,7 +460,7 @@ if SERVER then
         net.Start("MetrostroiExtDoReload")
         net.Broadcast()
         MEL.ApplyBackports()
-        logInfo("reloading recipies...")
+        MEL._LogInfo("reloading recipies...")
         -- clear all inject stacks
         MEL.FunctionInjectStack = {}
         MEL.BaseRecipies = {}
@@ -480,7 +480,7 @@ end
 
 if CLIENT then
     net.Receive("MetrostroiExtDoReload", function(len, ply)
-        logInfo("reloading recipies...")
+        MEL._LogInfo("reloading recipies...")
         MEL.ApplyBackports()
         -- clear all inject stacks
         MEL.FunctionInjectStack = {}
