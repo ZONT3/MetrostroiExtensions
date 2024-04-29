@@ -467,8 +467,8 @@ function RECIPE:Inject(ent, entclass)
         end)
 
         local function enableDebug()
-            -- if C_DrawDebug:GetInt() > 0 then
-            if false then
+            if C_DrawDebug:GetInt() > 0 then
+            -- if false then
                 hook.Add("PostDrawTranslucentRenderables", "MetrostroiTrainDebug", function(bDrawingDepth, bDrawingSkybox)
                     if bDrawingSkybox then return end
                     for wagon in pairs(Metrostroi.SpawnedTrains) do
