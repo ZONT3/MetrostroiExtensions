@@ -147,6 +147,7 @@ for _, moduleName in pairs(methodModules) do
         include("metrostroi/extensions/" .. moduleName)
     end
 end
+
 MEL.ApplyBackports()
 function MEL.GetEntsByTrainType(trainType)
     if not trainType then
@@ -190,6 +191,7 @@ local function findRecipeFiles(folder, recipe_files)
 
     if found_folders and #found_folders > 0 then
         for _, found_folder in pairs(found_folders) do
+            if found_folder == "disabled" then continue end
             findRecipeFiles(folder .. "/" .. found_folder, recipe_files)
         end
     end
@@ -277,12 +279,12 @@ local function discoverRecipies()
     end
 end
 
-
 local prefixes = {
     ["gmod_subway"] = true,
     ["gmod_train_"] = true,
     ["gmod_track_"] = true
 }
+
 local function getEntTables()
     -- we are using this method cause default metrotroi table caused problems
     for entclass in pairs(scripted_ents.GetList()) do
