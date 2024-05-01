@@ -10,48 +10,49 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("714_new", "gmod_subway_81-714_mvm")
+RECIPE.BackportPriority = true
 local Cpos = {0, 0.2, 0.4, 0.5, 0.6, 0.8, 1}
 function RECIPE:Inject(ent)
-    function ent.InitializeSystems()
+    function ent.InitializeSystems(wagon)
         -- Электросистема 81-710
-        self:LoadSystem("Electric", "81_714_Electric_EXT")
+        wagon:LoadSystem("Electric", "81_714_Electric_EXT")
         -- Токоприёмник
-        self:LoadSystem("TR", "TR_3B")
+        wagon:LoadSystem("TR", "TR_3B")
         -- Электротяговые двигатели
-        self:LoadSystem("Engines", "DK_117DM")
+        wagon:LoadSystem("Engines", "DK_117DM")
         -- Резисторы для реостата/пусковых сопротивлений
-        self:LoadSystem("KF_47A", "KF_47A1")
+        wagon:LoadSystem("KF_47A", "KF_47A1")
         -- Резисторы для ослабления возбуждения
-        self:LoadSystem("KF_50A")
+        wagon:LoadSystem("KF_50A")
         -- Ящик с предохранителями
-        self:LoadSystem("YAP_57")
+        wagon:LoadSystem("YAP_57")
         -- Реостатный контроллер для управления пусковыми сопротивления
-        self:LoadSystem("Reverser", "PR_722D")
-        self:LoadSystem("RheostatController", "EKG_17B")
+        wagon:LoadSystem("Reverser", "PR_722D")
+        wagon:LoadSystem("RheostatController", "EKG_17B")
         -- Групповой переключатель положений
-        self:LoadSystem("PositionSwitch", "PKG_761")
+        wagon:LoadSystem("PositionSwitch", "PKG_761")
         -- Ящики с реле и контакторами
-        self:LoadSystem("BV", "BV_630")
-        self:LoadSystem("LK_755A")
-        self:LoadSystem("YAR_13B")
-        self:LoadSystem("YAR_27_EXT", nil, "MSK")
-        self:LoadSystem("YAK_36")
-        self:LoadSystem("YAK_37E")
-        self:LoadSystem("YAS_44V")
-        self:LoadSystem("YARD_2")
-        self:LoadSystem("Horn")
-        self:LoadSystem("IGLA_PCBK")
+        wagon:LoadSystem("BV", "BV_630")
+        wagon:LoadSystem("LK_755A")
+        wagon:LoadSystem("YAR_13B")
+        wagon:LoadSystem("YAR_27_EXT", nil, "MSK")
+        wagon:LoadSystem("YAK_36")
+        wagon:LoadSystem("YAK_37E")
+        wagon:LoadSystem("YAS_44V")
+        wagon:LoadSystem("YARD_2")
+        wagon:LoadSystem("Horn")
+        wagon:LoadSystem("IGLA_PCBK")
         -- Панель управления 81-710
-        self:LoadSystem("Panel", "81_714_Panel")
+        wagon:LoadSystem("Panel", "81_714_Panel")
         -- Пневмосистема 81-710
-        self:LoadSystem("Pneumatic", "81_717_Pneumatic_EXT", {
+        wagon:LoadSystem("Pneumatic", "81_717_Pneumatic_EXT", {
             br013_1 = true
         })
 
         -- Everything else
-        self:LoadSystem("Battery")
-        self:LoadSystem("PowerSupply", "BPSN_EXT")
-        self:LoadSystem("Announcer", "81_71_Announcer")
+        wagon:LoadSystem("Battery")
+        wagon:LoadSystem("PowerSupply", "BPSN_EXT")
+        wagon:LoadSystem("Announcer", "81_71_Announcer")
     end
 
     if CLIENT then
@@ -914,7 +915,6 @@ function RECIPE:Inject(ent)
         end
 
         function ent.Think(wagon)
-            Think()
             local retVal = wagon.BaseClass.Think(wagon)
             local Panel = wagon.Panel
             local Pneumatic = wagon.Pneumatic

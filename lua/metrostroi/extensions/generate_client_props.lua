@@ -203,6 +203,7 @@ local function newGenerateClientProps()
                         --wagon.ClientSounds[id] = {sndid,function(ent,var) return snd(func(ent,vmin,vmax),var) end,vol or 1,pitch or 1,min or 100,max or 1000,ang or Angle(0,0,0)}
                         --else
                         if not wagon.ClientSounds[id] then wagon.ClientSounds[id] = {} end
+                        wagon.ClientSounds[id] = {}  -- TEST
                         table.insert(wagon.ClientSounds[id], {sndid, function(ent, var) return snd(var > 0, var) end, vol or 1, pitch or 1, min or 100, max or 1000, ang or Angle(0, 0, 0)})
                         --end
                     end

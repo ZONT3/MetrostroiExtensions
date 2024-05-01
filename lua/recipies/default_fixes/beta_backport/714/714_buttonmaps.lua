@@ -10,6 +10,7 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("714_buttonmaps", "gmod_subway_81-714_mvm")
+RECIPE.BackportPriority = true
 function RECIPE:Inject(ent)
     if SERVER then return end
     local buttonOverrides = {

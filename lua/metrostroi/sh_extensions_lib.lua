@@ -184,8 +184,9 @@ function MEL.DefineRecipe(name, train_type)
 end
 
 local function findRecipeFiles(folder, recipe_files)
-    local found_files, found_folders = file.Find(folder .. "/*.lua", "LUA")
+    local found_files, found_folders = file.Find(folder .. "/*", "LUA")
     for _, recipe_file in pairs(found_files) do
+        if string.GetExtensionFromFilename(recipe_file) ~= "lua" then continue end
         table.insert(recipe_files, folder .. "/" .. recipe_file)
     end
 
@@ -207,7 +208,12 @@ local function initRecipe(recipe)
     if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then
         -- if recipe enabled: 
         -- add it to inject stack
-        table.insert(MEL.InjectStack, recipe)
+        if recipe.BackportPriority then
+            table.insert(MEL.InjectStack, 1, recipe)
+        else
+            table.insert(MEL.InjectStack, recipe)
+        end
+
         -- add recipe specific things
         for key, value in pairs(recipe.Specific) do
             MEL.RecipeSpecific[key] = value
