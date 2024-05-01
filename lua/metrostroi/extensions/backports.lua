@@ -15,6 +15,7 @@ local function newConvars()
     CreateClientConVar("metrostroi_sprites", 1, true)
     CreateClientConVar("metrostroi_cabz", 0, true)
     CreateClientConVar("metrostroi_disableseatshadows", 0, true)
+    CreateClientConVar("metrostroi_disablehovertextpos",0,true)
 end
 
 local function newSpriteEnt()

@@ -20,6 +20,17 @@ local function getSpawnerEntclass(ent_or_entclass)
     return ent_class
 end
 
+function MEL.FindSpawnerField(ent_or_entclass, field_name)
+    local ent_class = MEL.GetEntclass(ent_or_entclass)
+    local spawner = MEL.EntTables[ent_class].Spawner
+    if MEL.SpawnerFieldMappings[ent_class] and MEL.SpawnerFieldMappings[ent_class][field_name] then
+        return spawner[MEL.SpawnerFieldMappings[ent_class][field_name].index]
+    end
+    for i, field in pairs(spawner) do
+        if istable(field) and isnumber(i) and #field ~= 0 and field[SpawnerC.NAME] == field_name then return field end
+    end
+end
+
 function MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name, field_name)
     local ent_class = MEL.GetEntclass(ent_or_entclass)
     if not MEL.ClientPropsToReload[ent_class] then MEL.ClientPropsToReload[ent_class] = {} end

@@ -235,21 +235,18 @@ function RECIPE:Inject(ent)
             },
             ["KDPKToggle"] = {
                 noTooltip = true,
-            }
+            },
         },
         Block1 = {
             ["!BatteryVoltage"] = {
-                tooltip = "",
                 tooltipFunc = function(ent) return Format(Metrostroi.GetPhrase("Train.Buttons.BatteryVoltage"), ent:GetPackedRatio("BatteryVoltage") * 150) end
             }
         },
         Block3 = {
             ["!BLTLPressure"] = {
-                tooltip = "",
                 tooltipFunc = function(ent) return Format(Metrostroi.GetPhrase("Train.Buttons.BLTLPressure"), ent:GetPackedRatio("TLPressure") * 16, ent:GetPackedRatio("BLPressure") * 16) end
             },
             ["!BCPressure"] = {
-                tooltip = "",
                 tooltipFunc = function(ent) return Format(Metrostroi.GetPhrase("Train.Buttons.BCPressure"), ent:GetPackedRatio("BCPressure") * 6) end
             }
         },
@@ -477,7 +474,6 @@ function RECIPE:Inject(ent)
         },
         Block2_3 = {
             ["!Speedometer"] = {
-                tooltip = "",
                 tooltipFunc = function(ent) return Format(Metrostroi.GetPhrase("Train.Buttons.Speed"), math.floor(ent:GetPackedRatio("Speed") * 100)) end
             },
             ["!LPU"] = {
@@ -787,12 +783,10 @@ function RECIPE:Inject(ent)
         CabVent_C = {
             -- todo: copy to CabVent_R
             ["PVK-"] = {
-                tooltip = "",
                 states = {"Train.Buttons.Off", "Train.Buttons.VentHalf", "Train.Buttons.VentFull"},
                 varTooltip = function(ent) return ent:GetPackedRatio("PVK") end,
             },
             ["PVK+"] = {
-                tooltip = "",
                 states = {"Train.Buttons.Off", "Train.Buttons.VentHalf", "Train.Buttons.VentFull"},
                 varTooltip = function(ent) return ent:GetPackedRatio("PVK") end,
             }
@@ -901,24 +895,20 @@ function RECIPE:Inject(ent)
         },
         FrontPneumatic = {
             ["FrontBrakeLineIsolationToggle"] = {
-                tooltip = "",
                 var = "FbI",
                 states = {"Train.Buttons.Opened", "Train.Buttons.Closed"}
             },
             ["FrontTrainLineIsolationToggle"] = {
-                tooltip = "",
                 var = "FtI",
                 states = {"Train.Buttons.Opened", "Train.Buttons.Closed"}
             }
         },
         RearPneumatic = {
             ["RearTrainLineIsolationToggle"] = {
-                tooltip = "",
                 var = "RtI",
                 states = {"Train.Buttons.Opened", "Train.Buttons.Closed"}
             },
             ["RearBrakeLineIsolationToggle"] = {
-                tooltip = "",
                 var = "RbI",
                 states = {"Train.Buttons.Opened", "Train.Buttons.Closed"}
             }
@@ -930,7 +920,6 @@ function RECIPE:Inject(ent)
         },
         AirDistributor = {
             ["AirDistributorDisconnectToggle"] = {
-                tooltip = "",
                 var = "AD",
                 states = {"Train.Buttons.On", "Train.Buttons.Off"}
             }

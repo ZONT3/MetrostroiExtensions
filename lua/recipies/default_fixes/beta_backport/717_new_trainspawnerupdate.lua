@@ -14,7 +14,6 @@ function RECIPE:Inject(ent)
     if SERVER then
         ent.TrainSpawnerUpdate = function(wagon)
             local num = wagon.WagonNumber
-            print("lol", num)
             wagon:SetNW2Bool("Custom", wagon.CustomSettings)
             math.randomseed(num + 817171)
             if wagon.CustomSettings then

@@ -136,6 +136,49 @@ function RECIPE:Inject(ent)
         }
     })
 
+    MEL.NewButtonMapButton(ent, "Block7", {
+        ID = "VKSTToggle",
+        x = 28,
+        y = 57,
+        radius = 20,
+        tooltip = "",
+        model = {
+            model = "models/metrostroi_train/81-717/udkst.mdl",
+            ang = 180,
+            z = -2.4,
+            var = "VKST",
+            speed = 16,
+            sndvol = 1,
+            snd = function(val) return val and "switch_on" or "switch_off" end,
+            sndmin = 90,
+            sndmax = 1e3,
+            sndang = Angle(-90, 0, 0),
+        }
+    })
+
+    MEL.NewButtonMapButton(ent, "Block7", {
+        ID = "!IST",
+        x = 43,
+        y = 57,
+        radius = 8,
+        tooltip = "",
+        model = {
+            lamp = {
+                model = "models/metrostroi_train/81-502/lamps/svetodiod_small_502.mdl",
+                z = 0,
+                color = Color(255, 50, 45),
+                var = "IST"
+            },
+            sprite = {
+                bright = 0.5,
+                size = 0.25,
+                scale = 0.01,
+                color = Color(255, 50, 45),
+                z = -1.4,
+            }
+        }
+    })
+
     MEL.NewButtonMap(ent, "AutostopValve", {
         pos = Vector(365.8, -67.6, -56),
         ang = Angle(0, 0, 90),
@@ -185,6 +228,7 @@ function RECIPE:Inject(ent)
     end, 1)
 
     if SERVER then
+        table.insert(ent.SyncTable, "VKST")
         function ent.TriggerLightSensor(wagon, coil, plate)
             if plate.PlateType == METROSTROI_UPPSSENSOR then wagon.UPPS:TriggerSensor(coil, plate) end
         end
@@ -208,7 +252,7 @@ function RECIPE:Inject(ent)
 
     ent.InitializeSystems = function(wagon)
         -- Электросистема 81-710
-        wagon:LoadSystem("Electric", "81_717_Electric")
+        wagon:LoadSystem("Electric", "81_717_Electric_EXT")
         -- Токоприёмник
         wagon:LoadSystem("TR", "TR_3B")
         -- Электротяговые двигатели
@@ -233,31 +277,151 @@ function RECIPE:Inject(ent)
         -- Ящики с реле и контакторами
         wagon:LoadSystem("BV", "BV_630")
         wagon:LoadSystem("LK_755A")
-        wagon:LoadSystem("YAR_13B")
-        wagon:LoadSystem("YAR_27")
+        wagon:LoadSystem("YAR_13B", "YAR_13B_EXT")
+        wagon:LoadSystem("YAR_27", "YAR_27_EXT", "MSK")
         wagon:LoadSystem("YAK_36")
         wagon:LoadSystem("YAK_37E")
         wagon:LoadSystem("YAS_44V")
         wagon:LoadSystem("YARD_2")
         wagon:LoadSystem("PR_14X_Panels")
-        -- Пневмосистема 81-710
-        wagon:LoadSystem("Pneumatic", "81_717_Pneumatic")
-        -- Панель управления 81-710
+        -- Пневмосистема 81-717
+        wagon:LoadSystem("Pneumatic", "81_717_Pneumatic_EXT")
+        -- Панель управления 81-717
         wagon:LoadSystem("Panel", "81_717_Panel_EXT")
         -- Everything else
         wagon:LoadSystem("Battery")
-        wagon:LoadSystem("PowerSupply", "BPSN")
-        --wagon:LoadSystem("DURA")
+        wagon:LoadSystem("PowerSupply", "BPSN_EXT")
         wagon:LoadSystem("ALS_ARS", "ALS_ARS_D")
         wagon:LoadSystem("Horn")
-        wagon:LoadSystem("IGLA_CBKI", "IGLA_CBKI1")
+        wagon:LoadSystem("IGLA_CBKI", "IGLA_CBKI1_EXT")
         wagon:LoadSystem("IGLA_PCBK")
         wagon:LoadSystem("UPPS")
         wagon:LoadSystem("BZOS", "81_718_BZOS")
         wagon:LoadSystem("Announcer", "81_71_Announcer", "AnnouncementsASNP")
-        wagon:LoadSystem("ASNP", "81_71_ASNP")
+        wagon:LoadSystem("ASNP", "81_71_ASNP_EXT")
         wagon:LoadSystem("ASNP_VV", "81_71_ASNP_VV")
         wagon:LoadSystem("RouteNumber", "81_71_RouteNumber", 2)
         wagon:LoadSystem("LastStation", "81_71_LastStation", "717", "destination")
+    end
+
+    function ent.UpdateLampsColors(wagon)
+        local lCol, lCount = Vector(), 0
+        local rand = math.random() > 0.8 and 1 or math.random(0.95, 0.99)
+        if wagon.LampType == 1 then
+            local r, g, col = 15, 15
+            local typ = math.Round(math.random())
+            local rnd = 0.5 + math.random() * 0.5
+            for i = 1, 12 do
+                local chtp = math.random() > rnd
+                if typ == 0 and not chtp or typ == 1 and chtp then
+                    g = math.random() * 15
+                    col = Vector(240 + g, 240 + g, 255)
+                else
+                    b = -5 + math.random() * 20
+                    col = Vector(255, 255, 235 + b)
+                end
+
+                lCol = lCol + col
+                lCount = lCount + 1
+                if i % 4 == 0 then
+                    local id = 10 + math.ceil(i / 4)
+                    local tcol = (lCol / lCount) / 255
+                    --wagon.Lights[id][4] = Vector(tcol.r,tcol.g^3,tcol.b^3)*255
+                    wagon:SetNW2Vector("lampD" .. id, Vector(tcol.r, tcol.g ^ 3, tcol.b ^ 3) * 255)
+                    lCol = Vector()
+                    lCount = 0
+                end
+
+                wagon:SetNW2Vector("lamp" .. i, col)
+                wagon.Lamps.broken[i] = math.random() > rand and math.random() > 0.7
+            end
+        else
+            local rnd1, rnd2, col = 0.7 + math.random() * 0.3, math.random()
+            local typ = math.Round(math.random())
+            local r, g = 15, 15
+            for i = 1, 25 do
+                local chtp = math.random() > rnd1
+                if typ == 0 and not chtp or typ == 1 and chtp then
+                    if math.random() > rnd2 then
+                        r = -20 + math.random() * 25
+                        g = 0
+                    else
+                        g = -5 + math.random() * 15
+                        r = g
+                    end
+
+                    col = Vector(245 + r, 228 + g, 189)
+                else
+                    if math.random() > rnd2 then
+                        g = math.random() * 15
+                        b = g
+                    else
+                        g = 15
+                        b = -10 + math.random() * 25
+                    end
+
+                    col = Vector(255, 235 + g, 235 + b)
+                end
+
+                lCol = lCol + col
+                lCount = lCount + 1
+                if i % 8.3 < 1 then
+                    local id = 9 + math.ceil(i / 8.3)
+                    local tcol = (lCol / lCount) / 255
+                    --wagon.Lights[id][4] = Vector(tcol.r,tcol.g^3,tcol.b^3)*255
+                    wagon:SetNW2Vector("lampD" .. id, Vector(tcol.r, tcol.g ^ 3, tcol.b ^ 3) * 255)
+                    lCol = Vector()
+                    lCount = 0
+                end
+
+                wagon:SetNW2Vector("lamp" .. i, col)
+                wagon.Lamps.broken[i] = math.random() > rand and math.random() > 0.7
+            end
+        end
+    end
+
+    MEL.FindSpawnerField(ent, "SpawnMode")[MEL.Constants.Spawner.List.WAGON_CALLBACK] = function(wagon, val, rot, i, wagnum, rclk)
+        if rclk then return end
+        if wagon._SpawnerStarted ~= val then
+            wagon.VB:TriggerInput("Set", val <= 2 and 1 or 0)
+            wagon.ParkingBrake:TriggerInput("Set", val == 3 and 1 or 0)
+            if wagon.AR63 then
+                local first = i == 1 or _LastSpawner ~= CurTime()
+                wagon.A53:TriggerInput("Set", val <= 2 and 1 or 0)
+                wagon.A49:TriggerInput("Set", val <= 2 and 1 or 0)
+                wagon.AR63:TriggerInput("Set", val <= 2 and 1 or 0)
+                wagon.R_UNch:TriggerInput("Set", val == 1 and 1 or 0)
+                wagon.R_Radio:TriggerInput("Set", val == 1 and 1 or 0)
+                wagon.BPSNon:TriggerInput("Set", (val == 1 and first) and 1 or 0)
+                wagon.VMK:TriggerInput("Set", (val == 1 and first) and 1 or 0)
+                wagon.ARS:TriggerInput("Set", (wagon.Plombs.RC1 and val == 1 and first) and 1 or 0)
+                wagon.ALS:TriggerInput("Set", val == 1 and 1 or 0)
+                wagon.L_1:TriggerInput("Set", val == 1 and 1 or 0)
+                wagon.L_4:TriggerInput("Set", val == 1 and 1 or 0)
+                wagon.EPK:TriggerInput("Set", (wagon.Plombs.RC1 and val == 1) and 1 or 0)
+                wagon.DriverValveDisconnect:TriggerInput("Set", (val == 4 and first) and 1 or 0)
+                _LastSpawner = CurTime()
+                wagon.CabinDoor = val == 4 and first
+                wagon.PassengerDoor = val == 4
+                wagon.RearDoor = val == 4
+            else
+                wagon.FrontDoor = val == 4
+                wagon.RearDoor = val == 4
+            end
+
+            if val == 1 then
+                timer.Simple(1, function()
+                    if not IsValid(ent) then return end
+                    wagon.BV:TriggerInput("Enable", 1)
+                end)
+            end
+
+            wagon.GV:TriggerInput("Set", val < 4 and 1 or 0)
+            wagon._SpawnerStarted = val
+        end
+
+        wagon.Pneumatic.TrainLinePressure = val == 3 and math.random() * 4 or val == 2 and 4.5 + math.random() * 3 or 7.6 + math.random() * 0.6
+        wagon.Pneumatic.WorkingChamberPressure = val == 3 and math.random() * 1.0 or val == 2 and 4.0 + math.random() * 1.0 or 5.2
+        if val == 4 then wagon.Pneumatic.BrakeLinePressure = 5.2 end
     end
 end

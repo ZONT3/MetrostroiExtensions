@@ -200,15 +200,16 @@ function RECIPE:Inject(ent)
                 wagon:ShowHideSmooth("Headlights141_2", 0)
                 wagon:ShowHideSmooth("Headlights22_1", 0)
                 wagon:ShowHideSmooth("Headlights22_2", 0)
-                if mask == 4 then
-                    wagon.LightsOverride[30][2] = Vector(465, -48, -23.5)
-                    wagon.LightsOverride[31][2] = Vector(465, 48, -23.5)
-                    wagon.LightsOverride[32][2] = Vector(465, 0, -23.5)
-                elseif mask < 4 then
-                    wagon.LightsOverride[30][2] = Vector(465, -45, -23.5)
-                    wagon.LightsOverride[31][2] = Vector(465, 45, -23.5)
-                    wagon.LightsOverride[32][2] = Vector(465, 0, 52)
-                end
+                -- впизду, все равно в эксте новые масочки
+                -- if mask == 4 then
+                --     wagon.LightsOverride[30][2] = Vector(465, -48, -23.5)
+                --     wagon.LightsOverride[31][2] = Vector(465, 48, -23.5)
+                --     wagon.LightsOverride[32][2] = Vector(465, 0, -23.5)
+                -- elseif mask < 4 then
+                --     wagon.LightsOverride[30][2] = Vector(465, -45, -23.5)
+                --     wagon.LightsOverride[31][2] = Vector(465, 45, -23.5)
+                --     wagon.LightsOverride[32][2] = Vector(465, 0, 52)
+                -- end
 
                 wagon.MaskType = mask
             end
@@ -332,7 +333,7 @@ function RECIPE:Inject(ent)
 
                 maxLights = 25
             end
-
+            -- впизду, все равно в эксте новые лампочки)))))))))))))))))))
             for i = 11, 13 do
                 local col = wagon:GetNW2Vector("lampD" .. i)
                 if wagon.LightsOverride[i].vec ~= col then
