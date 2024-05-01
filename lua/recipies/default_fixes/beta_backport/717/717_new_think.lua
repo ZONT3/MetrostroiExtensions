@@ -210,7 +210,6 @@ function RECIPE:Inject(ent)
                 --     wagon.LightsOverride[31][2] = Vector(465, 45, -23.5)
                 --     wagon.LightsOverride[32][2] = Vector(465, 0, 52)
                 -- end
-
                 wagon.MaskType = mask
             end
 
@@ -333,6 +332,7 @@ function RECIPE:Inject(ent)
 
                 maxLights = 25
             end
+
             -- впизду, все равно в эксте новые лампочки)))))))))))))))))))
             for i = 11, 13 do
                 local col = wagon:GetNW2Vector("lampD" .. i)
@@ -827,4 +827,9 @@ function RECIPE:Inject(ent)
             return wagon.RetVal
         end
     end
+end
+
+function RECIPE:InjectNeeded()
+    if Metrostroi.Version > 1537278077 then return false end
+    return true
 end

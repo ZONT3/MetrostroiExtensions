@@ -425,3 +425,8 @@ function RECIPE:Inject(ent)
         if val == 4 then wagon.Pneumatic.BrakeLinePressure = 5.2 end
     end
 end
+
+function RECIPE:InjectNeeded()
+    if Metrostroi.Version > 1537278077 then return false end
+    return true
+end

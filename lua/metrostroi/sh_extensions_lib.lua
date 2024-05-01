@@ -184,7 +184,7 @@ function MEL.DefineRecipe(name, train_type)
 end
 
 local function findRecipeFiles(folder, recipe_files)
-    local found_files, found_folders = file.Find(folder .. "/*", "LUA")
+    local found_files, found_folders = file.Find(folder .. "/*.lua", "LUA")
     for _, recipe_file in pairs(found_files) do
         table.insert(recipe_files, folder .. "/" .. recipe_file)
     end
@@ -201,7 +201,7 @@ local function initRecipe(recipe)
     recipe:Init()
     if not ConVarExists("metrostroi_ext_" .. recipe.ClassName) then
         -- add convar that will be able to disable that recipe on server
-        CreateConVar("metrostroi_ext_" .. recipe.ClassName, 1, {FCVAR_ARCHIVE, FCVAR_REPLICATED}, "Status of Metrostroi extensions recipe \"" .. recipe.ClassName .. "\": " .. recipe.Description .. ".", 0, 1)
+        CreateConVar("metrostroi_ext_" .. recipe.ClassName, 1, {FCVAR_ARCHIVE, FCVAR_REPLICATED}, "Status of Metrostroi Extensions recipe \"" .. recipe.ClassName .. "\": " .. recipe.Description .. ".", 0, 1)
     end
 
     if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then

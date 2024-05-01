@@ -294,22 +294,27 @@ local newLights = {
 function RECIPE:Inject(ent)
     if CLIENT then
         local lights = ent.Lights
-        lights[3].hidden = nil--"salon"
-        lights[4].hidden = nil--"salon"
+        lights[3].hidden = nil --"salon"
+        lights[4].hidden = nil --"salon"
         lights[40].farz = 7
-        lights[40].hidden = nil--"pult_mvm_classic"
+        lights[40].hidden = nil --"pult_mvm_classic"
         lights[41].farz = 7
-        lights[41].hidden = nil--"pult_mvm_classic"
+        lights[41].hidden = nil --"pult_mvm_classic"
         lights[42].farz = 7
-        lights[42].hidden = nil--"pult_mvm_classic"
+        lights[42].hidden = nil --"pult_mvm_classic"
         lights[43].farz = 7
-        lights[43].hidden = nil--"pult_mvm_classic"
+        lights[43].hidden = nil --"pult_mvm_classic"
         lights[44].farz = 5.05
-        lights[44].hidden = nil--"pult_mvm_classic"
+        lights[44].hidden = nil --"pult_mvm_classic"
         lights[45].farz = 5.05
-        lights[45].hidden = nil--"pult_mvm_classic"
+        lights[45].hidden = nil --"pult_mvm_classic"
         for id, light in pairs(newLights) do
             lights[id] = light
         end
     end
+end
+
+function RECIPE:InjectNeeded()
+    if Metrostroi.Version > 1537278077 then return false end
+    return true
 end

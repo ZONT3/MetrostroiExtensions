@@ -9,7 +9,7 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-MEL.DefineRecipe("717_sprites", "gmod_subway_81-717_mvm")
+MEL.DefineRecipe("717_buttonmaps", "gmod_subway_81-717_mvm")
 function RECIPE:Inject(ent)
     if SERVER then return end
     local strength = {
