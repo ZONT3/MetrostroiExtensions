@@ -346,7 +346,6 @@ function RECIPE:Inject(ent)
                 maxLights = 25
             end
 
-            -- впизду, все равно в эксте новые лампочки)))))))))))))))))))
             for i = 11, 13 do
                 local col = wagon:GetNW2Vector("lampD" .. i)
                 if wagon.LightsOverride[i].vec ~= col then

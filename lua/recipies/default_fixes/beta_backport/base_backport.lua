@@ -29,6 +29,84 @@ local C_AA = GetConVar("mat_antialias")
 local C_Sprites = GetConVar("metrostroi_sprites")
 local C_DisableSeatShadows = GetConVar("metrostroi_disableseatshadows")
 function RECIPE:Init()
+    hook.Remove("PopulateToolMenu", "Metrostroi cpanel")
+    -- Build admin panel
+    local function AdminPanel(panel)
+        if not LocalPlayer():IsAdmin() then return end
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.RequireThirdRail"), "metrostroi_train_requirethirdrail")
+    end
+
+    -- Build regular client panel
+    local function ClientPanel(panel)
+        panel:ClearControls()
+        panel:SetPadding(0)
+        panel:SetSpacing(0)
+        panel:Dock(FILL)
+        local Lang = vgui.Create("DComboBox")
+        Lang:SetValue(Metrostroi.CurrentLanguageTable and Metrostroi.CurrentLanguageTable.lang or Metrostroi.GetPhrase("Panel.Language"))
+        Lang:SetColor(color_black)
+        for k, v in pairs(Metrostroi.Languages) do
+            Lang:AddChoice(v.lang, k)
+        end
+
+        Lang.OnSelect = function(Lang, index, value, data)
+            Metrostroi.ChoosedLang = data
+            RunConsoleCommand("metrostroi_language", Metrostroi.ChoosedLang)
+        end
+
+        panel:AddItem(Lang)
+        panel:ControlHelp(Metrostroi.GetPhrase("AuthorText"))
+        if Metrostroi.HasPhrase("AuthorTextMetadmin") then panel:ControlHelp(Metrostroi.GetPhrase("AuthorTextMetadmin")) end
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DrawCams"), "metrostroi_drawcams")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DisableHUD"), "metrostroi_disablehud")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DisableCamAccel"), "metrostroi_disablecamaccel")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DisableHoverText"), "metrostroi_disablehovertext")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DisableHoverTextP"), "metrostroi_disablehovertextpos")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DisableSeatShadows"), "metrostroi_disableseatshadows")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.ScreenshotMode"), "metrostroi_screenshotmode")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.ShadowsHeadlight"), "metrostroi_shadows1")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.RedLights"), "metrostroi_shadows3")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.ShadowsOther"), "metrostroi_shadows2")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.PanelLights"), "metrostroi_shadows4")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.PanelSprites"), "metrostroi_sprites")
+        local DRouteNumber = panel:TextEntry(Metrostroi.GetPhrase("Panel.RouteNumber"), "metrostroi_route_number")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.MinimizedShow"), "metrostroi_minimizedshow")
+        panel:NumSlider(Metrostroi.GetPhrase("Panel.FOV"), "metrostroi_cabfov", 65, 100)
+        panel:NumSlider(Metrostroi.GetPhrase("Panel.Z"), "metrostroi_cabz", -10, 10)
+        panel:NumSlider(Metrostroi.GetPhrase("Panel.RenderDistance"), "metrostroi_renderdistance", 960, 3072)
+        panel:NumSlider(Metrostroi.GetPhrase("Panel.RenderSignals"), "metrostroi_signal_distance", 6144, 16384)
+        panel:Button(Metrostroi.GetPhrase("Panel.ReloadClient"), "metrostroi_reload_client", true)
+        function DRouteNumber:OnChange()
+            local oldval = self:GetValue()
+            local NewValue = ""
+            for i = 1, math.min(3, #oldval) do
+                NewValue = NewValue .. ((oldval[i] or ""):upper():match("[%d]+") or "")
+            end
+
+            local oldpos = self:GetCaretPos()
+            self:SetText(NewValue)
+            self:SetCaretPos(math.min(#NewValue, oldpos, 3))
+        end
+    end
+
+    local function ClientAdvanced(panel)
+        panel:ClearControls()
+        panel:SetPadding(0)
+        panel:SetSpacing(0)
+        panel:Dock(FILL)
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DrawDebugInfo"), "metrostroi_drawdebug")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DrawSignalDebugInfo"), "metrostroi_drawsignaldebug")
+        panel:Button(Metrostroi.GetPhrase("Panel.CheckAddons"), "metrostroi_addons_check")
+        panel:Button(Metrostroi.GetPhrase("Panel.ReloadLang"), "metrostroi_language_reload", true)
+        panel:NumSlider(Metrostroi.GetPhrase("Panel.SoftDraw"), "metrostroi_softdrawmultipier", 25, 400)
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.SoftReloadLang"), "metrostroi_language_softreload")
+    end
+
+    hook.Add("PopulateToolMenu", "Metrostroi cpanel", function()
+        spawnmenu.AddToolMenuOption("Utilities", "Metrostroi", "metrostroi_admin_panel", Metrostroi.GetPhrase("Panel.Admin"), "", "", AdminPanel)
+        spawnmenu.AddToolMenuOption("Utilities", "Metrostroi", "metrostroi_client_panel", Metrostroi.GetPhrase("Panel.Client"), "", "", ClientPanel)
+        spawnmenu.AddToolMenuOption("Utilities", "Metrostroi", "metrostroi_clientadv_panel", Metrostroi.GetPhrase("Panel.ClientAdvanced"), "", "", ClientAdvanced)
+    end)
 end
 
 function RECIPE:Inject(ent, entclass)
@@ -152,7 +230,7 @@ function RECIPE:Inject(ent, entclass)
             end
 
             if not IsValid(snd) then return end
-            if (volume <= 0) or (pitch <= 0) then
+            if volume <= 0 or pitch <= 0 then
                 if snd:GetTime() > 0 then PauseBASS(snd) end
                 return
             end
@@ -317,7 +395,7 @@ function RECIPE:Inject(ent, entclass)
                 if (train.Hidden[button.PropName] or train.Hidden.button[button.PropName]) and (not train.ClientProps[button.PropName] or not train.ClientProps[button.PropName].config or not train.ClientProps[button.PropName].config.staylabel) then continue end
                 if (train.Hidden[button.ID] or train.Hidden.button[button.ID]) and (not train.ClientProps[button.ID] or not train.ClientProps[button.ID].config or not train.ClientProps[button.ID].config.staylabel) then continue end
                 if button.w and button.h then
-                    if panel.aimX >= button.x and panel.aimX <= (button.x + button.w) and panel.aimY >= button.y and panel.aimY <= (button.y + button.h) then
+                    if panel.aimX >= button.x and panel.aimX <= button.x + button.w and panel.aimY >= button.y and panel.aimY <= button.y + button.h then
                         buttonTarget = button
                         --table.insert(foundbuttons,{button,panel.aimedAt})
                     end
@@ -340,7 +418,7 @@ function RECIPE:Inject(ent, entclass)
             vWorldPos:Rotate(Angle(0, -aRot.y, 0))
             vWorldPos:Rotate(Angle(-aRot.p, 0, 0))
             vWorldPos:Rotate(Angle(0, 0, -aRot.r))
-            return vWorldPos.x / vScale, (-vWorldPos.y) / vScale
+            return vWorldPos.x / vScale, -vWorldPos.y / vScale
         end
 
         hook.Remove("Think", "metrostroi-cabin-panel")
@@ -638,7 +716,7 @@ function RECIPE:Inject(ent, entclass)
                 if wagon:IsDormant() then continue end
                 if MetrostroiStarted and MetrostroiStarted ~= true or wagon.RenderBlock then
                     if not inSeat then
-                        local timeleft = math.max(0, (MetrostroiStarted and MetrostroiStarted ~= true) and 3 - (RealTime() - MetrostroiStarted) or 3 - (RealTime() - wagon.RenderBlock)) + 0.99
+                        local timeleft = math.max(0, MetrostroiStarted and MetrostroiStarted ~= true and 3 - (RealTime() - MetrostroiStarted) or 3 - (RealTime() - wagon.RenderBlock)) + 0.99
                         cam.Start3D2D(wagon:LocalToWorld(Vector(0, -150, 100)), wagon:LocalToWorldAngles(Angle(0, 90, 90)), 1.5)
                         draw.SimpleText("Wait, train will be available across " .. string.NiceTime(timeleft))
                         cam.End3D2D()
@@ -972,7 +1050,7 @@ function RECIPE:Inject(ent, entclass)
                 end
             end
 
-            local disableSeatShadows = false
+            local disableSeatShadows = C_DisableSeatShadows:GetBool()
             if wagon.DisableSeatShadows ~= disableSeatShadows then
                 for i = 1, wagon:GetNW2Int("seats", 0) do
                     local seat = wagon:GetNW2Entity("seat_" .. i)
@@ -1039,7 +1117,7 @@ function RECIPE:Inject(ent, entclass)
 
                         if i == 1 then
                             local no1 = ntbl.loop and ntbl.loop == 0
-                            local endt = (ntbl.loop and snd:GetTime() > ntbl.loop or snd:GetTime() / snd:GetLength() >= 0.8) or no1
+                            local endt = ntbl.loop and snd:GetTime() > ntbl.loop or snd:GetTime() / snd:GetLength() >= 0.8 or no1
                             if stbl.state and stbl.volume < v.volume and not no1 then
                                 if snd:GetState() ~= GMOD_CHANNEL_PLAYING then
                                     snd:Play()
@@ -1121,7 +1199,7 @@ function RECIPE:Inject(ent, entclass)
                                         wagon:SetPitchVolume(v[i].sound, v.pitch, v[i].volume, tbl)
                                     end
                                 end
-                            elseif (not stbl.state or (snd:GetTime() / snd:GetLength() >= 0.9)) and stbl.time then
+                            elseif (not stbl.state or snd:GetTime() / snd:GetLength() >= 0.9) and stbl.time then
                                 stbl.time = nil
                                 stbl.volume = 0
                                 stbl.state = false
@@ -1244,7 +1322,7 @@ function RECIPE:Inject(ent, entclass)
 
                 for k, v in pairs(wagon.ButtonMap) do
                     if not v.pos then continue end
-                    if not v.hide or (v.nohide or screenshotMode) then
+                    if not v.hide or v.nohide or screenshotMode then
                         wagon.HiddenPanelsDistance[k] = v.screenHide
                         continue
                     end
@@ -1277,7 +1355,7 @@ function RECIPE:Inject(ent, entclass)
                         ent:SetPos(wagon:LocalToWorld(Vector(v.x, v.y, wagon:GetStandingArea().z)))
                         ent:SetAngles(wagon:LocalToWorldAngles(Angle(0, v.y < 0 and -90 or 90, 0)))
                         ent:SetSkin(math.floor(ent:SkinCount() * math.random()))
-                        ent:SetModelScale(0.98 + (-0.02 + 0.04 * math.random()), 0)
+                        ent:SetModelScale(0.98 + -0.02 + 0.04 * math.random(), 0)
                         ent:SetParent(wagon)
                         stucked[i] = ent
                         if math.random() > 0.99 then
@@ -1300,7 +1378,7 @@ function RECIPE:Inject(ent, entclass)
                         ent:SetPos(wagon:LocalToWorld(Vector(v.x, v.y, wagon:GetStandingArea().z)))
                         ent:SetAngles(wagon:LocalToWorldAngles(Angle(0, v.y < 0 and -90 or 90, 0)))
                         ent:SetSkin(math.floor(ent:SkinCount() * math.random()))
-                        ent:SetModelScale(0.98 + (-0.02 + 0.04 * math.random()), 0)
+                        ent:SetModelScale(0.98 + -0.02 + 0.04 * math.random(), 0)
                         ent:SetParent(wagon)
                         stucked[-i] = ent
                         if math.random() > 0.99 then
@@ -1343,7 +1421,7 @@ function RECIPE:Inject(ent, entclass)
                             --ent.Spawned = true
                         end)]]
                         ent:SetSkin(math.floor(ent:SkinCount() * math.random()))
-                        ent:SetModelScale(0.98 + (-0.02 + 0.04 * math.random()), 0)
+                        ent:SetModelScale(0.98 + -0.02 + 0.04 * math.random(), 0)
                         ent:SetParent(wagon)
                         table.insert(wagon.PassengerPositions, pos)
                         table.insert(wagon.PassengerEnts, ent)
@@ -1411,7 +1489,7 @@ function RECIPE:Inject(ent, entclass)
             --if wagon["_anim_old_"..id] == value then return wagon["_anim_old_"..id] end
             -- Generate sticky value
             if stickyness and damping then
-                if (math.abs(anims[id].P - value) < stickyness) and anims[id].stuck then
+                if math.abs(anims[id].P - value) < stickyness and anims[id].stuck then
                     value = anims[id].P
                     anims[id].stuck = false
                 else
@@ -1444,7 +1522,7 @@ function RECIPE:Inject(ent, entclass)
                 if anims[id].V < -max_speed then anims[id].V = -max_speed end
                 val = math.max(0, math.min(1, val + anims[id].V * dT))
                 -- Check if value got stuck
-                if (math.abs(dX2dT) < 0.001) and stickyness and (dT > 0) then anims[id].stuck = true end
+                if math.abs(dX2dT) < 0.001 and stickyness and dT > 0 then anims[id].stuck = true end
             end
 
             local retval = min + (max - min) * val
@@ -1477,7 +1555,7 @@ function RECIPE:Inject(ent, entclass)
         function ent.ShowHideSmooth(wagon, clientProp, value, color)
             if wagon.Hidden.override[clientProp] then return value end
             if not IsValid(wagon.ClientEnts[clientProp]) and wagon.SmoothHide[clientProp] then wagon.SmoothHide[clientProp] = 0 end
-            if wagon.SmoothHide[clientProp] and (wagon.SmoothHide[clientProp] == value and not color) then return value end
+            if wagon.SmoothHide[clientProp] and wagon.SmoothHide[clientProp] == value and not color then return value end
             wagon.SmoothHide[clientProp] = value
             wagon.Hidden.anim[clientProp] = value == 0
             if value > 0 and not IsValid(wagon.ClientEnts[clientProp]) and wagon:ShowHide(clientProp, true) then wagon.SmoothHide[clientProp] = nil end
@@ -1519,7 +1597,7 @@ function RECIPE:Inject(ent, entclass)
                         wagon.LightBrightness[index] = brightness
                     end
                     return
-                elseif (lightData[1] == "glow") or (lightData[1] == "light") then
+                elseif lightData[1] == "glow" or lightData[1] == "light" then
                     local brightness = brightness * (lightData.brightness or 0.5)
                     if brightness ~= wagon.LightBrightness[index] then
                         local light = wagon.GlowingLights[index]
@@ -1554,7 +1632,7 @@ function RECIPE:Inject(ent, entclass)
                 light:SetSize(lightData.scale or 1.0)
                 light:Set3D(false)
                 wagon.GlowingLights[index] = light
-            elseif (lightData[1] == "headlight") and (not lightData.backlight or wagon.RedLights) and (not lightData.panellight or wagon.OtherLights) then
+            elseif lightData[1] == "headlight" and (not lightData.backlight or wagon.RedLights) and (not lightData.panellight or wagon.OtherLights) then
                 local light = ProjectedTexture()
                 light:SetPos(wagon:LocalToWorld(lightData[2]))
                 light:SetAngles(wagon:LocalToWorldAngles(lightData[3]))
@@ -1755,7 +1833,7 @@ function RECIPE:Inject(ent, entclass)
             wagon.SpeedSign = 0
             wagon.Acceleration = 0
             -- Initialize train
-            if Turbostroi and (not wagon.NoPhysics) and not wagon.DontAccelerateSimulation then Turbostroi.InitializeTrain(wagon) end
+            if Turbostroi and not wagon.NoPhysics and not wagon.DontAccelerateSimulation then Turbostroi.InitializeTrain(wagon) end
             if not Turbostroi or wagon.DontAccelerateSimulation then wagon.DataCache = {} end
             -- Passenger related data (must be set by derived trains to allow boarding)
             wagon.LeftDoorsOpen = false
@@ -1791,7 +1869,7 @@ function RECIPE:Inject(ent, entclass)
                 if rTIsFront and rC and rC.NoFrontEKK then return end
                 if rC and conf and conf.EKKType ~= rC.EKKType then return end
                 if rTIsFront and rT.FrontCoupledBogeyDisconnect or not rTIsFront and rT.RearCoupledBogeyDisconnect or wagon.RearCoupledBogeyDisconnect then return end
-                if not IsValid(wagon.RearCouple) or wagon.RearCouple:ElectricDisconnected() or (rT.FrontTrain == wagon and (not IsValid(rT.FrontCouple) or rT.FrontCouple:ElectricDisconnected()) or rT.RearTrain == wagon and (not IsValid(rT.RearCouple) or rT.RearCouple:ElectricDisconnected())) then return end
+                if not IsValid(wagon.RearCouple) or wagon.RearCouple:ElectricDisconnected() or rT.FrontTrain == wagon and (not IsValid(rT.FrontCouple) or rT.FrontCouple:ElectricDisconnected()) or rT.RearTrain == wagon and (not IsValid(rT.RearCouple) or rT.RearCouple:ElectricDisconnected()) then return end
             else
                 local fT = wagon.FrontTrain
                 local fC = fT.SubwayTrain
@@ -1800,7 +1878,7 @@ function RECIPE:Inject(ent, entclass)
                 if conf.NoFrontEKK or fTIsFront and fC and fC.NoFrontEKK then return end
                 if fC and conf and conf.EKKType ~= fC.EKKType then return end
                 if fTIsFront and fT.FrontCoupledBogeyDisconnect or not fTIsFront and fT.RearCoupledBogeyDisconnect or wagon.FrontCoupledBogeyDisconnect then return end
-                if IsValid(wagon.FrontCouple) and wagon.FrontCouple:ElectricDisconnected() or (fT.FrontTrain == wagon and (not IsValid(fT.FrontCouple) or fT.FrontCouple:ElectricDisconnected()) or fT.RearTrain == wagon and (not IsValid(fT.RearCouple) or fT.RearCouple:ElectricDisconnected())) then return end
+                if IsValid(wagon.FrontCouple) and wagon.FrontCouple:ElectricDisconnected() or fT.FrontTrain == wagon and (not IsValid(fT.FrontCouple) or fT.FrontCouple:ElectricDisconnected()) or fT.RearTrain == wagon and (not IsValid(fT.RearCouple) or fT.RearCouple:ElectricDisconnected()) then return end
             end
             return true
         end
@@ -1888,7 +1966,7 @@ function RECIPE:Inject(ent, entclass)
                     local first, last = wagon.JointPositions[1], wagon.JointPositions[#wagon.JointPositions]
                     --wagon.Joints = {}
                     for i, j in ipairs(wagon.Joints) do
-                        j.dist = j.dist + wagon.DeltaTime * (-wagon:GetVelocity():Dot(wagon:GetAngles():Forward()))
+                        j.dist = j.dist + wagon.DeltaTime * -wagon:GetVelocity():Dot(wagon:GetAngles():Forward())
                         local dist = j.dist
                         local ch = false
                         for iD, jD in ipairs(wagon.JointPositions) do
@@ -1898,9 +1976,9 @@ function RECIPE:Inject(ent, entclass)
                                 if 1 < iD and iD < #wagon.JointPositions then
                                     ch = iD
                                 else
-                                    if (iD == 1 and dist > first) and IsValid(wagon.FrontTrain) then
+                                    if iD == 1 and dist > first and IsValid(wagon.FrontTrain) then
                                         wagon.FrontTrain:CreateJointSound(j.type)
-                                    elseif (iD ~= 1 and dist < last) and IsValid(wagon.RearTrain) then
+                                    elseif iD ~= 1 and dist < last and IsValid(wagon.RearTrain) then
                                         wagon.RearTrain:CreateJointSound(j.type)
                                     end
 
@@ -1953,7 +2031,7 @@ function RECIPE:Inject(ent, entclass)
             if Turbostroi and not wagon.DontAccelerateSimulation then
                 -- Run iterations on systems simulation
                 local iterationsCount = 1
-                if (not wagon.Schedule) or (iterationsCount ~= wagon.Schedule.IterationsCount) then
+                if not wagon.Schedule or iterationsCount ~= wagon.Schedule.IterationsCount then
                     wagon.Schedule = {
                         IterationsCount = iterationsCount
                     }
@@ -1972,7 +2050,7 @@ function RECIPE:Inject(ent, entclass)
                         wagon.Schedule[iteration] = {}
                         -- Populate schedule
                         for k, v in pairs(wagon.Systems) do
-                            if v.DontAccelerateSimulation and (iteration % (maxIterations / (v.SubIterations or 1))) == 0 then table.insert(wagon.Schedule[iteration], v) end
+                            if v.DontAccelerateSimulation and iteration % (maxIterations / (v.SubIterations or 1)) == 0 then table.insert(wagon.Schedule[iteration], v) end
                         end
                     end
                 end
@@ -1987,7 +2065,7 @@ function RECIPE:Inject(ent, entclass)
             else
                 -- Output all variable values
                 for sys_name, system in pairs(wagon.Systems) do
-                    if system.OutputsList and (not system.DontAccelerateSimulation) then
+                    if system.OutputsList and not system.DontAccelerateSimulation then
                         for _, name in pairs(system.OutputsList) do
                             local value = system[name] or 0
                             --if type(value) == "boolean" then value = value and 1 or 0 end
@@ -2002,7 +2080,7 @@ function RECIPE:Inject(ent, entclass)
 
                 -- Run iterations on systems simulation
                 local iterationsCount = 1
-                if (not wagon.Schedule) or (iterationsCount ~= wagon.Schedule.IterationsCount) then
+                if not wagon.Schedule or iterationsCount ~= wagon.Schedule.IterationsCount then
                     wagon.Schedule = {
                         IterationsCount = iterationsCount
                     }
@@ -2019,7 +2097,7 @@ function RECIPE:Inject(ent, entclass)
                         wagon.Schedule[iteration] = {}
                         -- Populate schedule
                         for k, v in pairs(wagon.Systems) do
-                            if (iteration % (maxIterations / SystemIterations[k])) == 0 then table.insert(wagon.Schedule[iteration], v) end
+                            if iteration % (maxIterations / SystemIterations[k]) == 0 then table.insert(wagon.Schedule[iteration], v) end
                         end
                     end
                 end
@@ -2160,10 +2238,10 @@ function RECIPE:Inject(ent, entclass)
 
             if wagon.Electric and wagon.Electric.Overheat1 then
                 -- Draw overheat of the engines FIXME
-                local smoke_intensity = wagon.Electric.Overheat1 * ((wagon.Electric.T1 - 200) / 400) or wagon.Electric.Overheat2 * ((wagon.Electric.T2 - 200) / 400) or 0
+                local smoke_intensity = wagon.Electric.Overheat1 * (wagon.Electric.T1 - 200) / 400 or wagon.Electric.Overheat2 * (wagon.Electric.T2 - 200) / 400 or 0
                 -- Generate smoke
                 wagon.PrevSmokeTime = wagon.PrevSmokeTime or CurTime()
-                if (smoke_intensity > 0.0) and (CurTime() - wagon.PrevSmokeTime > 0.5 + 4.0 * (1 - smoke_intensity)) then
+                if smoke_intensity > 0.0 and CurTime() - wagon.PrevSmokeTime > 0.5 + 4.0 * (1 - smoke_intensity) then
                     wagon.PrevSmokeTime = CurTime()
                     ParticleEffect("generic_smoke", wagon:LocalToWorld(Vector(100 * math.random(), 40, -80)), Angle(0, 0, 0), wagon)
                 end

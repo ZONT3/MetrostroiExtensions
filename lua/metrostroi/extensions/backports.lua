@@ -10,15 +10,21 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 local function newConvars()
-    CreateConVar("metrostroi_maxtrains", 3, {FCVAR_ARCHIVE}, "Maximum of allowed trains")
-    CreateConVar("metrostroi_maxwagons", 3, {FCVAR_ARCHIVE}, "Maximum of allowed wagons in 1 train")
-    CreateConVar("metrostroi_maxtrains_onplayer", 1, {FCVAR_ARCHIVE}, "Maximum of allowed trains by player")
-    if SERVER then return end
-    CreateClientConVar("metrostroi_shadows4", 0, true)
-    CreateClientConVar("metrostroi_sprites", 1, true)
-    CreateClientConVar("metrostroi_cabz", 0, true)
-    CreateClientConVar("metrostroi_disableseatshadows", 0, true)
-    CreateClientConVar("metrostroi_disablehovertextpos", 0, true)
+    if SERVER then
+        CreateConVar("metrostroi_maxtrains", 3, {FCVAR_ARCHIVE}, "Maximum of allowed trains")
+        CreateConVar("metrostroi_maxwagons", 3, {FCVAR_ARCHIVE}, "Maximum of allowed wagons in 1 train")
+        CreateConVar("metrostroi_maxtrains_onplayer", 1, {FCVAR_ARCHIVE}, "Maximum of allowed trains by player")
+    end
+
+    if CLIENT then
+        CreateClientConVar("metrostroi_shadows4", 0, true)
+        CreateClientConVar("metrostroi_sprites", 1, true)
+        CreateClientConVar("metrostroi_cabz", 0, true)
+        CreateClientConVar("metrostroi_disableseatshadows", 0, true)
+        CreateClientConVar("metrostroi_disablehovertextpos", 0, true)
+        CreateClientConVar("metrostroi_signal_distance",8192,true)
+        CreateClientConVar("metrostroi_route_number",61,true,true)
+    end
 end
 
 local function newSpriteEnt()
@@ -147,7 +153,7 @@ local function newDLightEnt()
     end
 
     function ENT:SetLightStrength(br)
-        self.Strength = br
+        self.Strength = br or 1
     end
 
     function ENT:SetBrightness(br)

@@ -311,8 +311,13 @@ function RECIPE:Inject(ent)
         lights[45].farz = 5.05
         lights[45].hidden = "pult_mvm_classic"
         for id, light in pairs(newLights) do
-            lights[id] = light
+            ent.Lights[id] = light
         end
+    end
+    if SERVER then
+        MEL.InjectIntoServerFunction(ent, "Initialize", function(wagon)
+            wagon.Lights = nil
+        end, 1)
     end
 end
 
