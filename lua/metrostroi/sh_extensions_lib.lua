@@ -147,6 +147,7 @@ for _, moduleName in pairs(methodModules) do
         include("metrostroi/extensions/" .. moduleName)
     end
 end
+
 MEL.ApplyBackports()
 function MEL.GetEntsByTrainType(trainType)
     if not trainType then
@@ -185,11 +186,13 @@ end
 local function findRecipeFiles(folder, recipe_files)
     local found_files, found_folders = file.Find(folder .. "/*", "LUA")
     for _, recipe_file in pairs(found_files) do
+        if string.GetExtensionFromFilename(recipe_file) ~= "lua" then continue end
         table.insert(recipe_files, folder .. "/" .. recipe_file)
     end
 
     if found_folders and #found_folders > 0 then
         for _, found_folder in pairs(found_folders) do
+            if found_folder == "disabled" then continue end
             findRecipeFiles(folder .. "/" .. found_folder, recipe_files)
         end
     end
@@ -199,13 +202,18 @@ local function initRecipe(recipe)
     recipe:Init()
     if not ConVarExists("metrostroi_ext_" .. recipe.ClassName) then
         -- add convar that will be able to disable that recipe on server
-        CreateConVar("metrostroi_ext_" .. recipe.ClassName, 1, {FCVAR_ARCHIVE, FCVAR_REPLICATED}, "Status of Metrostroi extensions recipe \"" .. recipe.ClassName .. "\": " .. recipe.Description .. ".", 0, 1)
+        CreateConVar("metrostroi_ext_" .. recipe.ClassName, 1, {FCVAR_ARCHIVE, FCVAR_REPLICATED}, "Status of Metrostroi Extensions recipe \"" .. recipe.ClassName .. "\": " .. recipe.Description .. ".", 0, 1)
     end
 
     if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then
         -- if recipe enabled: 
         -- add it to inject stack
-        table.insert(MEL.InjectStack, recipe)
+        if recipe.BackportPriority then
+            table.insert(MEL.InjectStack, 1, recipe)
+        else
+            table.insert(MEL.InjectStack, recipe)
+        end
+
         -- add recipe specific things
         for key, value in pairs(recipe.Specific) do
             MEL.RecipeSpecific[key] = value
@@ -277,12 +285,12 @@ local function discoverRecipies()
     end
 end
 
-
 local prefixes = {
     ["gmod_subway"] = true,
     ["gmod_train_"] = true,
     ["gmod_track_"] = true
 }
+
 local function getEntTables()
     -- we are using this method cause default metrotroi table caused problems
     for entclass in pairs(scripted_ents.GetList()) do
@@ -327,7 +335,7 @@ local function injectRandomFieldHelper(entclass)
         end
 
         math.randomseed(os.time())
-    end, 1)
+    end, -1)
 end
 
 local function injectFieldUpdateHelper(entclass)

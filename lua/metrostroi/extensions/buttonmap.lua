@@ -19,6 +19,7 @@ function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang, reload_name)
 
         buttonmap.pos = new_pos
         if new_ang then buttonmap.ang = new_ang end
+        -- TODO: ПЕРЕПИСАТЬ НАХУЙ
         if not buttonmap.buttons then return end
         for _, button in pairs(buttonmap.buttons) do
             MEL.UpdateCallback(ent, button.ID, function(wagon, cent) cent:SetPos(wagon:LocalToWorld(Metrostroi.PositionFromPanel(buttonmap_name, button.ID, 0, 0, 0, wagon))) end)
@@ -45,11 +46,19 @@ function MEL.NewButtonMapButton(ent, buttonmap_name, button_data)
             MEL._LogError(Format("no such buttonmap: %s", buttonmap_name))
             return
         end
-        for i, button in pairs(buttonmap.buttons) do
-            if button.ID == button_data.ID then
-                button = button_data
-                return
+        local ent_class = MEL.GetEntclass(ent)
+        local button_index = MEL.ButtonmapButtonMappigns[ent_class][buttonmap_name]
+        if not button_index then
+            for i, button in pairs(buttonmap.buttons) do
+                if button.ID == button_data.ID then
+                    button_index = i
+                    return
+                end
             end
+        end
+        if button_index then
+            buttonmap.buttons[button_index] = button_data
+            return
         end
         table.insert(buttonmap.buttons, button_data)
     end

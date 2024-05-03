@@ -12,13 +12,13 @@
 local LanguageIDC = MEL.Constants.LanguageID
 local function handle_buttons(id_parts, id, phrase, ent_table, ent_class)
     local name = id_parts[LanguageIDC.Buttons.NAME]
-    if not ent_table[name] then return end
-    if not ent_table[name].buttons then return end
-    for _, button in pairs(ent_table.ButtonMap[name].buttons) do
-        if button.ID == tbl[LanguageIDC.Buttons.ID] then
-            button.tooltip = phrase
-            return
-        end
+    local buttonmap = ent_table.ButtonMap[name]
+    if not buttonmap then return end
+    if not buttonmap.buttons then return end
+    local button = buttonmap[MEL.ButtonmapButtonMappigns[ent_class][name]]
+    if button then
+        button.tooltip = phrase
+        return
     end
 end
 

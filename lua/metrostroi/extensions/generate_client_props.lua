@@ -35,15 +35,15 @@ local function newGenerateClientProps()
                 --if reti > 8 then reti=0; ret=ret.."\n" end
                 if buttons.tooltipFunc then
                     local func = buttons.tooltipFunc
-                    buttons.tooltipState = function(ent)
-                        local str = func(ent)
+                    buttons.tooltipState = function(wag)
+                        local str = func(wag)
                         if not str then return "" end
                         return "\n[" .. str:gsub("\n", "]\n[") .. "]"
                     end
                 elseif buttons.varTooltip then
                     local states = buttons.states or {"Train.Buttons.Off", "Train.Buttons.On"}
                     local count = #states - 1
-                    buttons.tooltipState = function(ent) return Format("\n[%s]", Metrostroi.GetPhrase(states[math.floor(buttons.varTooltip(ent) * count + 0.5) + 1]):gsub("\n", "]\n[")) end
+                    buttons.tooltipState = function(wag) return Format("\n[%s]", Metrostroi.GetPhrase(states[math.floor(buttons.varTooltip(wag) * count + 0.5) + 1]):gsub("\n", "]\n[")) end
                 elseif buttons.var then
                     local var = buttons.var
                     local st1, st2 = "Train.Buttons.Off", "Train.Buttons.On"
@@ -52,7 +52,7 @@ local function newGenerateClientProps()
                         st2 = buttons.states[2]
                     end
 
-                    buttons.tooltipState = function(ent) return Format("\n[%s]", Metrostroi.GetPhrase(ent:GetPackedBool(var) and st2 or st1):gsub("\n", "]\n[")) end
+                    buttons.tooltipState = function(wag) return Format("\n[%s]", Metrostroi.GetPhrase(wag:GetPackedBool(var) and st2 or st1):gsub("\n", "]\n[")) end
                 end
 
                 if buttons.model then
@@ -60,8 +60,8 @@ local function newGenerateClientProps()
                     local name = config.name or buttons.ID
                     if config.tooltipFunc then
                         local func = config.tooltipFunc
-                        buttons.tooltipState = function(ent)
-                            local str = func(ent)
+                        buttons.tooltipState = function(wag)
+                            local str = func(wag)
                             if not str then return "" end
                             return "\n[" .. str:gsub("\n", "]\n[") .. "]"
                         end
@@ -70,9 +70,9 @@ local function newGenerateClientProps()
                         local count = #states - 1
                         local func = config.getfunc
                         if config.varTooltip == true and func then
-                            buttons.tooltipState = function(ent) return Format("\n[%s]", Metrostroi.GetPhrase(states[math.floor(config.func(ent) * count + 0.5) + 1]):gsub("\n", "]\n[")) end
+                            buttons.tooltipState = function(wag) return Format("\n[%s]", Metrostroi.GetPhrase(states[math.floor(config.func(wag) * count + 0.5) + 1]):gsub("\n", "]\n[")) end
                         elseif config.varTooltip ~= true then
-                            buttons.tooltipState = function(ent) return Format("\n[%s]", Metrostroi.GetPhrase(states[math.floor(config.varTooltip(ent) * count + 0.5) + 1]):gsub("\n", "]\n[")) end
+                            buttons.tooltipState = function(wag) return Format("\n[%s]", Metrostroi.GetPhrase(states[math.floor(config.varTooltip(wag) * count + 0.5) + 1]):gsub("\n", "]\n[")) end
                         end
                     elseif config.var and (not config.noTooltip and not buttons.ID:find("Set") or config.noTooltip == false) then
                         local var = config.var
@@ -82,7 +82,7 @@ local function newGenerateClientProps()
                             st2 = config.states[2]
                         end
 
-                        buttons.tooltipState = function(ent) return Format("\n[%s]", Metrostroi.GetPhrase(ent:GetPackedBool(var) and st2 or st1)) end
+                        buttons.tooltipState = function(wag) return Format("\n[%s]", Metrostroi.GetPhrase(wag:GetPackedBool(var) and st2 or st1)) end
                     end
 
                     if config.model then
@@ -203,6 +203,7 @@ local function newGenerateClientProps()
                         --wagon.ClientSounds[id] = {sndid,function(ent,var) return snd(func(ent,vmin,vmax),var) end,vol or 1,pitch or 1,min or 100,max or 1000,ang or Angle(0,0,0)}
                         --else
                         if not wagon.ClientSounds[id] then wagon.ClientSounds[id] = {} end
+                        wagon.ClientSounds[id] = {}  -- TEST
                         table.insert(wagon.ClientSounds[id], {sndid, function(ent, var) return snd(var > 0, var) end, vol or 1, pitch or 1, min or 100, max or 1000, ang or Angle(0, 0, 0)})
                         --end
                     end

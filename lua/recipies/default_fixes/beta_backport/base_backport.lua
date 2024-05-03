@@ -10,6 +10,7 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("base_backport", "gmod_subway_base")
+RECIPE.BackportPriority = true
 RECIPE.Description = "This recipe backports changes for gmod_subway_base from metrostroi beta"
 -- local C_DisableHUD          = GetConVar("metrostroi_disablehud")
 local C_RenderDistance = GetConVar("metrostroi_renderdistance")
@@ -28,14 +29,94 @@ local C_AA = GetConVar("mat_antialias")
 local C_Sprites = GetConVar("metrostroi_sprites")
 local C_DisableSeatShadows = GetConVar("metrostroi_disableseatshadows")
 function RECIPE:Init()
+    hook.Remove("PopulateToolMenu", "Metrostroi cpanel")
+    -- Build admin panel
+    local function AdminPanel(panel)
+        if not LocalPlayer():IsAdmin() then return end
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.RequireThirdRail"), "metrostroi_train_requirethirdrail")
+    end
 
+    -- Build regular client panel
+    local function ClientPanel(panel)
+        panel:ClearControls()
+        panel:SetPadding(0)
+        panel:SetSpacing(0)
+        panel:Dock(FILL)
+        local Lang = vgui.Create("DComboBox")
+        Lang:SetValue(Metrostroi.CurrentLanguageTable and Metrostroi.CurrentLanguageTable.lang or Metrostroi.GetPhrase("Panel.Language"))
+        Lang:SetColor(color_black)
+        for k, v in pairs(Metrostroi.Languages) do
+            Lang:AddChoice(v.lang, k)
+        end
+
+        Lang.OnSelect = function(Lang, index, value, data)
+            Metrostroi.ChoosedLang = data
+            RunConsoleCommand("metrostroi_language", Metrostroi.ChoosedLang)
+        end
+
+        panel:AddItem(Lang)
+        panel:ControlHelp(Metrostroi.GetPhrase("AuthorText"))
+        if Metrostroi.HasPhrase("AuthorTextMetadmin") then panel:ControlHelp(Metrostroi.GetPhrase("AuthorTextMetadmin")) end
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DrawCams"), "metrostroi_drawcams")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DisableHUD"), "metrostroi_disablehud")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DisableCamAccel"), "metrostroi_disablecamaccel")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DisableHoverText"), "metrostroi_disablehovertext")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DisableHoverTextP"), "metrostroi_disablehovertextpos")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DisableSeatShadows"), "metrostroi_disableseatshadows")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.ScreenshotMode"), "metrostroi_screenshotmode")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.ShadowsHeadlight"), "metrostroi_shadows1")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.RedLights"), "metrostroi_shadows3")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.ShadowsOther"), "metrostroi_shadows2")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.PanelLights"), "metrostroi_shadows4")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.PanelSprites"), "metrostroi_sprites")
+        local DRouteNumber = panel:TextEntry(Metrostroi.GetPhrase("Panel.RouteNumber"), "metrostroi_route_number")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.MinimizedShow"), "metrostroi_minimizedshow")
+        panel:NumSlider(Metrostroi.GetPhrase("Panel.FOV"), "metrostroi_cabfov", 65, 100)
+        panel:NumSlider(Metrostroi.GetPhrase("Panel.Z"), "metrostroi_cabz", -10, 10)
+        panel:NumSlider(Metrostroi.GetPhrase("Panel.RenderDistance"), "metrostroi_renderdistance", 960, 3072)
+        panel:NumSlider(Metrostroi.GetPhrase("Panel.RenderSignals"), "metrostroi_signal_distance", 6144, 16384)
+        panel:Button(Metrostroi.GetPhrase("Panel.ReloadClient"), "metrostroi_reload_client", true)
+        function DRouteNumber:OnChange()
+            local oldval = self:GetValue()
+            local NewValue = ""
+            for i = 1, math.min(3, #oldval) do
+                NewValue = NewValue .. ((oldval[i] or ""):upper():match("[%d]+") or "")
+            end
+
+            local oldpos = self:GetCaretPos()
+            self:SetText(NewValue)
+            self:SetCaretPos(math.min(#NewValue, oldpos, 3))
+        end
+    end
+
+    local function ClientAdvanced(panel)
+        panel:ClearControls()
+        panel:SetPadding(0)
+        panel:SetSpacing(0)
+        panel:Dock(FILL)
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DrawDebugInfo"), "metrostroi_drawdebug")
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.DrawSignalDebugInfo"), "metrostroi_drawsignaldebug")
+        panel:Button(Metrostroi.GetPhrase("Panel.CheckAddons"), "metrostroi_addons_check")
+        panel:Button(Metrostroi.GetPhrase("Panel.ReloadLang"), "metrostroi_language_reload", true)
+        panel:NumSlider(Metrostroi.GetPhrase("Panel.SoftDraw"), "metrostroi_softdrawmultipier", 25, 400)
+        panel:CheckBox(Metrostroi.GetPhrase("Panel.SoftReloadLang"), "metrostroi_language_softreload")
+    end
+
+    hook.Add("PopulateToolMenu", "Metrostroi cpanel", function()
+        spawnmenu.AddToolMenuOption("Utilities", "Metrostroi", "metrostroi_admin_panel", Metrostroi.GetPhrase("Panel.Admin"), "", "", AdminPanel)
+        spawnmenu.AddToolMenuOption("Utilities", "Metrostroi", "metrostroi_client_panel", Metrostroi.GetPhrase("Panel.Client"), "", "", ClientPanel)
+        spawnmenu.AddToolMenuOption("Utilities", "Metrostroi", "metrostroi_clientadv_panel", Metrostroi.GetPhrase("Panel.ClientAdvanced"), "", "", ClientAdvanced)
+    end)
 end
 
 function RECIPE:Inject(ent, entclass)
     ent.CustomThinks = ent.CustomThinks or {}
     ent.CustomSpawnerUpdates = ent.CustomSpawnerUpdates or {}
     local function destroySound(snd, nogc)
-        -- if IsValid(snd) then snd:Stop() end -- ????
+        if IsValid(snd) then
+            snd:Stop() -- ????
+        end
+
         if not nogc and snd and snd.__gc then snd:__gc() end
     end
 
@@ -44,7 +125,7 @@ function RECIPE:Inject(ent, entclass)
         snd:SetTime(0)
     end
 
-    function ent.DestroySound(snd, nogc)
+    function ent.DestroySound(wagon, snd, nogc)
         destroySound(snd, nogc)
     end
 
@@ -149,7 +230,7 @@ function RECIPE:Inject(ent, entclass)
             end
 
             if not IsValid(snd) then return end
-            if (volume <= 0) or (pitch <= 0) then
+            if volume <= 0 or pitch <= 0 then
                 if snd:GetTime() > 0 then PauseBASS(snd) end
                 return
             end
@@ -168,93 +249,302 @@ function RECIPE:Inject(ent, entclass)
         end
     end
 
-    function ent.PlayOnceFromPos(wagon, id, sndname, volume, pitch, min, max, location)
-        if wagon.StopSounds or not wagon.ClientPropsInitialized or wagon.CreatingCSEnts then return end
-        wagon:DestroySound(wagon.Sounds[id], true)
-        wagon.Sounds[id] = nil
-        if sndname == "_STOP" then return end
-        wagon.SoundPositions[id] = {min, max, location}
-        wagon:CreateBASSSound(sndname, function(snd)
-            wagon.Sounds[id] = snd
-            wagon:SetBassParameters(wagon.Sounds[id], pitch, volume, wagon.SoundPositions[id], false)
-            snd:Play()
-        end)
-    end
+    if SERVER then
+        function ent.PlayOnce(wagon, soundid, location, range, pitch, randoff)
+            if wagon.OnPlay then soundid, location, range, pitch = wagon:OnPlay(soundid, location, range, pitch) end
+            net.Start("metrostroi_client_sound", true)
+            net.WriteEntity(wagon)
+            net.WriteString(soundid)
+            net.WriteString(location or "")
+            net.WriteFloat(range or 0.8)
+            net.WriteUInt((pitch or 1) * 100, 9)
+            net.SendPAS(wagon:GetPos())
+        end
+    else
+        function ent.PlayOnceFromPos(wagon, id, sndname, volume, pitch, min, max, location)
+            if wagon.StopSounds or not wagon.ClientPropsInitialized or wagon.CreatingCSEnts then return end
+            wagon:DestroySound(wagon.Sounds[id], true)
+            wagon.Sounds[id] = nil
+            if sndname == "_STOP" then return end
+            wagon.SoundPositions[id] = {min, max, location}
+            wagon:CreateBASSSound(sndname, function(snd)
+                wagon.Sounds[id] = snd
+                wagon:SetBassParameters(wagon.Sounds[id], pitch, volume, wagon.SoundPositions[id], false)
+                snd:Play()
+            end)
+        end
 
-    function ent.PlayOnce(wagon, soundid, location, range, pitch, randoff)
-        if wagon.StopSounds or not wagon.ClientPropsInitialized or wagon.CreatingCSEnts then return end
-        if not soundid then ErrorNoHalt(debug.Trace()) end
-        -- Emit sound from right location
-        if wagon.ClientSounds and wagon.ClientSounds[soundid] then
-            local entsound = wagon.ClientSounds[soundid]
-            for i, esnd in ipairs(entsound) do
-                soundid = esnd[2](wagon, range, location)
-                local soundname = wagon.SoundNames[soundid]
-                if not soundname then
-                    print("NO SOUND", soundname, soundid)
-                    continue
-                end
+        function ent.PlayOnce(wagon, soundid, location, range, pitch, randoff)
+            if wagon.StopSounds or not wagon.ClientPropsInitialized or wagon.CreatingCSEnts then return end
+            if not soundid then ErrorNoHalt(debug.Trace()) end
+            -- Emit sound from right location
+            if wagon.ClientSounds and wagon.ClientSounds[soundid] then
+                local entsound = wagon.ClientSounds[soundid]
+                for i, esnd in ipairs(entsound) do
+                    soundid = esnd[2](wagon, range, location)
+                    local soundname = wagon.SoundNames[soundid]
+                    if not soundname then
+                        print("NO SOUND", soundname, soundid)
+                        continue
+                    end
 
-                if type(soundname) == "table" then soundname = table.Random(soundname) end
-                if IsValid(wagon.ClientEnts[esnd[1]]) and not wagon.ClientEnts[esnd[1]].snd then
-                    local ent = wagon.ClientEnts[esnd[1]]
-                    sound.PlayFile("sound/" .. soundname, "3d noplay mono", function(snd, err, errName)
-                        if not IsValid(wagon) then
-                            destroySound(snd)
-                            return
-                        end
-
-                        if err then
-                            wagon:DestroySound(snd)
-                            if err == 4 or err == 37 then wagon.StopSounds = true end
-                            if err ~= 41 then
-                                MsgC(Color(255, 0, 0), Format("Sound:%s\n\tErrCode:%s, ErrName:%s\n", name, err, errName))
-                            elseif GetConVar("metrostroi_drawdebug"):GetInt() ~= 0 then
-                                MsgC(Color(255, 255, 0), Format("Sound:%s\n\tBASS_ERROR_UNKNOWN (it's normal),ErrCode:%s, ErrName:%s\n", name, err, errName))
-                                --wagon:PlayOnce(soundid,location,range,pitch,randoff)
+                    if type(soundname) == "table" then soundname = table.Random(soundname) end
+                    if IsValid(wagon.ClientEnts[esnd[1]]) and not wagon.ClientEnts[esnd[1]].snd then
+                        local ent = wagon.ClientEnts[esnd[1]]
+                        sound.PlayFile("sound/" .. soundname, "3d noplay mono", function(snd, err, errName)
+                            if not IsValid(wagon) then
+                                destroySound(snd)
+                                return
                             end
-                            return
-                        elseif not IsValid(ent) then
-                            wagon:DestroySound(snd)
-                        else
-                            snd:SetPos(ent:GetPos(), ent:LocalToWorldAngles(esnd[7]):Forward())
-                            snd:SetPlaybackRate(esnd[4])
-                            snd:SetVolume(esnd[3])
-                            if esnd[5] then snd:Set3DFadeDistance(esnd[5], esnd[6]) end
-                            table.insert(ent.BASSSounds, snd)
-                            snd:Play()
-                            --local siz1,siz2 = snd:Get3DFadeDistance()
-                            --debugoverlay.Sphere(snd:GetPos(),4,2,Color(0,255,0),true)
-                            --debugoverlay.Sphere(snd:GetPos(),siz1,2,Color(255,0,0,100),false)
-                            --debugoverlay.Sphere(snd:GetPos(),siz2,2,Color(0,0,255,100),false)
-                        end
-                    end)
+
+                            if err then
+                                wagon:DestroySound(snd)
+                                if err == 4 or err == 37 then wagon.StopSounds = true end
+                                if err ~= 41 then
+                                    MsgC(Color(255, 0, 0), Format("Sound:%s\n\tErrCode:%s, ErrName:%s\n", name, err, errName))
+                                elseif GetConVar("metrostroi_drawdebug"):GetInt() ~= 0 then
+                                    MsgC(Color(255, 255, 0), Format("Sound:%s\n\tBASS_ERROR_UNKNOWN (it's normal),ErrCode:%s, ErrName:%s\n", name, err, errName))
+                                    --wagon:PlayOnce(soundid,location,range,pitch,randoff)
+                                end
+                                return
+                            elseif not IsValid(ent) then
+                                wagon:DestroySound(snd)
+                            else
+                                snd:SetPos(ent:GetPos(), ent:LocalToWorldAngles(esnd[7]):Forward())
+                                snd:SetPlaybackRate(esnd[4])
+                                snd:SetVolume(esnd[3])
+                                if esnd[5] then snd:Set3DFadeDistance(esnd[5], esnd[6]) end
+                                table.insert(ent.BASSSounds, snd)
+                                snd:Play()
+                                --local siz1,siz2 = snd:Get3DFadeDistance()
+                                --debugoverlay.Sphere(snd:GetPos(),4,2,Color(0,255,0),true)
+                                --debugoverlay.Sphere(snd:GetPos(),siz1,2,Color(255,0,0,100),false)
+                                --debugoverlay.Sphere(snd:GetPos(),siz2,2,Color(0,0,255,100),false)
+                            end
+                        end)
+                    end
                 end
+                return
             end
-            return
-        end
 
-        local tbl = wagon.SoundPositions[soundid]
-        local soundname = wagon.SoundNames[soundid]
-        if type(soundname) == "table" then soundname = table.Random(soundname) end
-        if not soundname or not tbl then
-            --print("NO SOUND",soundname,soundid)
-            return
-        end
+            local tbl = wagon.SoundPositions[soundid]
+            local soundname = wagon.SoundNames[soundid]
+            if type(soundname) == "table" then soundname = table.Random(soundname) end
+            if not soundname or not tbl then
+                --print("NO SOUND",soundname,soundid)
+                return
+            end
 
-        if IsValid(wagon.Sounds[soundid]) then
-            wagon:DestroySound(wagon.Sounds[soundid])
-            wagon.Sounds[soundid] = nil
-        end
+            if IsValid(wagon.Sounds[soundid]) then
+                wagon:DestroySound(wagon.Sounds[soundid])
+                wagon.Sounds[soundid] = nil
+            end
 
-        wagon:CreateBASSSound(soundname, function(snd)
-            wagon.Sounds[soundid] = snd
-            wagon:SetBassParameters(wagon.Sounds[soundid], pitch, range, tbl, false)
-            snd:Play()
-        end)
+            wagon:CreateBASSSound(soundname, function(snd)
+                wagon.Sounds[soundid] = snd
+                wagon:SetBassParameters(wagon.Sounds[soundid], pitch, range, tbl, false)
+                snd:Play()
+            end)
+        end
     end
 
     if CLIENT then
+        local function isValidTrainDriver(ply)
+            if IsValid(ply.InMetrostroiTrain) then return ply.InMetrostroiTrain end
+            local weapon = IsValid(LocalPlayer():GetActiveWeapon()) and LocalPlayer():GetActiveWeapon():GetClass()
+            if weapon ~= "train_kv_wrench" and weapon ~= "train_kv_wrench_gold" then return end
+            local train = util.TraceLine({
+                start = LocalPlayer():GetPos(),
+                endpos = LocalPlayer():GetPos() - LocalPlayer():GetAngles():Up() * 100,
+                filter = function(wagon) if wagon.ButtonMap ~= nil then return true end end
+            }).Entity
+
+            if not IsValid(train) then
+                train = util.TraceLine({
+                    start = LocalPlayer():EyePos(),
+                    endpos = LocalPlayer():EyePos() + LocalPlayer():EyeAngles():Forward() * 300,
+                    filter = function(wagon) if wagon.ButtonMap ~= nil then return true end end
+                }).Entity
+            end
+            return IsValid(train) and train, true
+        end
+
+        local function LinePlaneIntersect(PlanePos, PlaneNormal, LinePos, LineDir)
+            local dot = LineDir:Dot(PlaneNormal)
+            local fac = LinePos - PlanePos
+            local dis = -PlaneNormal:Dot(fac) / dot
+            return LineDir * dis + LinePos
+        end
+
+        local function findAimButton(ply, train)
+            local panel, panelDist = nil, 1e9
+            for kp, pan in pairs(train.ButtonMap) do
+                if not train:ShouldDrawPanel(kp) then continue end
+                --If player is looking at this panel
+                if pan.aimedAt and (pan.buttons or pan.sensor or pan.mouse) and pan.aimedAt < panelDist then
+                    panel = pan
+                    panelDist = pan.aimedAt
+                end
+            end
+
+            if not panel then return false end
+            if panel.aimX and panel.aimY and (panel.sensor or panel.mouse) and math.InRangeXY(panel.aimX, panel.aimY, 0, 0, panel.width, panel.height) then return false, panel.aimX, panel.aimY, panel.system end
+            if not panel.buttons then return false end
+            local buttonTarget
+            for _, button in pairs(panel.buttons) do
+                if (train.Hidden[button.PropName] or train.Hidden.button[button.PropName]) and (not train.ClientProps[button.PropName] or not train.ClientProps[button.PropName].config or not train.ClientProps[button.PropName].config.staylabel) then continue end
+                if (train.Hidden[button.ID] or train.Hidden.button[button.ID]) and (not train.ClientProps[button.ID] or not train.ClientProps[button.ID].config or not train.ClientProps[button.ID].config.staylabel) then continue end
+                if button.w and button.h then
+                    if panel.aimX >= button.x and panel.aimX <= button.x + button.w and panel.aimY >= button.y and panel.aimY <= button.y + button.h then
+                        buttonTarget = button
+                        --table.insert(foundbuttons,{button,panel.aimedAt})
+                    end
+                else
+                    --If the aim location is withing button radis
+                    local dist = math.Distance(button.x, button.y, panel.aimX, panel.aimY)
+                    if dist < (button.radius or 10) then
+                        buttonTarget = button
+                        --table.insert(foundbuttons,{button,panel.aimedAt})
+                    end
+                end
+            end
+
+            if not buttonTarget then return false end
+            return buttonTarget
+        end
+
+        local function WorldToScreen(vWorldPos, vPos, vScale, aRot)
+            vWorldPos = vWorldPos - vPos
+            vWorldPos:Rotate(Angle(0, -aRot.y, 0))
+            vWorldPos:Rotate(Angle(-aRot.p, 0, 0))
+            vWorldPos:Rotate(Angle(0, 0, -aRot.r))
+            return vWorldPos.x / vScale, -vWorldPos.y / vScale
+        end
+
+        hook.Remove("Think", "metrostroi-cabin-panel")
+        hook.Add("Think", "metrostroi-cabin-panel", function()
+            local ply = LocalPlayer()
+            if not IsValid(ply) then return end
+            toolTipText = nil
+            drawCrosshair = false
+            canDrawCrosshair = false
+            local train, outside = isValidTrainDriver(ply)
+            if not IsValid(train) then return end
+            if gui.IsConsoleVisible() or gui.IsGameUIVisible() or IsValid(vgui.GetHoveredPanel()) and not vgui.IsHoveringWorld() and vgui.GetHoveredPanel():GetParent() ~= vgui.GetWorldPanel() then return end
+            if train.ButtonMap ~= nil then
+                canDrawCrosshair = true
+                local plyaimvec
+                if outside then
+                    plyaimvec = ply:GetAimVector()
+                else
+                    local x, y = input.GetCursorPos()
+                    --plyaimvec = util.AimVector( train.CamAngles, train.CamFOV,x,y,ScrW(),ScrH())
+                    --plyaimvec = ply:GetAimVector()
+                    plyaimvec = gui.ScreenToVector(x, y) -- ply:GetAimVector() is unreliable when in seats
+                end
+
+                -- Loop trough every panel
+                for k2, panel in pairs(train.ButtonMap) do
+                    if not train:ShouldDrawPanel(kp2) then continue end
+                    local pang = train:LocalToWorldAngles(panel.ang)
+                    if plyaimvec:Dot(pang:Up()) < 0 then
+                        local campos = not outside and train.CamPos or ply:EyePos()
+                        local ppos = train:LocalToWorld(panel.pos) -- - Vector(math.Round((not outside and train.HeadAcceleration or 0),2),0,0))
+                        local isectPos = LinePlaneIntersect(ppos, pang:Up(), campos, plyaimvec)
+                        local localx, localy = WorldToScreen(isectPos, ppos, panel.scale, pang)
+                        panel.aimX = localx
+                        panel.aimY = localy
+                        if plyaimvec:Dot(isectPos - campos) / (isectPos - campos):Length() > 0 and localx > 0 and localx < panel.width and localy > 0 and localy < panel.height then
+                            panel.aimedAt = isectPos:Distance(campos)
+                            drawCrosshair = panel.aimedAt
+                        else
+                            panel.aimedAt = false
+                        end
+
+                        panel.outside = outside
+                    else
+                        panel.aimedAt = false
+                    end
+                end
+
+                -- Tooltips
+                local ttdelay = GetConVar("metrostroi_tooltip_delay"):GetFloat()
+                if GetConVar("metrostroi_disablehovertext"):GetInt() == 0 and ttdelay and ttdelay >= 0 then
+                    local button = findAimButton(ply, train)
+                    --print(train.ClientProps[button.ID].button)
+                    if button and ((train.Hidden[button.ID] or train.Hidden[button.PropName]) and (not train.ClientProps[button.ID].config or not train.ClientProps[button.ID].config.staylabel) or (train.Hidden.button[button.ID] or train.Hidden.button[button.PropName]) and (not train.ClientProps[button.PropName].config or not train.ClientProps[button.PropName].config.staylabel)) then return end
+                    if button ~= lastAimButton then
+                        lastAimButtonChange = CurTime()
+                        lastAimButton = button
+                    end
+
+                    if button then
+                        if ttdelay == 0 or CurTime() - lastAimButtonChange > ttdelay then
+                            if C_DrawDebug:GetInt() > 0 then
+                                toolTipText, toolTipColor = button.ID, Color(255, 0, 255)
+                            elseif button.plombed then
+                                toolTipText, _, toolTipColor = button.plombed(train)
+                            else
+                                toolTipText, toolTipColor = button.tooltip
+                            end
+
+                            --[[toolTipPosition = nil
+                            if button.tooltipState then
+                                local newTT,newTTpos = button.tooltipState(train)
+                                toolTipText = toolTipText..newTT
+                                toolTipPosition = Metrostroi.GetPhrase(newTTpos)
+                            end]]
+                            if GetConVar("metrostroi_disablehovertextpos"):GetInt() == 0 and button.tooltipState and button.tooltip then toolTipText = toolTipText .. button.tooltipState(train) end
+                        end
+                    end
+                end
+            end
+        end)
+
+        hook.Remove("HUDPaint", "metrostroi-draw-crosshair-tooltip")
+        hook.Add("HUDPaint", "metrostroi-draw-crosshair-tooltip", function()
+            --if not drawCrosshair then return end
+            if IsValid(LocalPlayer()) then
+                local scrX, scrY = ScrW(), ScrH()
+                if canDrawCrosshair then surface.DrawCircle(scrX / 2, scrY / 2, 4.1, drawCrosshair and Color(255, 0, 0) or Color(255, 255, 150)) end
+                if toolTipText ~= nil then
+                    surface.SetFont("MetrostroiLabels")
+                    local w, h = surface.GetTextSize("SomeText")
+                    local height = h * 1.1
+                    local texts = string.Explode("\n", toolTipText)
+                    surface.SetDrawColor(0, 0, 0, 125)
+                    for i, v in ipairs(texts) do
+                        local y = scrY / 2 + height * i
+                        if #v == 0 then continue end
+                        local w2, h2 = surface.GetTextSize(v)
+                        surface.DrawRect(scrX / 2 - w2 / 2 - 5, scrY / 2 - h2 / 2 + height * i, w2 + 10, h2)
+                        --[[if toolTipPosition and i==#texts then
+                            local st,en = v:find(toolTipPosition)
+                            local textSt,textEn = v:sub(1,st-1),v:sub(en+1,-1)
+                            local x1 = 0-w2/2
+                            local x2 = surface.GetTextSize(textSt)-w2/2
+                            local x3 = surface.GetTextSize(textSt)+surface.GetTextSize(toolTipPosition)-w2/2
+                            draw.SimpleText(textSt,"MetrostroiLabels",scrX/2+x1,y, toolTipColor or Color(255,255,255),TEXT_ALIGN_LEFT,TEXT_ALIGN_CENTER)
+                            draw.SimpleText(toolTipPosition,"MetrostroiLabels",scrX/2+x2,y, toolTipColor or Color(0,255,0),TEXT_ALIGN_LEFT,TEXT_ALIGN_CENTER)
+                            draw.SimpleText(textEn,"MetrostroiLabels",scrX/2+x3,y, toolTipColor or Color(255,255,255),TEXT_ALIGN_LEFT,TEXT_ALIGN_CENTER)
+                            Metrostroi.DrawLine(scrX/2+x2,y+h/2-3,scrX/2+x3,y+h/2-3,toolTipColor or Color(0,255,0),1)
+                        else]]
+                        draw.SimpleText(v, "MetrostroiLabels", scrX / 2, y, toolTipColor or Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                        --end
+                    end
+                    --[[
+                    local w1 = surface.GetTextSize(text1)
+                    local w2 = surface.GetTextSize(text2)
+        
+                    surface.SetTextColor(toolTipColor or Color(255,255,255))
+                    surface.SetTextPos((scrX-w1)/2,scrY/2+10)
+                    surface.DrawText(text1)
+                    surface.SetTextPos((scrX-w2)/2,scrY/2+30)
+                    surface.DrawText(text2)]]
+                end
+            end
+        end)
+
         function ent.ShouldDrawClientEnt(wagon, k, v)
             if wagon.Hidden[k] or wagon.Hidden.anim[k] then return false end
             v = v or wagon.ClientProps[k]
@@ -426,7 +716,7 @@ function RECIPE:Inject(ent, entclass)
                 if wagon:IsDormant() then continue end
                 if MetrostroiStarted and MetrostroiStarted ~= true or wagon.RenderBlock then
                     if not inSeat then
-                        local timeleft = math.max(0, (MetrostroiStarted and MetrostroiStarted ~= true) and 3 - (RealTime() - MetrostroiStarted) or 3 - (RealTime() - wagon.RenderBlock)) + 0.99
+                        local timeleft = math.max(0, MetrostroiStarted and MetrostroiStarted ~= true and 3 - (RealTime() - MetrostroiStarted) or 3 - (RealTime() - wagon.RenderBlock)) + 0.99
                         cam.Start3D2D(wagon:LocalToWorld(Vector(0, -150, 100)), wagon:LocalToWorldAngles(Angle(0, 90, 90)), 1.5)
                         draw.SimpleText("Wait, train will be available across " .. string.NiceTime(timeleft))
                         cam.End3D2D()
@@ -446,9 +736,7 @@ function RECIPE:Inject(ent, entclass)
                     local pos = wagon:LocalToWorld(lightData[2])
                     local visibility = util.PixelVisible(pos, lightData.size or 5, vHandle) --math.max(0,util.PixelVisible(pos, 5, vHandle)-0.25)/0.75
                     if visibility > 0 then
-                        if lightData.mat then
-                            render.SetMaterial(lightData.mat)
-                        end
+                        if lightData.mat then render.SetMaterial(lightData.mat) end
                         render.DrawSprite(pos, 128 * lightData.scale, 128 * (lightData.vscale or lightData.scale), colAlpha(lightData[4] or Color(255, 255, 255), visibility * br))
                     end
                 end
@@ -467,8 +755,8 @@ function RECIPE:Inject(ent, entclass)
         end)
 
         local function enableDebug()
-            -- if C_DrawDebug:GetInt() > 0 then
-            if false then
+            if C_DrawDebug:GetInt() > 0 then
+                -- if false then
                 hook.Add("PostDrawTranslucentRenderables", "MetrostroiTrainDebug", function(bDrawingDepth, bDrawingSkybox)
                     if bDrawingSkybox then return end
                     for wagon in pairs(Metrostroi.SpawnedTrains) do
@@ -721,7 +1009,7 @@ function RECIPE:Inject(ent, entclass)
                 wagon.OtherLights = C_Shadows4:GetBool()
                 wagon.SpritesEnabled = C_Sprites:GetBool()
                 wagon.AAEnabled = C_AA:GetInt() > 1
-                for k, v in pairs(wagon.GlowingLights) do
+                for k, v in pairs(wagon.GlowingLights or {}) do
                     if IsValid(v) then v:Remove() end
                 end
 
@@ -762,7 +1050,7 @@ function RECIPE:Inject(ent, entclass)
                 end
             end
 
-            local disableSeatShadows = false
+            local disableSeatShadows = C_DisableSeatShadows:GetBool()
             if wagon.DisableSeatShadows ~= disableSeatShadows then
                 for i = 1, wagon:GetNW2Int("seats", 0) do
                     local seat = wagon:GetNW2Entity("seat_" .. i)
@@ -829,7 +1117,7 @@ function RECIPE:Inject(ent, entclass)
 
                         if i == 1 then
                             local no1 = ntbl.loop and ntbl.loop == 0
-                            local endt = (ntbl.loop and snd:GetTime() > ntbl.loop or snd:GetTime() / snd:GetLength() >= 0.8) or no1
+                            local endt = ntbl.loop and snd:GetTime() > ntbl.loop or snd:GetTime() / snd:GetLength() >= 0.8 or no1
                             if stbl.state and stbl.volume < v.volume and not no1 then
                                 if snd:GetState() ~= GMOD_CHANNEL_PLAYING then
                                     snd:Play()
@@ -911,7 +1199,7 @@ function RECIPE:Inject(ent, entclass)
                                         wagon:SetPitchVolume(v[i].sound, v.pitch, v[i].volume, tbl)
                                     end
                                 end
-                            elseif (not stbl.state or (snd:GetTime() / snd:GetLength() >= 0.9)) and stbl.time then
+                            elseif (not stbl.state or snd:GetTime() / snd:GetLength() >= 0.9) and stbl.time then
                                 stbl.time = nil
                                 stbl.volume = 0
                                 stbl.state = false
@@ -1034,7 +1322,7 @@ function RECIPE:Inject(ent, entclass)
 
                 for k, v in pairs(wagon.ButtonMap) do
                     if not v.pos then continue end
-                    if not v.hide or (v.nohide or screenshotMode) then
+                    if not v.hide or v.nohide or screenshotMode then
                         wagon.HiddenPanelsDistance[k] = v.screenHide
                         continue
                     end
@@ -1060,6 +1348,53 @@ function RECIPE:Inject(ent, entclass)
 
             -- Update passengers
             if wagon.RenderClientEnts and wagon.PassengerEnts then
+                local stucked = wagon.PassengerEntsStucked
+                for i, v in ipairs(wagon.LeftDoorPositions) do
+                    if wagon:GetPackedBool("DoorLS" .. i) and not IsValid(stucked[i]) then
+                        local ent = ClientsideModel(table.Random(wagon.PassengerModels), RENDERGROUP_OPAQUE)
+                        ent:SetPos(wagon:LocalToWorld(Vector(v.x, v.y, wagon:GetStandingArea().z)))
+                        ent:SetAngles(wagon:LocalToWorldAngles(Angle(0, v.y < 0 and -90 or 90, 0)))
+                        ent:SetSkin(math.floor(ent:SkinCount() * math.random()))
+                        ent:SetModelScale(0.98 + -0.02 + 0.04 * math.random(), 0)
+                        ent:SetParent(wagon)
+                        stucked[i] = ent
+                        if math.random() > 0.99 then
+                            wagon:PlayOnceFromPos("PassStuckL" .. i, "subway_trains/common/door/pass_stAAAck.mp3", 5, 0.9 + math.random() * 0.2, 150, 400, v)
+                        elseif math.random() > 0.95 then
+                            wagon:PlayOnceFromPos("PassStuckL" .. i, "subway_trains/common/door/tom.mp3", 5, 0.9 + math.random() * 0.2, 150, 400, v)
+                        elseif ent:GetModel():find("models/metrostroi/passengers/f") then
+                            wagon:PlayOnceFromPos("PassStuckL" .. i, "subway_trains/common/door/pass_stuck.mp3", 5, 1.6 + math.random() * 0.2, 150, 400, v)
+                        else
+                            wagon:PlayOnceFromPos("PassStuckL" .. i, "subway_trains/common/door/pass_stuck.mp3", 5, 0.9 + math.random() * 0.2, 150, 400, v)
+                        end
+                    elseif not wagon:GetPackedBool("DoorLS" .. i) and IsValid(stucked[i]) then
+                        SafeRemoveEntity(stucked[i])
+                    end
+                end
+
+                for i, v in ipairs(wagon.RightDoorPositions) do
+                    if wagon:GetPackedBool("DoorRS" .. i) and not IsValid(stucked[-i]) then
+                        local ent = ClientsideModel(table.Random(wagon.PassengerModels), RENDERGROUP_OPAQUE)
+                        ent:SetPos(wagon:LocalToWorld(Vector(v.x, v.y, wagon:GetStandingArea().z)))
+                        ent:SetAngles(wagon:LocalToWorldAngles(Angle(0, v.y < 0 and -90 or 90, 0)))
+                        ent:SetSkin(math.floor(ent:SkinCount() * math.random()))
+                        ent:SetModelScale(0.98 + -0.02 + 0.04 * math.random(), 0)
+                        ent:SetParent(wagon)
+                        stucked[-i] = ent
+                        if math.random() > 0.99 then
+                            wagon:PlayOnceFromPos("PassStuckR" .. i, "subway_trains/common/door/pass_stAAAck.mp3", 5, 0.9 + math.random() * 0.2, 150, 400, v)
+                        elseif math.random() > 0.95 then
+                            wagon:PlayOnceFromPos("PassStuckR" .. i, "subway_trains/common/door/tom.mp3", 5, 0.9 + math.random() * 0.2, 150, 400, v)
+                        elseif ent:GetModel():find("models/metrostroi/passengers/f") then
+                            wagon:PlayOnceFromPos("PassStuckR" .. i, "subway_trains/common/door/pass_stuck.mp3", 5, 1.6 + math.random() * 0.2, 150, 400, v)
+                        else
+                            wagon:PlayOnceFromPos("PassStuckR" .. i, "subway_trains/common/door/pass_stuck.mp3", 5, 0.9 + math.random() * 0.2, 150, 400, v)
+                        end
+                    elseif not wagon:GetPackedBool("DoorRS" .. i) and IsValid(stucked[-i]) then
+                        SafeRemoveEntity(stucked[-i])
+                    end
+                end
+
                 if #wagon.PassengerEnts ~= wagon:GetNW2Float("PassengerCount") then
                     -- Passengers go out
                     while #wagon.PassengerEnts > wagon:GetNW2Float("PassengerCount") do
@@ -1086,16 +1421,11 @@ function RECIPE:Inject(ent, entclass)
                             --ent.Spawned = true
                         end)]]
                         ent:SetSkin(math.floor(ent:SkinCount() * math.random()))
-                        ent:SetModelScale(0.98 + (-0.02 + 0.04 * math.random()), 0)
+                        ent:SetModelScale(0.98 + -0.02 + 0.04 * math.random(), 0)
                         ent:SetParent(wagon)
                         table.insert(wagon.PassengerPositions, pos)
                         table.insert(wagon.PassengerEnts, ent)
                     end
-                end
-            elseif wagon.PassengerEnts then
-                for k, v in pairs(wagon.PassengerEnts) do
-                    if IsValid(v) then v:Remove() end
-                    wagon.PassengerEnts[k] = nil
                 end
             end
 
@@ -1106,26 +1436,6 @@ function RECIPE:Inject(ent, entclass)
 
         hook.Remove("Think", "metrostroi_mouse_handle")
         local OldTrainHandle, OldSeat
-        local function isValidTrainDriver(ply)
-            if IsValid(ply.InMetrostroiTrain) then return ply.InMetrostroiTrain end
-            local weapon = IsValid(LocalPlayer():GetActiveWeapon()) and LocalPlayer():GetActiveWeapon():GetClass()
-            if weapon ~= "train_kv_wrench" and weapon ~= "train_kv_wrench_gold" then return end
-            local train = util.TraceLine({
-                start = LocalPlayer():GetPos(),
-                endpos = LocalPlayer():GetPos() - LocalPlayer():GetAngles():Up() * 100,
-                filter = function(wagon) if wagon.ButtonMap ~= nil then return true end end
-            }).Entity
-
-            if not IsValid(train) then
-                train = util.TraceLine({
-                    start = LocalPlayer():EyePos(),
-                    endpos = LocalPlayer():EyePos() + LocalPlayer():EyeAngles():Forward() * 300,
-                    filter = function(wagon) if wagon.ButtonMap ~= nil then return true end end
-                }).Entity
-            end
-            return IsValid(train) and train, true
-        end
-
         hook.Add("Think", "metrostroi_mouse_handle", function()
             local train, outside = isValidTrainDriver(LocalPlayer())
             if outside then train = nil end
@@ -1179,7 +1489,7 @@ function RECIPE:Inject(ent, entclass)
             --if wagon["_anim_old_"..id] == value then return wagon["_anim_old_"..id] end
             -- Generate sticky value
             if stickyness and damping then
-                if (math.abs(anims[id].P - value) < stickyness) and anims[id].stuck then
+                if math.abs(anims[id].P - value) < stickyness and anims[id].stuck then
                     value = anims[id].P
                     anims[id].stuck = false
                 else
@@ -1212,7 +1522,7 @@ function RECIPE:Inject(ent, entclass)
                 if anims[id].V < -max_speed then anims[id].V = -max_speed end
                 val = math.max(0, math.min(1, val + anims[id].V * dT))
                 -- Check if value got stuck
-                if (math.abs(dX2dT) < 0.001) and stickyness and (dT > 0) then anims[id].stuck = true end
+                if math.abs(dX2dT) < 0.001 and stickyness and dT > 0 then anims[id].stuck = true end
             end
 
             local retval = min + (max - min) * val
@@ -1245,7 +1555,7 @@ function RECIPE:Inject(ent, entclass)
         function ent.ShowHideSmooth(wagon, clientProp, value, color)
             if wagon.Hidden.override[clientProp] then return value end
             if not IsValid(wagon.ClientEnts[clientProp]) and wagon.SmoothHide[clientProp] then wagon.SmoothHide[clientProp] = 0 end
-            if wagon.SmoothHide[clientProp] and (wagon.SmoothHide[clientProp] == value and not color) then return value end
+            if wagon.SmoothHide[clientProp] and wagon.SmoothHide[clientProp] == value and not color then return value end
             wagon.SmoothHide[clientProp] = value
             wagon.Hidden.anim[clientProp] = value == 0
             if value > 0 and not IsValid(wagon.ClientEnts[clientProp]) and wagon:ShowHide(clientProp, true) then wagon.SmoothHide[clientProp] = nil end
@@ -1287,7 +1597,7 @@ function RECIPE:Inject(ent, entclass)
                         wagon.LightBrightness[index] = brightness
                     end
                     return
-                elseif (lightData[1] == "glow") or (lightData[1] == "light") then
+                elseif lightData[1] == "glow" or lightData[1] == "light" then
                     local brightness = brightness * (lightData.brightness or 0.5)
                     if brightness ~= wagon.LightBrightness[index] then
                         local light = wagon.GlowingLights[index]
@@ -1322,7 +1632,7 @@ function RECIPE:Inject(ent, entclass)
                 light:SetSize(lightData.scale or 1.0)
                 light:Set3D(false)
                 wagon.GlowingLights[index] = light
-            elseif (lightData[1] == "headlight") and (not lightData.backlight or wagon.RedLights) and (not lightData.panellight or wagon.OtherLights) then
+            elseif lightData[1] == "headlight" and (not lightData.backlight or wagon.RedLights) and (not lightData.panellight or wagon.OtherLights) then
                 local light = ProjectedTexture()
                 light:SetPos(wagon:LocalToWorld(lightData[2]))
                 light:SetAngles(wagon:LocalToWorldAngles(lightData[3]))
@@ -1371,11 +1681,699 @@ function RECIPE:Inject(ent, entclass)
             end
         end
     end
+
+    if SERVER then
+        local C_MaxWagons = GetConVar("metrostroi_maxwagons")
+        local C_MaxTrains = GetConVar("metrostroi_maxtrains")
+        local C_MaxTrainsOnPly = GetConVar("metrostroi_maxtrains_onplayer")
+        function ent.Initialize(wagon)
+            wagon.Joints = {}
+            wagon.JointPositions = {}
+            if wagon:GetModel() == "models/error.mdl" then wagon:SetModel("models/props_lab/reciever01a.mdl") end
+            if not wagon.NoPhysics then
+                wagon:PhysicsInit(SOLID_VPHYSICS)
+                wagon:SetMoveType(MOVETYPE_VPHYSICS)
+                wagon:SetSolid(SOLID_VPHYSICS)
+            else
+                wagon:SetSolid(SOLID_VPHYSICS)
+            end
+
+            wagon:SetUseType(SIMPLE_USE)
+            -- Prop-protection related
+            if CPPI and IsValid(wagon.Owner) then wagon:CPPISetOwner(wagon.Owner) end
+            -- Entities that belong to train and must be cleaned up later
+            wagon.TrainEntities = {}
+            -- All the sitting positions in train
+            wagon.Seats = {}
+            -- List of headlights, dynamic lights, sprite lights
+            wagon.Lights = {}
+            -- Load sounds
+            wagon:InitializeSounds()
+            if wagon.NoTrain then return end
+            -- Possible number of train wires
+            wagon.TrainWireCount = wagon.TrainWireCount or 36
+            -- Train wires
+            wagon:ResetTrainWires()
+            wagon:UpdateWagonList()
+            wagon:ChooseTrainWireLeader()
+            wagon:GenerateWagonNumber()
+            -- Systems defined in the train
+            wagon.Systems = {}
+            -- Initialize train systems
+            wagon:InitializeSystems()
+            -- Initialize highspeed interface
+            wagon:InitializeHighspeedLayout()
+            -- Add telemetry recording module if required
+            if GetConVar("metrostroi_write_telemetry"):GetInt() == 1 then wagon:LoadSystem("Telemetry") end
+            wagon:LoadSystem("FailSim")
+            if Wire_CreateInputs then
+                -- Initialize wire interface
+                wagon.WireIOSystems = wagon.WireIOSystems or {"KV", "ALSCoil", "Pneumatic"}
+                wagon.WireIOIgnoreList = wagon.WireIOIgnoreList or {"ALSCoilEnabled", "ALSCoilRealF5"}
+                local inputs = {}
+                local outputs = {}
+                local inputTypes = {}
+                local outputTypes = {}
+                local ignoreOutputs = {}
+                for k, v in pairs(wagon.WireIOIgnoreList) do
+                    ignoreOutputs[v] = true
+                end
+
+                for _, name in pairs(wagon.WireIOSystems) do
+                    local v = wagon.Systems[name]
+                    if v then
+                        local i = v:Inputs()
+                        local o = v:Outputs()
+                        for _, v2 in pairs(i) do
+                            if type(v2) == "string" then
+                                local name = (v.Name or "") .. v2
+                                if not ignoreOutputs[name] then
+                                    table.insert(inputs, name)
+                                    table.insert(inputTypes, "NORMAL")
+                                end
+                            elseif type(v2) == "table" then
+                                local name = (v.Name or "") .. v2[1]
+                                if not ignoreOutputs[name] then
+                                    table.insert(inputs, name)
+                                    table.insert(inputTypes, v2[2])
+                                end
+                            else
+                                ErrorNoHalt("Invalid wire input for metrostroi subway entity")
+                            end
+                        end
+
+                        for _, v2 in pairs(o) do
+                            if type(v2) == "string" then
+                                local name = (v.Name or "") .. v2
+                                if not ignoreOutputs[name] then
+                                    table.insert(outputs, (v.Name or "") .. v2)
+                                    table.insert(outputTypes, "NORMAL")
+                                end
+                            elseif type(v2) == "table" then
+                                local name = (v.Name or "") .. v2[1]
+                                if not ignoreOutputs[name] then
+                                    table.insert(outputs, (v.Name or "") .. v2[1])
+                                    table.insert(outputTypes, v2[2])
+                                end
+                            else
+                                ErrorNoHalt("Invalid wire output for metrostroi subway entity")
+                            end
+                        end
+                    end
+                end
+
+                -- Add input for a custom driver seat
+                table.insert(inputs, "DriverSeat")
+                table.insert(inputTypes, "ENTITY")
+                -- Add input for wrench
+                table.insert(inputs, "DriversWrenchPresent")
+                table.insert(inputTypes, "NORMAL")
+                -- Add I/O for train wires
+                if wagon.SubwayTrain then
+                    --for i=1,wagon.TrainWireCount do
+                    for i = 1, 20 do
+                        table.insert(inputs, "TrainWire" .. i)
+                        table.insert(inputTypes, "NORMAL")
+                        table.insert(outputs, "TrainWire" .. i)
+                        table.insert(outputTypes, "NORMAL")
+                    end
+                end
+
+                wagon.Inputs = WireLib.CreateSpecialInputs(wagon, inputs, inputTypes)
+                wagon.Outputs = WireLib.CreateSpecialOutputs(wagon, outputs, outputTypes)
+            else
+                wagon.WireIOSystems = {}
+                wagon.WireIOIgnoreList = {}
+            end
+
+            -- Setup drivers controls
+            wagon.ButtonBuffer = {}
+            wagon.KeyBuffer = {}
+            wagon.KeyMap = {}
+            -- Override for if drivers wrench is present
+            wagon.DriversWrenchPresent = false
+            -- External interaction areas
+            wagon.InteractionAreas = {}
+            -- Joystick module support
+            if joystick then wagon.JoystickBuffer = {} end
+            wagon.DebugVars = {}
+            -- Cross-connections in train wires
+            wagon.TrainWireCrossConnections = {}
+            wagon.TrainWireInverts = {}
+            wagon.TrainWireWritersID = {}
+            wagon.TrainWireTurbostroi = {}
+            -- Overrides for train wire values from wiremod interface and special concommand
+            wagon.TrainWireOverrides = {}
+            wagon.TrainWireOutside = {}
+            wagon.TrainWireOutsideFrom = {}
+            -- Is this train 'odd' or 'even' in coupled set
+            wagon.TrainCoupledIndex = 0
+            -- Speed and acceleration of train
+            wagon.Speed = 0
+            wagon.SpeedSign = 0
+            wagon.Acceleration = 0
+            -- Initialize train
+            if Turbostroi and not wagon.NoPhysics and not wagon.DontAccelerateSimulation then Turbostroi.InitializeTrain(wagon) end
+            if not Turbostroi or wagon.DontAccelerateSimulation then wagon.DataCache = {} end
+            -- Passenger related data (must be set by derived trains to allow boarding)
+            wagon.LeftDoorsOpen = false
+            --wagon.LeftDoorsBlocked = false
+            wagon.PrevLeftDoorsOpening = false
+            wagon.LeftDoorsOpening = false
+            wagon.RightDoorsOpen = false
+            --wagon.RightDoorsBlocked = false
+            wagon.PrevRightDoorsOpening = false
+            wagon.RightDoorsOpening = false
+            -- Get default train mass
+            if IsValid(wagon:GetPhysicsObject()) then wagon.NormalMass = wagon:GetPhysicsObject():GetMass() end
+            SetGlobalInt("metrostroi_train_count", Metrostroi.TrainCount())
+            net.Start("MetrostroiTrainCount")
+            net.Broadcast()
+            wagon.FailSim:TriggerInput("TrainWires", wagon.TrainWireCount)
+            wagon:FindFineSkin()
+            -- Initialize train systems
+            wagon:PostInitializeSystems()
+            for k, v in pairs(wagon.CustomSpawnerUpdates) do
+                if k ~= "BaseClass" then v(wagon) end
+            end
+        end
+
+        function ent.ElectricConnected(wagon, train, isRear)
+            if not IsValid(train) then return end
+            local conf = wagon.SubwayTrain
+            if isRear then
+                local rT = wagon.RearTrain
+                local rC = rT.SubwayTrain
+                if not IsValid(rT) then return end
+                local rTIsFront = rT.FrontTrain == train
+                if rTIsFront and rC and rC.NoFrontEKK then return end
+                if rC and conf and conf.EKKType ~= rC.EKKType then return end
+                if rTIsFront and rT.FrontCoupledBogeyDisconnect or not rTIsFront and rT.RearCoupledBogeyDisconnect or wagon.RearCoupledBogeyDisconnect then return end
+                if not IsValid(wagon.RearCouple) or wagon.RearCouple:ElectricDisconnected() or rT.FrontTrain == wagon and (not IsValid(rT.FrontCouple) or rT.FrontCouple:ElectricDisconnected()) or rT.RearTrain == wagon and (not IsValid(rT.RearCouple) or rT.RearCouple:ElectricDisconnected()) then return end
+            else
+                local fT = wagon.FrontTrain
+                local fC = fT.SubwayTrain
+                if not IsValid(fT) then return end
+                local fTIsFront = fT.FrontTrain == train
+                if conf.NoFrontEKK or fTIsFront and fC and fC.NoFrontEKK then return end
+                if fC and conf and conf.EKKType ~= fC.EKKType then return end
+                if fTIsFront and fT.FrontCoupledBogeyDisconnect or not fTIsFront and fT.RearCoupledBogeyDisconnect or wagon.FrontCoupledBogeyDisconnect then return end
+                if IsValid(wagon.FrontCouple) and wagon.FrontCouple:ElectricDisconnected() or fT.FrontTrain == wagon and (not IsValid(fT.FrontCouple) or fT.FrontCouple:ElectricDisconnected()) or fT.RearTrain == wagon and (not IsValid(fT.RearCouple) or fT.RearCouple:ElectricDisconnected()) then return end
+            end
+            return true
+        end
+
+        function ent.LeaderReadTrainWire(wagon, id)
+            if wagon.TrainWireOverrides[id] then return wagon.TrainWireOverrides[id] end
+            if wagon.TrainWireOutside[id] then return (wagon.TrainWireOutsideFrom[id] and (wagon.TrainWireTurbostroi[wagon.TrainWireOutsideFrom[id]] or 0) or 1) * wagon.TrainWireOutside[id] end
+            return (wagon.TrainWireTurbostroi[id] or 0) + (wagon.TrainWireWriters[id] or 0)
+        end
+
+        function ent.CreateSeatEntity(wagon, seat_info)
+            -- Create seat entity
+            local seat = ents.Create("prop_vehicle_prisoner_pod")
+            seat:SetModel(seat_info.model or "models/nova/jeep_seat.mdl") --jalopy
+            seat:SetPos(wagon:LocalToWorld(seat_info.offset))
+            seat:SetAngles(wagon:GetAngles() + Angle(0, -90, 0) + seat_info.angle)
+            seat:SetKeyValue("limitview", 0)
+            seat:Spawn()
+            seat:GetPhysicsObject():SetMass(10)
+            seat:SetCollisionGroup(COLLISION_GROUP_WORLD)
+            wagon:DrawShadow(false)
+            --Assign ownership
+            if CPPI and IsValid(wagon:CPPIGetOwner()) then seat:CPPISetOwner(wagon:CPPIGetOwner()) end
+            -- Hide the entity visually
+            if seat_info.type == "passenger" then
+                seat:SetColor(Color(0, 0, 0, 0))
+                seat:SetRenderMode(RENDERMODE_TRANSALPHA)
+            end
+
+            -- Set some shared information about the seat
+            local seats = wagon:GetNW2Int("seats", 0) + 1
+            wagon:SetNW2Entity("seat_" .. seats, seat)
+            wagon:SetNW2Int("seats", seats)
+            seat:SetNW2String("SeatType", seat_info.type)
+            seat:SetNW2Entity("TrainEntity", wagon)
+            seat_info.entity = seat
+            -- Constrain seat to this object
+            -- constraint.NoCollide(wagon,seat,0,0)
+            seat:SetParent(wagon)
+            -- Add to cleanup list
+            table.insert(wagon.TrainEntities, seat)
+            return seat
+        end
+
+        local joints = {{2, 12.5}, {3, 25}, {3, 50}, {2, 75},}
+        function ent.Think(wagon)
+            if wagon.FrontBogey then
+                if wagon.SpeedSign and wagon.WagonList[1] == wagon and (not wagon.FrontTrain and wagon.Speed * wagon.SpeedSign > 0.25 or not wagon.RearTrain and wagon.Speed * wagon.SpeedSign < -0.25) then
+                    --print(wagon.FrontBogey.Wheels,wagon.RearBogey)
+                    --wagon.TargetDist
+                    --wagon.rep = 0
+                    --wagon.rep = nil
+                    if not wagon.JointRepeats or wagon.JointRepeats <= 0 then
+                        local ch
+                        repeat
+                            ch = math.ceil(math.random() * #joints)
+                        until ch ~= wagon.LastJoint
+
+                        wagon.LastJoint = ch
+                        wagon.JointDist = joints[ch][2]
+                        wagon.JointRepeats = math.floor(math.random(1, joints[ch][1]))
+                    end
+
+                    if not wagon.CurrentJointDist then wagon.CurrentJointDist = 0 end
+                    if wagon.JointDist then
+                        wagon.CurrentJointDist = wagon.CurrentJointDist + wagon.DeltaTime * wagon.Speed * wagon.SpeedSign / 3.6
+                        if wagon.JointRepeats > 0 and (wagon.CurrentJointDist > wagon.JointDist or wagon.CurrentJointDist < -wagon.JointDist) then
+                            wagon.JointRepeats = wagon.JointRepeats - 1
+                            local snd = math.ceil(math.random() * 32)
+                            wagon:CreateJointSound(snd)
+                            wagon.CurrentJointDist = 0
+                        end
+                    end
+                end
+
+                --DISTANCES
+                --0.774
+                --WHEELS:81 2.05 --2.66
+                --TRAIN:755 19.17 24.79
+                --89 2.26 2.92
+                --171 4.34 5.61
+                --584 14.83 19.17
+                --666 16.91 21.84
+                if #wagon.Joints > 0 then
+                    local first, last = wagon.JointPositions[1], wagon.JointPositions[#wagon.JointPositions]
+                    --wagon.Joints = {}
+                    for i, j in ipairs(wagon.Joints) do
+                        j.dist = j.dist + wagon.DeltaTime * -wagon:GetVelocity():Dot(wagon:GetAngles():Forward())
+                        local dist = j.dist
+                        local ch = false
+                        for iD, jD in ipairs(wagon.JointPositions) do
+                            if dist < jD and j.state < iD or dist > jD and j.state > iD then
+                                --RunConsoleCommand("say",Format("[%d] dist(%.1f)%sjD(%.1f) %d%+d",i,dist,dist>jD and ">" or "<",jD,j.state,j.state>iD and j.state-1 or j.state+1))
+                                j.state = iD --j.state>iD and j.state-1 or j.state+1
+                                if 1 < iD and iD < #wagon.JointPositions then
+                                    ch = iD
+                                else
+                                    if iD == 1 and dist > first and IsValid(wagon.FrontTrain) then
+                                        wagon.FrontTrain:CreateJointSound(j.type)
+                                    elseif iD ~= 1 and dist < last and IsValid(wagon.RearTrain) then
+                                        wagon.RearTrain:CreateJointSound(j.type)
+                                    end
+
+                                    table.remove(wagon.Joints, i)
+                                end
+
+                                break
+                            end
+                        end
+
+                        if ch then wagon:PlayOnce(ch % 2 > 0 and "a" or "b", "styk", j.type, math.floor(j.state / 2)) end
+                    end
+                end
+            end
+
+            if wagon.FailSim and wagon.FailSim.TrainWireFall and wagon.FailSim.TrainWireFail > 0 then
+                wagon.TrainWireOutside[wagon.FailSim.TrainWireFail] = 1
+                if fail then wagon.FailSim:TriggerInput("ResetTW") end
+            end
+
+            wagon.PrevTime = wagon.PrevTime or CurTime()
+            wagon.DeltaTime = CurTime() - wagon.PrevTime
+            wagon.PrevTime = CurTime()
+            -- Calculate train acceleration
+            -- Apply mass of passengers
+            if wagon.NormalMass then wagon:GetPhysicsObject():SetMass(wagon.NormalMass + 60 * wagon:GetNW2Float("PassengerCount")) end
+            if wagon.AnnouncementToLeaveWagon and wagon:GetNW2Float("PassengerCount") == 0 then wagon.AnnouncementToLeaveWagon = false end
+            -- Hack for VAH switch on non-supported maps so you don't have to hold space all the time
+            if not wagon.NonSupportedChecked then
+                wagon.NonSupportedChecked = true
+                if not Metrostroi.MapHasFullSupport("ars") and wagon.NonSupportTrigger then wagon:NonSupportTrigger() end
+            end
+
+            -- Calculate turn information, unused right now
+            --
+            -- Process the keymap for modifiers
+            -- TODO: Need a neat way of calling this once after wagon.KeyMap is populated
+            if not wagon.KeyMods and wagon.KeyMap then wagon:ProcessKeyMap() end
+            -- Keyboard input is done via PlayerButtonDown/Up hooks that call ENT:OnKeyEvent
+            -- Joystick input
+            if IsValid(wagon.DriverSeat) then
+                local ply = wagon.DriverSeat:GetPassenger(0)
+                if IsValid(ply) then
+                    --if wagon.KeyMap then wagon:HandleKeyboardInput(ply) end
+                    if joystick then wagon:HandleJoystickInput(ply) end
+                    wagon:SetNW2Bool("GoldenReverser", IsValid(ply) and IsValid(ply:GetWeapon("train_kv_wrench_gold")))
+                end
+            end
+
+            if Turbostroi and not wagon.DontAccelerateSimulation then
+                -- Run iterations on systems simulation
+                local iterationsCount = 1
+                if not wagon.Schedule or iterationsCount ~= wagon.Schedule.IterationsCount then
+                    wagon.Schedule = {
+                        IterationsCount = iterationsCount
+                    }
+
+                    local SystemIterations = {}
+                    -- Find max number of iterations
+                    local maxIterations = 0
+                    for k, v in pairs(wagon.Systems) do
+                        if v.DontAccelerateSimulation then
+                            SystemIterations[k] = v.SubIterations or 1
+                            maxIterations = math.max(maxIterations, v.SubIterations or 1)
+                        end
+                    end
+
+                    for iteration = 1, maxIterations do
+                        wagon.Schedule[iteration] = {}
+                        -- Populate schedule
+                        for k, v in pairs(wagon.Systems) do
+                            if v.DontAccelerateSimulation and iteration % (maxIterations / (v.SubIterations or 1)) == 0 then table.insert(wagon.Schedule[iteration], v) end
+                        end
+                    end
+                end
+
+                -- Simulate according to schedule
+                for i, s in ipairs(wagon.Schedule) do
+                    for k, v in ipairs(s) do
+                        --v:Think(wagon.DeltaTime / (v.SubIterations or 1)/2,i)
+                        v:Think(wagon.DeltaTime / (v.SubIterations or 1), i)
+                    end
+                end
+            else
+                -- Output all variable values
+                for sys_name, system in pairs(wagon.Systems) do
+                    if system.OutputsList and not system.DontAccelerateSimulation then
+                        for _, name in pairs(system.OutputsList) do
+                            local value = system[name] or 0
+                            --if type(value) == "boolean" then value = value and 1 or 0 end
+                            if not wagon.DataCache[sys_name] then wagon.DataCache[sys_name] = {} end
+                            if wagon.DataCache[sys_name][name] ~= value then
+                                wagon:TriggerTurbostroiInput(sys_name, name, value)
+                                wagon.DataCache[sys_name][name] = value
+                            end
+                        end
+                    end
+                end
+
+                -- Run iterations on systems simulation
+                local iterationsCount = 1
+                if not wagon.Schedule or iterationsCount ~= wagon.Schedule.IterationsCount then
+                    wagon.Schedule = {
+                        IterationsCount = iterationsCount
+                    }
+
+                    local SystemIterations = {}
+                    -- Find max number of iterations
+                    local maxIterations = 0
+                    for k, v in pairs(wagon.Systems) do
+                        SystemIterations[k] = v.SubIterations or 1
+                        maxIterations = math.max(maxIterations, SystemIterations[k])
+                    end
+
+                    for iteration = 1, maxIterations do
+                        wagon.Schedule[iteration] = {}
+                        -- Populate schedule
+                        for k, v in pairs(wagon.Systems) do
+                            if iteration % (maxIterations / SystemIterations[k]) == 0 then table.insert(wagon.Schedule[iteration], v) end
+                        end
+                    end
+                end
+
+                -- Simulate according to schedule
+                for i, s in ipairs(wagon.Schedule) do
+                    for k, v in ipairs(s) do
+                        local el = v.FileName:find("electric")
+                        if el then
+                            --time = SysTime()
+                        end
+
+                        --if v.DontAccelerateSimulation then
+                        v:Think(wagon.DeltaTime / (v.SubIterations or 1), i)
+                        --[[ else
+                            v:Think(wagon.DeltaTime / (v.SubIterations or 1)/2,i)
+                            v:Think(wagon.DeltaTime / (v.SubIterations or 1)/2,i)
+                        end--]]
+                    end
+                end
+                --print(1/(SysTime()-time))
+                -- Wire outputs
+                --local triggerOutput = wagon.TriggerOutput
+            end
+
+            if wagon.WireIOSystems then
+                for _, name in pairs(wagon.WireIOSystems) do
+                    local system = wagon.Systems[name]
+                    if system and system.OutputsList then
+                        for _, name in pairs(system.OutputsList) do
+                            local varname = (system.Name or "") .. name
+                            if type(system[name]) == "boolean" then
+                                wagon.TriggerOutput(wagon, varname, system[name] and 1 or 0)
+                            else
+                                wagon.TriggerOutput(wagon, varname, tonumber(system[name]) or 0)
+                            end
+                        end
+                    end
+                end
+            end
+
+            if #wagon.WagonList == 1 then
+                for twID in pairs(wagon.TrainWireWritersID) do
+                    wagon.TrainWires[twID] = wagon:LeaderReadTrainWire(twID)
+                end
+            else
+                local wires = {}
+                for i, train in ipairs(wagon.WagonList) do
+                    local inv = train.TrainCoupledIndex ~= wagon.TrainCoupledIndex
+                    for twID in pairs(train.TrainWireWritersID) do
+                        local target = twID
+                        if inv then
+                            for a, b in pairs(train.TrainWireCrossConnections) do
+                                if target == a then
+                                    target = b
+                                elseif target == b then
+                                    target = a
+                                end
+                            end
+                        end
+
+                        local twVal = train:LeaderReadTrainWire(target)
+                        if train.TrainWireInverts[twID] or wires[twID] == true then
+                            if twVal <= 0 then
+                                wires[twID] = true
+                            elseif not wires[twID] or wires[twID] ~= true then
+                                wires[twID] = (wires[twID] or 0) + twVal
+                            end
+                        else
+                            wires[twID] = (wires[twID] or 0) + twVal
+                        end
+                    end
+                end
+
+                local TrainCount = #wagon.WagonList
+                for i, train in ipairs(wagon.WagonList) do
+                    local inv = train.TrainCoupledIndex ~= wagon.TrainCoupledIndex
+                    for twID in pairs(wires) do
+                        local target = twID
+                        if inv then
+                            for a, b in pairs(train.TrainWireCrossConnections) do
+                                if target == a then
+                                    target = b
+                                elseif target == b then
+                                    target = a
+                                end
+                            end
+                        end
+
+                        if wires[twID] == true then
+                            train.TrainWires[target] = 0
+                        else
+                            train.TrainWires[target] = wires[twID]
+                        end
+                    end
+                end
+            end
+
+            if Wire_CreateInputs then
+                local readTrainWire = wagon.ReadTrainWire
+                for i = 1, 32 do
+                    wagon.TriggerOutput(wagon, "TrainWire" .. i, readTrainWire(wagon, i))
+                end
+
+                wagon.TriggerOutput(wagon, "TrainWire35", readTrainWire(wagon, 35))
+                wagon.TriggerOutput(wagon, "TrainWire36", readTrainWire(wagon, 36))
+            end
+
+            -- Calculate own speed and acceleration
+            local speed, acceleration = 0, 0
+            if IsValid(wagon.FrontBogey) and IsValid(wagon.RearBogey) and not wagon.IgnoreEngine then
+                wagon.Speed = (wagon.FrontBogey.Speed + wagon.RearBogey.Speed) / 2
+                wagon.SpeedSign = wagon.FrontBogey.SpeedSign or 1
+                wagon.Acceleration = (wagon.FrontBogey.Acceleration + wagon.RearBogey.Acceleration) / 2
+            else
+                wagon.Acceleration = 0
+                wagon.Speed = 0
+                wagon.SpeedSign = 0
+            end
+
+            if wagon.Plombs and wagon.Plombs.Init then
+                for k, v in pairs(wagon.Plombs) do
+                    if k == "Init" then continue end
+                    if wagon.Plombs.Init then
+                        --wagon[k]:TriggerInput("Reset",true)
+                        wagon[k]:TriggerInput("Block", true)
+                    end
+
+                    if type(v) == "table" then
+                        wagon:SetPackedBool(k .. "Pl", v[1])
+                    else
+                        wagon:SetPackedBool(k .. "Pl", v)
+                    end
+                end
+
+                wagon.Plombs.Init = nil
+            end
+
+            if wagon.Electric and wagon.Electric.Overheat1 then
+                -- Draw overheat of the engines FIXME
+                local smoke_intensity = wagon.Electric.Overheat1 * (wagon.Electric.T1 - 200) / 400 or wagon.Electric.Overheat2 * (wagon.Electric.T2 - 200) / 400 or 0
+                -- Generate smoke
+                wagon.PrevSmokeTime = wagon.PrevSmokeTime or CurTime()
+                if smoke_intensity > 0.0 and CurTime() - wagon.PrevSmokeTime > 0.5 + 4.0 * (1 - smoke_intensity) then
+                    wagon.PrevSmokeTime = CurTime()
+                    ParticleEffect("generic_smoke", wagon:LocalToWorld(Vector(100 * math.random(), 40, -80)), Angle(0, 0, 0), wagon)
+                end
+            end
+
+            if (not wagon.SpritesTimer or CurTime() - wagon.SpritesTimer > 1) and wagon.GlowingLights then
+                for _, ply in ipairs(player.GetAll()) do
+                    local inPVS = wagon:TestPVS(ply)
+                    for _, light in pairs(wagon.GlowingLights) do
+                        light:SetPreventTransmit(ply, not inPVS)
+                    end
+                end
+
+                wagon.SpritesTimer = CurTime()
+            end
+
+            -- Go to next think
+            wagon:SetNW2Float("Accel", math.Round((wagon.OldSpeed or 0) - (wagon.Speed or 0) * (wagon.SpeedSign or 0), 2))
+            wagon:SetNW2Float("TrainSpeed", wagon.Speed)
+            wagon.OldSpeed = (wagon.Speed or 0) * (wagon.SpeedSign or 0)
+            for k, v in pairs(wagon.CustomThinks) do
+                if k ~= "BaseClass" then v(wagon) end
+            end
+
+            wagon:NextThink(CurTime() + 0.05)
+            return true
+        end
+
+        function ent.SpawnFunction(wagon, ply, tr, className, rotate, func)
+            --MaxTrains limit
+            if wagon.ClassName ~= "gmod_subway_base" and not wagon.NoTrain then
+                local Limit1 = math.min(2, C_MaxWagons:GetInt()) * C_MaxTrainsOnPly:GetInt() - 1
+                local Limit2 = math.max(0, C_MaxWagons:GetInt() - 2) * C_MaxTrainsOnPly:GetInt() - 1
+                if Metrostroi.TrainCount() > C_MaxTrains:GetInt() * C_MaxWagons:GetInt() - 1 then
+                    ply:LimitHit("train_limit")
+                    --Metrostroi.LimitMessage(ply)
+                    return
+                end
+
+                if Metrostroi.TrainCountOnPlayer(ply) > C_MaxWagons:GetInt() * C_MaxTrainsOnPly:GetInt() - 1 then
+                    ply:LimitHit("train_limit")
+                    --Metrostroi.LimitMessage(ply)
+                    return
+                end
+
+                if wagon.SubwayTrain and wagon.SubwayTrain.WagType == 1 then
+                    if Metrostroi.TrainCountOnPlayer(ply, 1) > Limit1 then
+                        ply:LimitHit("train_limit")
+                        --Metrostroi.LimitMessage(ply)
+                        return
+                    end
+                elseif wagon.SubwayTrain and wagon.SubwayTrain.WagType == 2 then
+                    if Metrostroi.TrainCountOnPlayer(ply, 2) > Limit2 then
+                        ply:LimitHit("train_limit")
+                        --Metrostroi.LimitMessage(ply)
+                        return
+                    end
+                    --elseif wagon.ClassName:find("tatra") then
+                end
+            end
+
+            local verticaloffset = 5 -- Offset for the train model
+            local distancecap = 2000 -- When to ignore hitpos and spawn at set distanace
+            local pos, ang = nil
+            local inhibitrerail = false
+            if func then
+                pos, ang = func(ply)
+                --TODO: Make this work better for raw base ent
+            elseif tr.Hit and wagon.NoTrain then
+                -- Regular spawn
+                if tr.HitPos:Distance(tr.StartPos) > distancecap then
+                    -- Spawnpos is far away, put it at distancecap instead
+                    pos = tr.StartPos + tr.Normal * distancecap
+                else
+                    -- Spawn is near
+                    pos = tr.HitPos + tr.HitNormal * verticaloffset
+                end
+
+                ang = Angle(0, tr.Normal:Angle().y, 0)
+            elseif tr.Hit and not wagon.NoTrain then
+                -- Setup trace to find out of this is a track
+                local tracesetup = {}
+                tracesetup.start = tr.HitPos
+                tracesetup.endpos = tr.HitPos + tr.HitNormal * 80
+                tracesetup.filter = ply
+                local tracedata = util.TraceLine(tracesetup)
+                if tracedata.Hit then
+                    -- Trackspawn
+                    pos = (tr.HitPos + tracedata.HitPos) / 2 + Vector(0, 0, verticaloffset)
+                    ang = tracedata.HitNormal
+                    ang:Rotate(Angle(0, 90, 0))
+                    ang = ang:Angle()
+                    -- Bit ugly because Rotate() messes with the orthogonal vector | Orthogonal? I wrote "origional?!" :V
+                else
+                    -- Regular spawn
+                    if tr.HitPos:Distance(tr.StartPos) > distancecap then
+                        -- Spawnpos is far away, put it at distancecap instead
+                        pos = tr.StartPos + tr.Normal * distancecap
+                        inhibitrerail = true
+                    else
+                        -- Spawn is near
+                        pos = tr.HitPos + tr.HitNormal * verticaloffset
+                    end
+
+                    ang = Angle(0, tr.Normal:Angle().y, 0)
+                end
+            else
+                -- Trace didn't hit anything, spawn at distancecap
+                pos = tr.StartPos + tr.Normal * distancecap
+                ang = Angle(0, tr.Normal:Angle().y, 0)
+            end
+
+            local ent = ents.Create(className or wagon.ClassName)
+            ent:SetPos(pos)
+            ent:SetAngles(ang)
+            if rotate then ent:SetAngles(ent:LocalToWorldAngles(Angle(0, 180, 0))) end
+            ent.Owner = ply
+            ent:Spawn()
+            ent:Activate()
+            if not inhibitrerail then inhibitrerail = not Metrostroi.RerailTrain(ent) end
+            if rotate and inhibitrerail then
+                ent:Remove()
+                return false
+            end
+            -- Debug mode
+            --Metrostroi.DebugTrain(ent,ply)
+            return ent
+        end
+    end
 end
 
 function RECIPE:InjectNeeded()
-    if Metrostroi.Version > 1537278077 then
-        return false
-    end
+    if Metrostroi.Version > 1537278077 then return false end
     return true
 end

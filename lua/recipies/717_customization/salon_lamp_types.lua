@@ -14,7 +14,19 @@ RECIPE.Description = "This recipe adds ability to customize salon lamp types."
 local MODELS_ROOT = "models/metrostroi_train/81-717/"
 local MAX_GLOW_COUNT = 48
 local logError = MEL.LogErrorFactory()
---TODO: lamp enable/disable, color variation
+local function getLampData(wagon)
+    local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
+    if string.find(wagon:GetClass(), "717") then
+        return lamp_data.head
+    else
+        return lamp_data.int
+    end
+end
+
+local function getGlowData(wagon)
+    return getLampData(wagon).glow
+end
+
 function RECIPE:Init()
     -- Я не стал трогать дефолт рандомы, так что снизу говнокод, предупреждаю)
     self.Specific.SalonLampList = {
@@ -140,82 +152,36 @@ function RECIPE:Inject(ent, entclass)
         pos = Vector(0, 0, 0),
         ang = Angle(0, 0, 0),
         hide = 1.5,
-        modelcallback = function(wagon)
-            local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
-            if string.find(wagon:GetClass(), "717") then
-                return lamp_data.head.model
-            else
-                return lamp_data.int.model
-            end
-        end,
+        modelcallback = function(wagon) return getLampData(wagon).model end,
         callback = function(wagon, cent)
-            local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
-            if string.find(wagon:GetClass(), "717") then
-                if lamp_data.head.callback then lamp_data.head.callback(wagon, cent) end
-            else
-                if lamp_data.int.callback then lamp_data.int.callback(wagon, cent) end
-            end
+            local lamp_data = getLampData(wagon)
+            if lamp_data.callback then lamp_data.callback(wagon, cent) end
         end
     }, "SalonLampType")
 
     for i = 1, MAX_GLOW_COUNT do
+        -- first two glows always used (first one is emergency lighting, second one is main lighting)
         MEL.NewClientProp(ent, "salon_lamps_glow" .. i, {
             model = MODELS_ROOT .. "lamps/lamp_typ1.mdl",
             pos = Vector(0, 0, 0),
             ang = Angle(0, 0, 0),
             hideseat = 1.1,
             modelcallback = function(wagon)
-                local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
-                if string.find(wagon:GetClass(), "717") then
-                    return lamp_data.head.glow.model
-                else
-                    return lamp_data.int.glow.model
-                end
+                local glow_data = getGlowData(wagon)
+                if glow_data.count == 1 and i == 1 then return glow_data.model_emergency end
+                return glow_data.model
             end,
             callback = function(wagon, cent)
-                local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
-                if string.find(wagon:GetClass(), "717") then
-                    if i > lamp_data.head.glow.count and i ~= 1 then
-                        cent:SetNoDraw(true)
-                        return
-                    end
-
-                    if lamp_data.head.glow.callback then lamp_data.head.glow.callback(wagon, cent, i) end
-                else
-                    if i > lamp_data.int.glow.count and i ~= 1 then
-                        cent:SetNoDraw(true)
-                        return
-                    end
-
-                    if lamp_data.int.glow.callback then lamp_data.int.glow.callback(wagon, cent, i) end
+                local glow_data = getGlowData(wagon)
+                if i > 2 and i > glow_data.count then
+                    cent:SetNoDraw(true)
+                    return
                 end
+
+                if glow_data.callback then glow_data.callback(wagon, cent, i) end
             end
         }, "SalonLampType")
     end
-
-    -- this model used only when count is == 1. 
-    MEL.NewClientProp(ent, "salon_lamps_glow_emergency", {
-        model = MODELS_ROOT .. "lamps/lamp_typ1.mdl",
-        pos = Vector(0, 0, 0),
-        ang = Angle(0, 0, 0),
-        hideseat = 1.1,
-        modelcallback = function(wagon)
-            local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
-            if string.find(wagon:GetClass(), "717") then
-                return lamp_data.head.glow.model_emergency
-            else
-                return lamp_data.int.glow.model_emergency
-            end
-        end,
-        callback = function(wagon, cent)
-            local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
-            if string.find(wagon:GetClass(), "717") and not lamp_data.head.glow.model_emergency then
-                cent:SetNoDraw(true)
-            elseif not lamp_data.int.glow.model_emergency then
-                cent:SetNoDraw(true)
-            end
-        end
-    }, "SalonLampType")
 
     ent.UpdateLampsColors = function(wagon)
         local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
@@ -235,7 +201,6 @@ function RECIPE:Inject(ent, entclass)
             local color = colors[i] or Vector(255, 255, 255)
             wagon:SetNW2Vector("SalonLampColor" .. i, color)
             wagon.SalonLamps.broken[i] = math.random() > rand and math.random() > 0.7
-
             if not lamp_data.light_color then
                 mean_color_sum = mean_color_sum + color
                 mean_count = mean_count + 1
@@ -245,35 +210,35 @@ function RECIPE:Inject(ent, entclass)
                         return
                     end
 
-                    wagon:SetLightPower(mean_current_lamp_id, false)
                     local mean_color = (mean_color_sum / mean_count) / 255
-                    wagon.Lights[mean_current_lamp_id][4] = Vector(mean_color.r, mean_color.g ^ 3, mean_color.b ^ 3) * 255
-                    wagon.Lights[mean_current_lamp_id].brightness = lamp_data.light_brightness or 3
+                    wagon:SetNW2Vector("lampD" .. mean_current_lamp_id, Vector(mean_color.r, mean_color.g ^ 3, mean_color.b ^ 3) * 255)
                     mean_color_sum, mean_count = Vector(), 0
                     mean_current_lamp_id = mean_current_lamp_id + 1
                 end
             end
         end
+
         if lamp_data.light_color then
+            local light_color = lamp_data.light_color
             for i = 11, 13 do
-                wagon:SetLightPower(i, false)
-                wagon.Lights[i][4] = lamp_data.light_color
-                wagon.Lights[i].brightness = lamp_data.light_brightness
+                wagon:SetNW2Vector("lampD" .. i, Vector(light_color.r, light_color.g, light_color.b))
+                -- wagon.Lights[i].brightness = lamp_data.light_brightness
             end
             return
         end
+
         -- 13 + 1 cause we do +1 in last iteration while counting mean color, if everything goes normally
-        if mean_current_lamp_id ~= (13 + 1) then
+        if mean_current_lamp_id ~= 13 + 1 then
             -- if we didn't changed colors on all lights, than just do it manually (but get a mean from ALL colors)
             mean_color_sum = Vector()
             for _, color in pairs(colors) do
                 mean_color_sum = mean_color_sum + (color or Vector(255, 255, 255))
             end
+
             local mean_color = (mean_color_sum / #colors) / 255
             for i = 11, 13 do
-                wagon:SetLightPower(i, false)
-                wagon.Lights[i][4] = Vector(mean_color.r, mean_color.g ^ 3, mean_color.b ^ 3) * 255
-                wagon.Lights[i].brightness = lamp_data.light_brightness or 3
+                wagon:SetNW2Vector("lampD" .. i, Vector(mean_color.r, mean_color.g ^ 3, mean_color.b ^ 3) * 255)
+                -- wagon.Lights[i].brightness = lamp_data.light_brightness or 3
             end
         end
     end
@@ -287,7 +252,6 @@ function RECIPE:Inject(ent, entclass)
         wagon:SetPackedBool("EmergencyLights", emergencyLights)
         wagon:SetPackedBool("MainLights", mainLights)
         if lamp_amount == 1 then return end
-        local mul = 0
         local Ip = lamp_data.emergency_Ip or 1
         if not wagon.SalonLamps then
             wagon.SalonLamps = {
@@ -296,41 +260,45 @@ function RECIPE:Inject(ent, entclass)
         end
 
         for i = 1, lamp_amount do
-            if mainLights or (emergencyLights and math.ceil((i + Ip) % Ip) == 1) then
+            if mainLights or emergencyLights and math.ceil((i + Ip) % Ip) == 1 then
                 if not wagon.SalonLamps[i] and not wagon.SalonLamps.broken[i] then wagon.SalonLamps[i] = CurTime() + math.Rand(0.1, math.Rand(0.5, 2)) end
             else
                 wagon.SalonLamps[i] = nil
             end
 
             if wagon.SalonLamps[i] and CurTime() - wagon.SalonLamps[i] > 0 then
-                mul = mul + 1
                 wagon:SetPackedBool("SalonLampEnabled" .. i, true)
             else
                 wagon:SetPackedBool("SalonLampEnabled" .. i, false)
             end
         end
-
-        wagon:SetLightPower(11, mul > 0, mul / lamp_amount)
-        wagon:SetLightPower(12, mul > 0, mul / lamp_amount)
-        wagon:SetLightPower(13, mul > 0, mul / lamp_amount)
     end)
 
     MEL.InjectIntoClientFunction(ent, "Think", function(wagon)
-        local lamp_data = MEL.RecipeSpecific.SalonLampList[wagon:GetNW2Int("SalonLampType", 1)]
-        local lamp_amount = lamp_data.int.glow.count
-        if string.find(wagon:GetClass(), "717") then lamp_amount = lamp_data.head.glow.count end
-        if lamp_amount == 1 then
+        local lamp_data = getLampData(wagon)
+        local glow_data = lamp_data.glow
+        if glow_data.count == 1 then
             local emergencyLights = wagon:GetPackedBool("EmergencyLights")
             local mainLights = wagon:GetPackedBool("MainLights")
-            wagon:ShowHide("salon_lamps_glow_emergency", emergencyLights and not mainLights)
-            wagon:ShowHide("salon_lamps_glow1", mainLights)
-            return
+            wagon:ShowHide("salon_lamps_glow1", emergencyLights and not mainLights)
+            wagon:ShowHide("salon_lamps_glow2", mainLights)
+        else
+            for i = 1, glow_data.count do
+                local color_vector = wagon:GetNW2Vector("SalonLampColor" .. i)
+                local color = Color(color_vector.x, color_vector.y, color_vector.z)
+                local state = wagon:Animate("SalonLamp" .. i, wagon:GetPackedBool("SalonLampEnabled" .. i) and 1 or 0, 0, 1, 6, false)
+                wagon:ShowHideSmooth("salon_lamps_glow" .. i, state, color)
+            end
         end
-
-        for i = 1, lamp_amount do
-            local colV = wagon:GetNW2Vector("SalonLampColor" .. i)
-            local col = Color(colV.x, colV.y, colV.z)
-            wagon:ShowHideSmooth("salon_lamps_glow" .. i, wagon:Animate("SalonLampsGlow" .. i, wagon:GetPackedBool("SalonLampEnabled" .. i) and 1 or 0, 0, 1, 6, false), col)
-        end
-    end)
+        -- for i = 11, 13 do
+        --     local color_vector = wagon:GetNW2Vector("SalonLampLightColor" .. i)
+        --     if wagon.LightsOverride[i].vec_ext ~= color_vector then
+        --         wagon.LightsOverride[i].vec_ext = color_vector
+        --         wagon.LightsOverride[i][4] = Color(color_vector.x, color_vector.y, color_vector.z)
+        --         wagon:SetLightPower(i, false)
+        --     else
+        --         wagon:SetLightPower(i, active_lights > 0, active_lights / glow_data.count)
+        --     end
+        -- end
+    end, 1)
 end
