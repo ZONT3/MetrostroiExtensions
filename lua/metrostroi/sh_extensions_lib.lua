@@ -415,7 +415,7 @@ local function inject(isBackports)
     MEL._LoadHelpers()
     -- method that finalizes inject on all trains. called after init of recipies
     for _, recipe in pairs(MEL.InjectStack) do
-        if not isBackports and recipe.BackportPriority then continue end  -- TODO: Probably do something with this
+        if isBackports then continue end  -- TODO: Probably do something with this
         recipe:BeforeInject()
     end
 
