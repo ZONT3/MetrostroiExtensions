@@ -83,27 +83,31 @@ MEL.Constants = {
     }
 }
 
--- logger methods
-local function printPrefix()
-    if SERVER then
-        MsgC(Color(0, 0, 255), "[Metrostroi", Color(0, 255, 0), "ExtensionsLib] ", color_white)
-    else
-        MsgC(Color(72, 120, 164), "[Metrostroi", Color(44, 131, 61), "ExtensionsLib] ", color_white)
-    end
-end
 
 local LOG_PREFIX = "[MetrostroiExtensionsLib] "
 local WARNING_COLOR = Color(255, 255, 0)
+local DEBUG_COLOR = Color(255, 0, 191)
+local INFO_COLOR = Color(0, 4, 255)
+local WHITE = Color(255, 255, 255)
+-- logger methods
+local function printPrefix()
+    if SERVER then
+        MsgC(Color(0, 0, 255), "[Metrostroi", Color(0, 255, 0), "ExtensionsLib] ")
+    else
+        MsgC(Color(72, 120, 164), "[Metrostroi", Color(44, 131, 61), "ExtensionsLib] ")
+    end
+end
+
 local function logDebug(msg)
     if MEL.Debug then
         printPrefix()
-        MsgC(Format("Debug: %s\n", msg))
+        MsgC(DEBUG_COLOR, "Debug: ", msg, "\n")
     end
 end
 
 function MEL._LogInfo(msg)
     printPrefix()
-    MsgC(Format("Info: %s\n", msg))
+    MsgC(INFO_COLOR, "Info: ", WHITE, msg, "\n")
 end
 
 function MEL._LogWarning(msg)
@@ -407,14 +411,18 @@ local function injectFunction(key, tbl)
     end
 end
 
-local function inject()
+local function inject(isBackports)
     MEL._LoadHelpers()
     -- method that finalizes inject on all trains. called after init of recipies
     for _, recipe in pairs(MEL.InjectStack) do
+        if not isBackports and recipe.BackportPriority then continue end  -- TODO: Probably do something with this
         recipe:BeforeInject()
     end
 
     for _, recipe in pairs(MEL.InjectStack) do
+        if isBackports and not recipe.BackportPriority then return end  -- we do this cause all backports recipies will be in start of table
+        if not isBackports and recipe.BackportPriority then continue end  -- TODO: Probably do something with this
+        logDebug(Format("injecting recipe %s", recipe.Name))
         -- call Inject method on every ent that recipe changes
         for _, entclass in pairs(MEL.GetEntsByTrainType(recipe.TrainType)) do
             if recipe:InjectNeeded(entclass) then
@@ -454,6 +462,11 @@ end
 discoverRecipies()
 -- injection logic
 hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
+    -- just for backports
+    if Metrostroi.Version <= 1537278077 then
+        getEntTables()
+        inject(true)
+    end
     timer.Simple(1, function()
         getEntTables()
         inject()

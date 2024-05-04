@@ -251,6 +251,7 @@ end
 
 function MEL.ApplyBackports()
     if Metrostroi.Version > 1537278077 then return end
+    MEL._LogInfo("applying backports")
     newConvars()
     newSpriteEnt()
     newDLightEnt()
