@@ -12,8 +12,8 @@
 MEL.DefineRecipe("platform_backport", {"gmod_track_platform"})
 RECIPE.BackportPriority = true
 function RECIPE:Inject(ent)
-    MEL.InjectIntoClientFunction(ent, "Initialize", function(wagon) wagon:DrawShadow(false) end, 1)
-    MEL.InjectIntoServerFunction(ent, "Initialize", function(wagon) wagon:DrawShadow(false) end, 1)
+    -- MEL.InjectIntoClientFunction(ent, "Initialize", function(wagon) wagon:DrawShadow(false) end, 1)
+    -- MEL.InjectIntoServerFunction(ent, "Initialize", function(wagon) wagon:DrawShadow(false) end, 1)
     if CLIENT then
         function ent.Think(wagon)
             wagon.PrevTime = wagon.PrevTime or CurTime()

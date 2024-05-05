@@ -314,11 +314,6 @@ function RECIPE:Inject(ent)
             ent.Lights[id] = light
         end
     end
-    if SERVER then
-        MEL.InjectIntoServerFunction(ent, "Initialize", function(wagon)
-            wagon.Lights = nil
-        end, 1)
-    end
 end
 
 function RECIPE:InjectNeeded()

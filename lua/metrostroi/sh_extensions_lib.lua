@@ -83,7 +83,6 @@ MEL.Constants = {
     }
 }
 
-
 local LOG_PREFIX = "[MetrostroiExtensionsLib] "
 local WARNING_COLOR = Color(255, 255, 0)
 local DEBUG_COLOR = Color(255, 0, 191)
@@ -330,7 +329,7 @@ local function injectRandomFieldHelper(entclass)
                 local value = wagon:GetNW2Float(name, min)
                 if not custom or value == min then
                     if decimals > 0 then
-                        wagon:SetNW2Float(name, math.Rand(min + (1 / decimals), max))
+                        wagon:SetNW2Float(name, math.Rand(min + 1 / decimals, max))
                     else
                         wagon:SetNW2Float(name, math.random(min + 1, max))
                     end
@@ -416,13 +415,22 @@ local function inject(isBackports)
     MEL._OverrideAnimate(MEL.EntTables["gmod_subway_base"])
     -- method that finalizes inject on all trains. called after init of recipies
     for _, recipe in pairs(MEL.InjectStack) do
-        if isBackports then continue end  -- TODO: Probably do something with this
+        if isBackports then -- TODO: Probably do something with this
+            continue
+        end
+
         recipe:BeforeInject()
     end
 
     for _, recipe in pairs(MEL.InjectStack) do
-        if isBackports and not recipe.BackportPriority then return end  -- we do this cause all backports recipies will be in start of table
-        if not isBackports and recipe.BackportPriority then continue end  -- TODO: Probably do something with this
+        if isBackports and not recipe.BackportPriority then -- we do this cause all backports recipies will be in start of table
+            return
+        end
+
+        if not isBackports and recipe.BackportPriority then -- TODO: Probably do something with this
+            continue
+        end
+
         logDebug(Format("injecting recipe %s", recipe.Name))
         -- call Inject method on every ent that recipe changes
         for _, entclass in pairs(MEL.GetEntsByTrainType(recipe.TrainType)) do
@@ -468,6 +476,7 @@ hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
         getEntTables()
         inject(true)
     end
+
     timer.Simple(1, function()
         getEntTables()
         inject()
@@ -495,6 +504,11 @@ if SERVER then
         MEL.RandomFields = {}
         MEL.MetrostroiClasses = {}
         discoverRecipies()
+        if Metrostroi.Version <= 1537278077 then
+            getEntTables()
+            inject(true)
+        end
+
         getEntTables()
         inject()
     end)
@@ -516,6 +530,11 @@ if CLIENT then
         MEL.RandomFields = {}
         MEL.MetrostroiClasses = {}
         discoverRecipies()
+        if Metrostroi.Version <= 1537278077 then
+            getEntTables()
+            inject(true)
+        end
+
         getEntTables()
         inject()
         -- try to reload all spawned trains csents and buttonmaps

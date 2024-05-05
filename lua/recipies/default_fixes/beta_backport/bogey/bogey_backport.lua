@@ -87,12 +87,13 @@ function RECIPE:Inject(ent)
             wagon.MotorSoundType = nil
         end
 
-        MEL.InjectIntoClientFunction(ent, "Initialize", function(wagon)
+        function ent.Initialize(wagon)
+            wagon.MotorPowerSound = 0
             wagon.PlayTime = {0, 0}
             wagon.SmoothAngleDelta = 0
             wagon.CurrentBrakeSqueal = 0
             wagon:ReinitializeSounds()
-        end, 1)
+        end
 
         function ent.OnRemove(wagon)
             if wagon.Sounds then
@@ -114,7 +115,7 @@ function RECIPE:Inject(ent)
             local streetC, tunnelC = 0, 1
             if IsValid(train) then
                 streetC, tunnelC = train.StreetCoeff or 0, train.TunnelCoeff or 1
-                soundsmul = math.Clamp(tunnelC ^ 1.5 + (streetC ^ 0.5) * 0.2, 0, 1)
+                soundsmul = math.Clamp(tunnelC ^ 1.5 + streetC ^ 0.5 * 0.2, 0, 1)
             end
 
             local speed = wagon:GetSpeed()
@@ -137,7 +138,7 @@ function RECIPE:Inject(ent)
                 local t = RealTime() * 2.5
                 local modulation = math.max(0, (speed - 60) / 30) * 0.7 + (0.2 + 1.0 * math.max(0, 0.2 + math.sin(t) * math.sin(t * 3.12) * math.sin(t * 0.24) * math.sin(t * 4.0))) * math.Clamp((speed - 15) / 60, 0, 1)
                 local mod2 = 1.0 - math.min(1.0, math.abs(wagon.MotorPowerSound) / 0.1)
-                if (speed > -1.0) and (math.abs(wagon.MotorPowerSound) + modulation) >= 0.0 then
+                if speed > -1.0 and math.abs(wagon.MotorPowerSound) + modulation >= 0.0 then
                     --local startVolRamp = 0.2 + 0.8*math.max(0.0,math.min(1.0,(speed - 1.0)*0.5))
                     local powerVolRamp
                     if wagon.MotorSoundType == 2 then
@@ -151,7 +152,7 @@ function RECIPE:Inject(ent)
                     --local motorPitch = 0.03+1.85*motorPchRamp
                     local volumemul = math.min(1, (speed / 4) ^ 3)
                     local motorsnd = math.min(1.0, math.max(0.0, 1.25 * math.abs(wagon.MotorPowerSound)))
-                    local motorvol = (soundsmul ^ 0.3) * math.Clamp(motorsnd + powerVolRamp, 0, 1) * volumemul
+                    local motorvol = soundsmul ^ 0.3 * math.Clamp(motorsnd + powerVolRamp, 0, 1) * volumemul
                     for i, snd in ipairs(wagon.MotorSoundArr) do
                         local prev = wagon.MotorSoundArr[i - 1]
                         local next = wagon.MotorSoundArr[i + 1]
@@ -372,7 +373,7 @@ function RECIPE:Inject(ent)
 
         function ent.CheckVoltage(wagon, dT)
             -- Check contact states
-            if (CurTime() - wagon.CheckTimeout) <= 0.25 then return end
+            if CurTime() - wagon.CheckTimeout <= 0.25 then return end
             wagon.CheckTimeout = CurTime()
             local supported = C_Require3rdRail:GetInt() > 0 and Metrostroi.MapHasFullSupport()
             local feeder = wagon.Feeder and Metrostroi.Voltages[wagon.Feeder]
@@ -400,7 +401,7 @@ function RECIPE:Inject(ent)
                     net.WriteEntity(wagon) -- Bogey
                     net.WriteUInt(i - 1, 1) -- PantNum
                     net.WriteVector(i == 1 and wagon.PantLPos or wagon.PantRPos) -- PantPos
-                    net.WriteUInt((math.random() > math.Clamp(1 - (wagon.MotorPower / 2), 0, 1)) and 1 or 0, 1) -- Sparking probability
+                    net.WriteUInt(math.random() > math.Clamp(1 - wagon.MotorPower / 2, 0, 1) and 1 or 0, 1) -- Sparking probability
                     net.Broadcast()
                 end
             end
@@ -481,8 +482,8 @@ function RECIPE:Inject(ent)
             -- Final brake cylinder pressure
             local pneumaticPow = wagon.PneumaticPow or 1
             local pB = not wagon.DisableParking and wagon.ParkingBrakePressure or 0
-            local BrakeCP = (((wagon.BrakeCylinderPressure / 2.7 + pB / 1.6) ^ pneumaticPow) * 2.7) / 4.5 -- + (wagon.ParkingBrake and 1 or 0)
-            if (BrakeCP * 4.5 > 1.5 - math.Clamp(math.abs(pitch) / 1, 0, 1)) and (absSpeed < 1) then
+            local BrakeCP = ((wagon.BrakeCylinderPressure / 2.7 + pB / 1.6) ^ pneumaticPow * 2.7) / 4.5 -- + (wagon.ParkingBrake and 1 or 0)
+            if BrakeCP * 4.5 > 1.5 - math.Clamp(math.abs(pitch) / 1, 0, 1) and absSpeed < 1 then
                 wagon.Wheels:GetPhysicsObject():SetMaterial("gmod_silent")
             else
                 wagon.Wheels:GetPhysicsObject():SetMaterial("gmod_ice")
@@ -527,7 +528,7 @@ function RECIPE:Inject(ent)
             wagon.RattleRandom = wagon.RattleRandom or 0.5 + math.random() * 0.2
             local PnF1 = math.Clamp((BCPress - 0.6) / 0.6, 0, 2)
             local PnF2 = math.Clamp((BCPress - wagon.RattleRandom) / 0.6, 0, 2)
-            local brakeSqueal1 = (PnF1 * PnF2) * pneumaticFactor
+            local brakeSqueal1 = PnF1 * PnF2 * pneumaticFactor
             --local brakeSqueal2 = (PnF1*PnF3)*pneumaticFactor
             -- Send parameters to client
             if wagon.DisableSound < 1 then wagon:SetMotorPower(motorPower) end

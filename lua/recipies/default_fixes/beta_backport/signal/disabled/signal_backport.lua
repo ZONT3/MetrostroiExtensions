@@ -115,7 +115,7 @@ function RECIPE:Inject(ent)
                         else
                             if not sig.Close then sig.Close = true end
                             if sig.InvationSignal then sig.InvationSignal = false end
-                            if (sig.LastOpenedRoute and sig.LastOpenedRoute == 1) or sig.Routes[1].Repeater then
+                            if sig.LastOpenedRoute and sig.LastOpenedRoute == 1 or sig.Routes[1].Repeater then
                                 sig:CloseRoute(1)
                             else
                                 sig:OpenRoute(1)
@@ -181,23 +181,68 @@ function RECIPE:Inject(ent)
         end
 
         hook.Add("PlayerSay", "metrostroi-signal-say", function(ply, comm) MSignalSayHook(ply, comm) end)
-        MEL.InjectIntoServerFunction(ent, "Initialize", function(wagon)
+        function ent.Initalize(wagon)
             wagon:SetModel(wagon.TrafficLightModels[wagon.SignalType or 0].ArsBox.model)
+            wagon.Sprites = {}
+            wagon.Sig = ""
+            wagon.FreeBS = 1
+            wagon.OldBSState = 1
+            wagon.OutputARS = 1
+            wagon.EnableDelay = {}
+            wagon.PostInitalized = true
+            wagon.Controllers = nil
             wagon.OccupiedOld = false
             wagon.ControllerLogicCheckOccupied = false
             wagon.ControllerLogicOverride325Hz = false
             wagon.Override325Hz = false
-        end, 1)
+        end
 
-        MEL.InjectIntoServerFunction(ent, "PreInitalize", function(wagon)
-            if wagon.Left then
-                wagon:SetModel(wagon.TrafficLightModels[wagon.SignalType or 0].ArsBoxMittor.model)
-            else
-                wagon:SetModel(wagon.TrafficLightModels[wagon.SignalType or 0].ArsBox.model)
+        function ent.PreInitalize(wagon)
+            wagon.AutostopOverride = nil
+            if not wagon.Routes or wagon.Routes[1].NextSignal == "" then wagon.AutostopOverride = true end
+            if wagon.Sprites then
+                for k, v in pairs(wagon.Sprites) do
+                    SafeRemoveEntity(v)
+                    wagon.Sprites[k] = nil
+                end
             end
-        end, 1)
 
-        MEL.InjectIntoServerFunction(ent, "GetARS", function(wagon, ARSID, Force1_5, Force2_6) if wagon.OverrideTrackOccupied then return ARSID == 2, MEL.Return end end)
+            wagon.NextSignals = {}
+            --wagon.Switches = {}
+            for k, v in ipairs(wagon.Routes) do
+                if v.NextSignal == "" then
+                    wagon.NextSignals[""] = nil --wagon
+                elseif v.NextSignal == "*" then
+                else
+                    if not v.NextSignal then
+                        ErrorNoHalt(Format("Metrostroi: No next signal name in signal %s! Check it now!\n", wagon.Name))
+                        wagon.AutostopOverride = true
+                    else
+                        wagon.NextSignals[v.NextSignal] = Metrostroi.GetSignalByName(v.NextSignal)
+                        if not wagon.NextSignals[v.NextSignal] then
+                            print(Format("Metrostroi: Signal %s, signal not found(%s)", wagon.Name, v.NextSignal))
+                            wagon.AutostopOverride = true
+                        end
+                    end
+                end
+            end
+
+            wagon.MU = false
+            for k, v in ipairs(wagon.Lenses) do
+                if v:find("M") then
+                    wagon.MU = true
+                    break
+                end
+            end
+        end
+
+        function ent.GetARS(wagon, ARSID,Force1_5,Force2_6)
+            if wagon.OverrideTrackOccupied then return ARSID == 2 end
+            if not wagon.ARSSpeedLimit then return false end
+            local nxt = wagon.ARSNextSpeedLimit == 2 and 0 or wagon.ARSNextSpeedLimit ~= 1 and wagon.ARSNextSpeedLimit
+            return wagon.ARSSpeedLimit == ARSID or ((wagon.TwoToSix and not Force1_5 or Force2_6) and nxt and nxt == ARSID and wagon.ARSSpeedLimit > nxt)
+        end
+        
         function ent.GetRS(wagon)
             if wagon.OverrideTrackOccupied or not wagon.TwoToSix or not wagon.ARSSpeedLimit then return false end
             if wagon.ARSSpeedLimit ~= 0 and wagon.ARSSpeedLimit == 2 then return false end
@@ -403,7 +448,7 @@ function RECIPE:Inject(ent)
                 end
 
                 wagon.PrevTime = wagon.PrevTime or 0
-                if (CurTime() - wagon.PrevTime) > 1.0 then
+                if CurTime() - wagon.PrevTime > 1.0 then
                     wagon.PrevTime = CurTime() + math.random(0.5, 1.5)
                     wagon:ARSLogic(wagon.PrevTime - CurTime())
                 end
@@ -470,8 +515,8 @@ function RECIPE:Inject(ent)
                         for i = 1, #v do
                             --Get the LightID and check, is this light must light up
                             local LightID = IsValid(wagon.NextSignalLink) and math.min(#Route.LightsExploded, wagon.FreeBS + 1) or 1
-                            local AverageState = Route.LightsExploded[LightID]:find(tostring(index)) or ((v[i] == "W" and wagon.InvationSignal and wagon.GoodInvationSignal == index) and 1 or 0)
-                            local MustBlink = (v[i] == "W" and wagon.InvationSignal and wagon.GoodInvationSignal == index) or (AverageState > 0 and Route.LightsExploded[LightID][AverageState + 1] == "b") --Blinking, when next is "b" (or it's invasion signal')
+                            local AverageState = Route.LightsExploded[LightID]:find(tostring(index)) or v[i] == "W" and wagon.InvationSignal and wagon.GoodInvationSignal == index and 1 or 0
+                            local MustBlink = v[i] == "W" and wagon.InvationSignal and wagon.GoodInvationSignal == index or AverageState > 0 and Route.LightsExploded[LightID][AverageState + 1] == "b" --Blinking, when next is "b" (or it's invasion signal')
                             wagon.Sig = wagon.Sig .. (AverageState > 0 and (MustBlink and 2 or 1) or 0)
                             if AverageState > 0 then
                                 if wagon.GoodInvationSignal ~= index then wagon.Colors = wagon.Colors .. (MustBlink and v[i]:lower() or v[i]:upper()) end
@@ -489,7 +534,7 @@ function RECIPE:Inject(ent)
                 local number = wagon.RouteNumberReplace or ""
                 if wagon.ControllerLogicCheckOccupied then
                     wagon.PrevTime = wagon.PrevTime or 0
-                    if (CurTime() - wagon.PrevTime) > 0.5 then
+                    if CurTime() - wagon.PrevTime > 0.5 then
                         wagon.PrevTime = CurTime() + math.random(0.5, 1.5)
                         if wagon.Node and wagon.TrackPosition then wagon.Occupied, wagon.OccupiedBy, wagon.OccupiedByNow = Metrostroi.IsTrackOccupied(wagon.Node, wagon.TrackPosition.x, wagon.TrackPosition.forward, wagon.ARSOnly and "ars" or "light", wagon) end
                     end
@@ -604,7 +649,7 @@ function RECIPE:Inject(ent)
             local id = wagon.RN
             local rouid = id and "rou" .. id
             if rouid and not IsValid(wagon.Models[1][rouid]) then
-                local rnadd = (wagon.RouteNumbers[id] and wagon.RouteNumbers[id][1] ~= "X") and (wagon.RouteNumbers[id][3] and not wagon.RouteNumbers[id][2] and "2" or "") or "5"
+                local rnadd = wagon.RouteNumbers[id] and wagon.RouteNumbers[id][1] ~= "X" and (wagon.RouteNumbers[id][3] and not wagon.RouteNumbers[id][2] and "2" or "") or "5"
                 local LampIndicator = wagon.TrafficLightModels[wagon.LightType].LampIndicator
                 wagon.Models[1][rouid] = ClientsideModel(LampIndicator.model .. rnadd .. ".mdl", RENDERGROUP_OPAQUE)
                 wagon.Models[1][rouid]:SetPos(wagon:LocalToWorld(pos - wagon.RouteNumberOffset * (wagon.Left and LampIndicator[1] or LampIndicator[2])))
@@ -766,7 +811,7 @@ function RECIPE:Inject(ent)
                 end
 
                 wagon.PrevTime = wagon.PrevTime or 0
-                if (CurTime() - wagon.PrevTime) > 1.0 then
+                if CurTime() - wagon.PrevTime > 1.0 then
                     wagon.PrevTime = CurTime() + math.random(0.5, 1.5)
                     wagon:ARSLogic(wagon.PrevTime - CurTime())
                 end
@@ -833,8 +878,8 @@ function RECIPE:Inject(ent)
                         for i = 1, #v do
                             --Get the LightID and check, is this light must light up
                             local LightID = IsValid(wagon.NextSignalLink) and math.min(#Route.LightsExploded, wagon.FreeBS + 1) or 1
-                            local AverageState = Route.LightsExploded[LightID]:find(tostring(index)) or ((v[i] == "W" and wagon.InvationSignal and wagon.GoodInvationSignal == index) and 1 or 0)
-                            local MustBlink = (v[i] == "W" and wagon.InvationSignal and wagon.GoodInvationSignal == index) or (AverageState > 0 and Route.LightsExploded[LightID][AverageState + 1] == "b") --Blinking, when next is "b" (or it's invasion signal')
+                            local AverageState = Route.LightsExploded[LightID]:find(tostring(index)) or v[i] == "W" and wagon.InvationSignal and wagon.GoodInvationSignal == index and 1 or 0
+                            local MustBlink = v[i] == "W" and wagon.InvationSignal and wagon.GoodInvationSignal == index or AverageState > 0 and Route.LightsExploded[LightID][AverageState + 1] == "b" --Blinking, when next is "b" (or it's invasion signal')
                             wagon.Sig = wagon.Sig .. (AverageState > 0 and (MustBlink and 2 or 1) or 0)
                             if AverageState > 0 then
                                 if wagon.GoodInvationSignal ~= index then wagon.Colors = wagon.Colors .. (MustBlink and v[i]:lower() or v[i]:upper()) end
@@ -852,7 +897,7 @@ function RECIPE:Inject(ent)
                 local number = wagon.RouteNumberReplace or ""
                 if wagon.ControllerLogicCheckOccupied then
                     wagon.PrevTime = wagon.PrevTime or 0
-                    if (CurTime() - wagon.PrevTime) > 0.5 then
+                    if CurTime() - wagon.PrevTime > 0.5 then
                         wagon.PrevTime = CurTime() + math.random(0.5, 1.5)
                         if wagon.Node and wagon.TrackPosition then wagon.Occupied, wagon.OccupiedBy, wagon.OccupiedByNow = Metrostroi.IsTrackOccupied(wagon.Node, wagon.TrackPosition.x, wagon.TrackPosition.forward, wagon.ARSOnly and "ars" or "light", wagon) end
                     end

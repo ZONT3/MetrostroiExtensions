@@ -9,26 +9,21 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-
-
 -- да, за это на меня выльется тонна говна.
 -- уважаемые, не нравится - не пользуйтесь экстом))))))))))))
 -- и моделями тоже, пожалуйста
 if not MEL.ButtonMaps then
-    MEL.ButtonMaps = {}  -- copies of buttonmaps because GenerateClientProps removes model of every button after creating clientprops
+    MEL.ButtonMaps = {} -- copies of buttonmaps because GenerateClientProps removes model of every button after creating clientprops
     -- (key: ent_class, value: (key: name of buttonmap, value: buttonmap copy))
 end
+
 local function newGenerateClientProps()
     function Metrostroi.GenerateClientProps(ent)
         local wagon = ent or ENT
-        if not wagon.ButtonMapCopy then
-            wagon.ButtonMapCopy = {}
-        end
+        if not wagon.ButtonMapCopy then wagon.ButtonMapCopy = {} end
         if not wagon.AutoAnimNames then wagon.AutoAnimNames = {} end
         for id, panel in pairs(wagon.ButtonMap) do
-            if not wagon.ButtonMapCopy[id] then
-                wagon.ButtonMapCopy[id] = table.Copy(panel)
-            end
+            if not wagon.ButtonMapCopy[id] then wagon.ButtonMapCopy[id] = table.Copy(panel) end
             if not panel.buttons then continue end
             if not panel.props then panel.props = {} end
             for name, buttons in pairs(panel.buttons) do
@@ -203,9 +198,13 @@ local function newGenerateClientProps()
                         --wagon.ClientSounds[id] = {sndid,function(ent,var) return snd(func(ent,vmin,vmax),var) end,vol or 1,pitch or 1,min or 100,max or 1000,ang or Angle(0,0,0)}
                         --else
                         if not wagon.ClientSounds[id] then wagon.ClientSounds[id] = {} end
-                        wagon.ClientSounds[id] = {}  -- TEST
-                        table.insert(wagon.ClientSounds[id], {sndid, function(ent, var) return snd(var > 0, var) end, vol or 1, pitch or 1, min or 100, max or 1000, ang or Angle(0, 0, 0)})
-                        --end
+                        -- wagon.ClientSounds[id] = {}  -- TEST
+                        local already_inserted = false
+                        for i, snd in pairs(wagon.ClientSounds[id]) do
+                            if snd[1] == sndid then already_inserted = true end
+                        end
+
+                        if not already_inserted then table.insert(wagon.ClientSounds[id], {sndid, function(ent, var) return snd(var > 0, var) end, vol or 1, pitch or 1, min or 100, max or 1000, ang or Angle(0, 0, 0)}) end
                     end
 
                     if config.plomb then

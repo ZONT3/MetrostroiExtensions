@@ -214,7 +214,17 @@ function RECIPE:Inject(ent)
             },
         }
 
-        MEL.InjectIntoClientFunction(ent, "Initialize", function(wagon)
+        function ent.Initialize(wagon)
+            wagon.BaseClass.Initialize(wagon)
+            wagon.CraneRamp = 0
+            wagon.CraneLRamp = 0
+            wagon.CraneRRamp = 0
+            wagon.EmergencyBrakeValveRamp = 0
+            wagon.ReleasedPdT = 0
+            wagon.FrontLeak = 0
+            wagon.RearLeak = 0
+            wagon.VentG1 = 0
+            wagon.VentG2 = 0
             wagon.Door1 = false
             wagon.Door2 = false
             wagon.ParkingBrake1 = true
@@ -223,10 +233,10 @@ function RECIPE:Inject(ent)
             wagon.DoorLoopStates = {}
             for i = 0, 3 do
                 for k = 0, 1 do
-                    wagon.DoorStates[(k == 1 and "DoorL" or "DoorR") .. (i + 1)] = false
+                    wagon.DoorStates[(k == 1 and "DoorL" or "DoorR") .. i + 1] = false
                 end
             end
-        end, 1)
+        end
 
         function ent.Think(wagon)
             wagon.BaseClass.Think(wagon)
@@ -353,12 +363,12 @@ function RECIPE:Inject(ent)
 
             local door1 = wagon:Animate("door1", wagon:GetPackedBool("FrontDoor") and 0.99 or 0, 0, 0.25, 4, 0.5)
             local door2 = wagon:Animate("door2", wagon:GetPackedBool("RearDoor") and (capOpened and 0.25 or 0.99) or 0, 0, 0.25, 4, 0.5)
-            if wagon.Door1 ~= (door1 > 0) then
+            if wagon.Door1 ~= door1 > 0 then
                 wagon.Door1 = door1 > 0
                 wagon:PlayOnce("door1", "bass", wagon.Door1 and 1 or 0)
             end
 
-            if wagon.Door2 ~= (door2 > 0) then
+            if wagon.Door2 ~= door2 > 0 then
                 wagon.Door2 = door2 > 0
                 wagon:PlayOnce("door2", "bass", wagon.Door2 and 1 or 0)
             end
@@ -382,7 +392,7 @@ function RECIPE:Inject(ent)
                 for k = 0, 1 do
                     local st = k == 1 and "DoorL" or "DoorR"
                     local doorstate = wagon:GetPackedBool(st)
-                    local id, sid = st .. (i + 1), "door" .. i .. "x" .. k
+                    local id, sid = st .. i + 1, "door" .. i .. "x" .. k
                     local state = wagon:GetPackedRatio(id)
                     --print(state,wagon.DoorStates[state])
                     if (state ~= 1 and state ~= 0) ~= wagon.DoorStates[id] then
@@ -452,15 +462,15 @@ function RECIPE:Inject(ent)
             wagon.ReleasedPdT = math.Clamp(wagon.ReleasedPdT + 2 * (-wagon:GetPackedRatio("BrakeCylinderPressure_dPdT", 0) - wagon.ReleasedPdT) * dT, 0, 1)
             local release1 = math.Clamp((wagon.ReleasedPdT - 0.1) / 0.8, 0, 1) ^ 2
             wagon:SetSoundState("release1", release1, 1)
-            wagon:SetSoundState("release2", (math.Clamp(0.3 - release1, 0, 0.3) / 0.3) * (release1 / 0.3), 1.0)
+            wagon:SetSoundState("release2", math.Clamp(0.3 - release1, 0, 0.3) / 0.3 * release1 / 0.3, 1.0)
             local parking_brake = wagon:GetPackedRatio("ParkingBrakePressure_dPdT", 0)
             local parking_brake_abs = math.Clamp(math.abs(parking_brake) - 0.3, 0, 1)
-            if wagon.ParkingBrake1 ~= (parking_brake < 1) then
+            if wagon.ParkingBrake1 ~= parking_brake < 1 then
                 wagon.ParkingBrake1 = parking_brake < 1
                 if wagon.ParkingBrake1 then wagon:PlayOnce("parking_brake_en", "bass", 1, 1) end
             end
 
-            if wagon.ParkingBrake2 ~= (parking_brake > -0.8) then
+            if wagon.ParkingBrake2 ~= parking_brake > -0.8 then
                 wagon.ParkingBrake2 = parking_brake > -0.8
                 if wagon.ParkingBrake2 then wagon:PlayOnce("parking_brake_rel", "bass", 0.6, 1) end
             end
@@ -473,12 +483,12 @@ function RECIPE:Inject(ent)
             local ramp = wagon:GetPackedRatio("Crane_dPdT", 0)
             if c013 then
                 if ramp > 0 then
-                    wagon.CraneRamp = wagon.CraneRamp + ((0.2 * ramp) - wagon.CraneRamp) * dT
+                    wagon.CraneRamp = wagon.CraneRamp + (0.2 * ramp - wagon.CraneRamp) * dT
                 else
-                    wagon.CraneRamp = wagon.CraneRamp + ((0.9 * ramp) - wagon.CraneRamp) * dT
+                    wagon.CraneRamp = wagon.CraneRamp + (0.9 * ramp - wagon.CraneRamp) * dT
                 end
 
-                wagon.CraneRRamp = math.Clamp(wagon.CraneRRamp + 1.0 * ((1 * ramp) - wagon.CraneRRamp) * dT, 0, 1)
+                wagon.CraneRRamp = math.Clamp(wagon.CraneRRamp + 1.0 * (1 * ramp - wagon.CraneRRamp) * dT, 0, 1)
                 wagon:SetSoundState("crane334_brake", 0, 1.0)
                 wagon:SetSoundState("crane334_brake_reflection", 0, 1.0)
                 wagon:SetSoundState("crane334_brake_slow", 0, 1.0)
@@ -493,7 +503,7 @@ function RECIPE:Inject(ent)
                         wagon.CraneLRamp = wagon.CraneLRamp + (math.min(ramp, 0) - wagon.CraneLRamp) * dT * 1
                     end
 
-                    wagon:SetSoundState("crane013_brake_l", (math.Clamp(-wagon.CraneRamp * 2.5 - 0.1, 0, 1) ^ 1.3) * (1 - math.Clamp((-wagon.CraneLRamp - loudV) * 3, 0, 1)), 1.12 - math.Clamp((-wagon.CraneLRamp - 0.15) * 2, 0, 1) * 0.12)
+                    wagon:SetSoundState("crane013_brake_l", math.Clamp(-wagon.CraneRamp * 2.5 - 0.1, 0, 1) ^ 1.3 * (1 - math.Clamp((-wagon.CraneLRamp - loudV) * 3, 0, 1)), 1.12 - math.Clamp((-wagon.CraneLRamp - 0.15) * 2, 0, 1) * 0.12)
                 else
                     wagon:SetSoundState("crane013_brake_l", 0, 1)
                 end
@@ -503,9 +513,9 @@ function RECIPE:Inject(ent)
                 wagon:SetSoundState("crane013_brake", 0, 1.0)
                 wagon:SetSoundState("crane013_release", 0, 1.0)
                 --wagon:SetSoundState("crane013_brake2",0,1.0)
-                wagon.CraneRamp = math.Clamp(wagon.CraneRamp + 8.0 * ((1 * wagon:GetPackedRatio("Crane_dPdT", 0)) - wagon.CraneRamp) * dT, -1, 1)
-                wagon:SetSoundState("crane334_brake_low", math.Clamp((-wagon.CraneRamp) * 2, 0, 1) ^ 2, 1)
-                local high = math.Clamp(((-wagon.CraneRamp) - 0.5) / 0.5, 0, 1) ^ 1
+                wagon.CraneRamp = math.Clamp(wagon.CraneRamp + 8.0 * (1 * wagon:GetPackedRatio("Crane_dPdT", 0) - wagon.CraneRamp) * dT, -1, 1)
+                wagon:SetSoundState("crane334_brake_low", math.Clamp(-wagon.CraneRamp * 2, 0, 1) ^ 2, 1)
+                local high = math.Clamp((-wagon.CraneRamp - 0.5) / 0.5, 0, 1) ^ 1
                 wagon:SetSoundState("crane334_brake_high", high, 1.0)
                 wagon:SetSoundState("crane013_brake2", high * 2, 1.0)
                 wagon:SetSoundState("crane334_brake_eq_high", --[[ math.Clamp(-wagon.CraneRamp*0,0,1)---]]
@@ -537,7 +547,7 @@ function RECIPE:Inject(ent)
 
             -- RK rotation
             if wagon:GetPackedBool("RK") then wagon.RKTimer = CurTime() end
-            wagon:SetSoundState("rk", (wagon.RKTimer and (CurTime() - wagon.RKTimer) < 0.2) and 0.7 or 0, 1)
+            wagon:SetSoundState("rk", wagon.RKTimer and CurTime() - wagon.RKTimer < 0.2 and 0.7 or 0, 1)
             -- BPSN sound
             wagon.BPSNType = wagon:GetNW2Int("BPSNType", 13)
             if not wagon.OldBPSNType then wagon.OldBPSNType = wagon.BPSNType end
@@ -556,8 +566,8 @@ function RECIPE:Inject(ent)
             local buzz = wagon:GetPackedBool("AnnBuzz") and wagon:GetNW2Int("AnnouncerBuzz", -1) > 0
             local buzz_old = wagon:GetNW2Int("AnnouncerBuzz", -1) == 2
             for k in ipairs(wagon.AnnouncerPositions) do
-                wagon:SetSoundState("announcer_buzz" .. k, (buzz and work and not buzz_old) and 1 or 0, 1)
-                wagon:SetSoundState("announcer_buzz_o" .. k, (buzz and work and buzz_old) and 1 or 0, 1)
+                wagon:SetSoundState("announcer_buzz" .. k, buzz and work and not buzz_old and 1 or 0, 1)
+                wagon:SetSoundState("announcer_buzz_o" .. k, buzz and work and buzz_old and 1 or 0, 1)
             end
 
             for k, v in ipairs(wagon.AnnouncerPositions) do
@@ -657,7 +667,7 @@ function RECIPE:Inject(ent)
                 wagon.RearCouple = wagon:CreateCouple(Vector(-421, 0, -66), Angle(0, 180, 0), false, "717")
             end
 
-            local pneumoPow = 0.8 + (math.random() ^ 1.55) * 0.4
+            local pneumoPow = 0.8 + math.random() ^ 1.55 * 0.4
             wagon.FrontBogey.PneumaticPow = pneumoPow
             wagon.RearBogey.PneumaticPow = pneumoPow
             -- Initialize key mapping
@@ -906,7 +916,7 @@ function RECIPE:Inject(ent)
             wagon:SetPackedBool("Crane013", wagon.Pneumatic.ValveType == 2)
             wagon:UpdateTextures()
             wagon:UpdateLampsColors()
-            local pneumoPow = 0.8 + (math.random() ^ 1.55) * 0.4
+            local pneumoPow = 0.8 + math.random() ^ 1.55 * 0.4
             if IsValid(wagon.FrontBogey) then wagon.FrontBogey.PneumaticPow = pneumoPow end
             if IsValid(wagon.RearBogey) then wagon.RearBogey.PneumaticPow = pneumoPow end
             wagon.Pneumatic.VDLoud = math.random() < 0.06 and 0.9 + math.random() * 0.2
@@ -924,7 +934,7 @@ function RECIPE:Inject(ent)
             local Ip = wagon.LampType == 2 and 7 or 3.6
             local Im = wagon.LampType == 2 and 2 or 1
             for i = 1, LampCount do
-                if lightsActive2 or (lightsActive1 and math.ceil((i + Ip - Im) % Ip) == 1) then
+                if lightsActive2 or lightsActive1 and math.ceil((i + Ip - Im) % Ip) == 1 then
                     if not wagon.Lamps[i] and not wagon.Lamps.broken[i] then wagon.Lamps[i] = CurTime() + math.Rand(0.1, math.Rand(0.5, 2)) end
                 else
                     wagon.Lamps[i] = nil
@@ -943,8 +953,8 @@ function RECIPE:Inject(ent)
             wagon:SetPackedBool("M1_3", Panel.M1_3 > 0)
             wagon:SetPackedBool("M4_7", Panel.M4_7 > 0)
             -- Signal if doors are open or no to platform simulation
-            wagon.LeftDoorsOpen = (Pneumatic.LeftDoorState[1] > 0.5) or (Pneumatic.LeftDoorState[2] > 0.5) or (Pneumatic.LeftDoorState[3] > 0.5) or (Pneumatic.LeftDoorState[4] > 0.5)
-            wagon.RightDoorsOpen = (Pneumatic.RightDoorState[1] > 0.5) or (Pneumatic.RightDoorState[2] > 0.5) or (Pneumatic.RightDoorState[3] > 0.5) or (Pneumatic.RightDoorState[4] > 0.5)
+            wagon.LeftDoorsOpen = Pneumatic.LeftDoorState[1] > 0.5 or Pneumatic.LeftDoorState[2] > 0.5 or Pneumatic.LeftDoorState[3] > 0.5 or Pneumatic.LeftDoorState[4] > 0.5
+            wagon.RightDoorsOpen = Pneumatic.RightDoorState[1] > 0.5 or Pneumatic.RightDoorState[2] > 0.5 or Pneumatic.RightDoorState[3] > 0.5 or Pneumatic.RightDoorState[4] > 0.5
             --wagon:SetPackedRatio("Crane", Pneumatic.RealDriverValvePosition)
             --wagon:SetPackedRatio("Controller", (wagon.KV.ControllerPosition+3)/7)
             if Pneumatic.ValveType == 1 then
@@ -959,14 +969,14 @@ function RECIPE:Inject(ent)
             --10th wire voltage readout imitation depending on the BPSNs and EKK state, not on the wagon battery switch state
             local hvcounter = 0
             local hvcar = nil
-            local vdrop = 1.125 * (#wagon.WagonList)
+            local vdrop = 1.125 * #wagon.WagonList
             for k, v in ipairs(wagon.WagonList) do
                 if v.PowerSupply.X2_2 > 0 and v.A24.Value > 0 then
                     hvcounter = hvcounter + 1
                     hvcar = hvcar or v
                     vdrop = vdrop - 1.125
                 else
-                    vdrop = vdrop - ((v.A56.Value == 0 and 0.4 or (v.VB.Value == 0 and 0.4 or 0)) + (v.LK4.Value == 0 and 0.725 or 0))
+                    vdrop = vdrop - ((v.A56.Value == 0 and 0.4 or v.VB.Value == 0 and 0.4 or 0) + (v.LK4.Value == 0 and 0.725 or 0))
                 end
             end
 
@@ -994,7 +1004,7 @@ function RECIPE:Inject(ent)
             ----------------------------------*****************************--------------------------------
             wagon:SetPackedRatio("BatteryVoltage", Panel["V1"] * PCV_o / 150.0)
             wagon:SetPackedRatio("BatteryCurrent", Panel["V1"] * math.Clamp((wagon.Battery.Voltage - 75) * 0.01, -0.01, 1))
-            wagon:SetPackedRatio("EnginesCurrent", 0.5 + 0.5 * (wagon.Electric.I24 / 500.0))
+            wagon:SetPackedRatio("EnginesCurrent", 0.5 + 0.5 * wagon.Electric.I24 / 500.0)
             wagon:SetPackedBool("Compressor", Pneumatic.Compressor > 0)
             wagon:SetPackedBool("RK", wagon.RheostatController.Velocity ~= 0.0)
             wagon:SetPackedBool("BPSN", wagon.PowerSupply.X2_2 > 0)
@@ -1021,8 +1031,8 @@ function RECIPE:Inject(ent)
                 if math.abs(A) > 0.4 then P = math.abs(A) end
                 if math.abs(A) < 0.05 then P = 0 end
                 if wagon.Speed < 10 then P = P * (1.0 + 0.5 * (10.0 - wagon.Speed) / 10.0) end
-                wagon.RearBogey.MotorPower = P * 0.5 * ((A > 0) and 1 or -1)
-                wagon.FrontBogey.MotorPower = P * 0.5 * ((A > 0) and 1 or -1)
+                wagon.RearBogey.MotorPower = P * 0.5 * (A > 0 and 1 or -1)
+                wagon.FrontBogey.MotorPower = P * 0.5 * (A > 0 and 1 or -1)
                 --wagon.RearBogey.MotorPower  = P*0.5
                 --wagon.FrontBogey.MotorPower = P*0.5
                 --wagon.Acc = (wagon.Acc or 0)*0.95 + wagon.Acceleration*0.05

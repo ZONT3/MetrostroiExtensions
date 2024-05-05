@@ -280,7 +280,7 @@ function RECIPE:Inject(ent, entclass)
                         print("NO SOUND", soundname, soundid)
                         continue
                     end
-
+                    
                     if type(soundname) == "table" then soundname = table.Random(soundname) end
                     if IsValid(wagon.ClientEnts[esnd[1]]) and not wagon.ClientEnts[esnd[1]].snd then
                         local ent = wagon.ClientEnts[esnd[1]]
