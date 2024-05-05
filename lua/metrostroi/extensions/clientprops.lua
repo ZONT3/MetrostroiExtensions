@@ -9,12 +9,17 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
+MEL.AnimateOverrides = {} -- table with Animate overrides
+-- (key: ent_class, value: (key: clientProp name, value: sequential table to unpack into animate (starting from min))) 
+MEL.AnimateValueOverrides = {} -- table with Animate value overrides
+-- (key: ent_class, value: (key: clientProp name, value: function to get value)) 
 function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, error_on_nil)
     if CLIENT then
         if error_on_nil and not ent.ClientProps[clientprop_name] then
             MEL._LogError(Format("no such clientprop with name %s", clientprop_name))
             return
         end
+
         local old_modelcallback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
         ent.ClientProps[clientprop_name]["modelcallback"] = function(self)
             local new_modelpath = new_modelcallback(self)
@@ -23,12 +28,136 @@ function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, error_
     end
 end
 
+function MEL._OverrideAnimate(ent)
+    function ent.Animate(wagon, clientProp, value, min, max, speed, damping, stickyness)
+        local id = clientProp
+
+        -- maybe reuse old function and just unpack our overrides into it?
+        if MEL.AnimateOverrides[MEL.GetEntclass(wagon)] and MEL.AnimateOverrides[MEL.GetEntclass(wagon)][id] then
+            local override = MEL.AnimateOverrides[MEL.GetEntclass(wagon)][id]
+            if isfunction(override) then
+                override = override(wagon)
+            end
+            min = override[1]
+            max = override[2]
+            speed = override[3]
+            damping = override[4]
+            stickyness = override[5]
+        end
+        if MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)] and MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)][id] then
+            local value_callback = MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)][id]
+            value = value_callback(wagon)
+        end
+        local anims = wagon.Anims
+        if not anims[id] then
+            anims[id] = {}
+            anims[id].val = value
+            anims[id].value = min + (max - min) * value
+            anims[id].V = 0.0
+            anims[id].block = false
+            anims[id].stuck = false
+            anims[id].P = value
+        end
+
+        if wagon.Hidden[id] or wagon.Hidden.anim[id] then return 0 end
+        if anims[id].Ignore then
+            if RealTime() - anims[id].Ignore < 0 then
+                return anims[id].value
+            else
+                anims[id].Ignore = nil
+            end
+        end
+
+        local val = anims[id].val
+        if value ~= val then anims[id].block = false end
+        if anims[id].block then
+            if anims[id].reload and IsValid(wagon.ClientEnts[clientProp]) then
+                wagon.ClientEnts[clientProp]:SetPoseParameter("position", anims[id].value)
+                anims[id].reload = false
+            end
+            return anims[id].value --min + (max-min)*anims[id].val
+        end
+
+        --if wagon["_anim_old_"..id] == value then return wagon["_anim_old_"..id] end
+        -- Generate sticky value
+        if stickyness and damping then
+            if math.abs(anims[id].P - value) < stickyness and anims[id].stuck then
+                value = anims[id].P
+                anims[id].stuck = false
+            else
+                anims[id].P = value
+            end
+        end
+
+        local dT = FrameTime() --wagon.DeltaTime
+        if damping == false then
+            local dX = speed * dT
+            if value > val then val = val + dX end
+            if value < val then val = val - dX end
+            if math.abs(value - val) < dX then
+                val = value
+                anims[id].V = 0
+            else
+                anims[id].V = dX
+            end
+        else
+            -- Prepare speed limiting
+            local delta = math.abs(value - val)
+            local max_speed = 1.5 * delta / dT
+            local max_accel = 0.5 / dT
+            -- Simulate
+            local dX2dT = (speed or 128) * (value - val) - anims[id].V * (damping or 8.0)
+            if dX2dT > max_accel then dX2dT = max_accel end
+            if dX2dT < -max_accel then dX2dT = -max_accel end
+            anims[id].V = anims[id].V + dX2dT * dT
+            if anims[id].V > max_speed then anims[id].V = max_speed end
+            if anims[id].V < -max_speed then anims[id].V = -max_speed end
+            val = math.max(0, math.min(1, val + anims[id].V * dT))
+            -- Check if value got stuck
+            if math.abs(dX2dT) < 0.001 and stickyness and dT > 0 then anims[id].stuck = true end
+        end
+
+        local retval = min + (max - min) * val
+        if IsValid(wagon.ClientEnts[clientProp]) then wagon.ClientEnts[clientProp]:SetPoseParameter("position", retval) end
+        if math.abs(anims[id].V) == 0 and math.abs(val - value) == 0 and not anims[id].stuck then anims[id].block = true end
+        anims[id].val = val
+        anims[id].oldival = value
+        anims[id].oldspeed = speed
+        anims[id].value = retval
+        return retval
+    end
+end
+
+function MEL.OverrideAnimate(ent, clientProp, min_or_callback, max, speed, damping, stickyness)
+    local ent_class = MEL.GetEntclass(ent)
+    if not MEL.AnimateOverrides[ent_class] then
+        MEL.AnimateOverrides[ent_class] = {}
+    end
+    if isfunction(min_or_callback) then
+        MEL.AnimateOverrides[ent_class][clientProp] = min_or_callback
+        return
+    end
+    MEL.AnimateOverrides[ent_class][clientProp] = {min_or_callback, max, speed, damping, stickyness}
+end
+
+function MEL.OverrideAnimateValue(ent, clientProp, value_callback)
+    local ent_class = MEL.GetEntclass(ent)
+    if not MEL.AnimateValueOverrides[ent_class] then
+        MEL.AnimateValueOverrides[ent_class] = {}
+    end
+    if isfunction(min_or_callback) then
+        MEL.AnimateValueOverrides[ent_class][clientProp] = min_or_callback
+        return
+    end
+    MEL.AnimateValueOverrides[ent_class][clientProp] = value_callback
+end
 function MEL.UpdateCallback(ent, clientprop_name, new_callback, error_on_nil)
     if CLIENT then
         if not ent.ClientProps[clientprop_name] then
             if error_on_nil then MEL._LogError(Format("no such clientprop with name %s", clientprop_name)) end
             return
         end
+
         local old_callback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
         ent.ClientProps[clientprop_name]["callback"] = function(self, cent)
             old_callback(self, cent)
@@ -43,6 +172,7 @@ function MEL.DeleteClientProp(ent, clientprop_name, error_on_nil)
             if error_on_nil then MEL._LogError(Format("no such clientprop with name %s", clientprop_name)) end
             return
         end
+
         ent.ClientProps[clientprop_name] = nil
     end
 end
@@ -53,6 +183,7 @@ function MEL.NewClientProp(ent, clientprop_name, clientprop_info, field_name, do
             MEL._LogError(Format("there is already clientprop with name %s! are you sure you want to override it?", clientprop_name))
             return
         end
+
         ent.ClientProps[clientprop_name] = clientprop_info
         if field_name then MEL.MarkClientPropForReload(ent, clientprop_name, field_name) end
     end
