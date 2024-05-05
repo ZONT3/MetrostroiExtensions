@@ -15,7 +15,7 @@ local function handle_buttons(id_parts, id, phrase, ent_table, ent_class)
     local buttonmap = ent_table.ButtonMap[name]
     if not buttonmap then return end
     if not buttonmap.buttons then return end
-    local button = buttonmap[MEL.ButtonmapButtonMappigns[ent_class][name]]
+    local button = buttonmap[MEL.ButtonmapButtonMappings[ent_class][name]]
     if button then
         button.tooltip = phrase
         return

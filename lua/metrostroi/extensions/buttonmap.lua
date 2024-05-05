@@ -41,13 +41,17 @@ end
 
 function MEL.NewButtonMapButton(ent, buttonmap_name, button_data)
     if CLIENT then
+        if not ent.ButtonMap then
+            -- хм
+            return
+        end
         local buttonmap = ent.ButtonMap[buttonmap_name]
         if not buttonmap then
             MEL._LogError(Format("no such buttonmap: %s", buttonmap_name))
             return
         end
         local ent_class = MEL.GetEntclass(ent)
-        local button_index = MEL.ButtonmapButtonMappigns[ent_class][buttonmap_name]
+        local button_index = MEL.ButtonmapButtonMappings[ent_class][buttonmap_name]
         if not button_index then
             for i, button in pairs(buttonmap.buttons) do
                 if button.ID == button_data.ID then

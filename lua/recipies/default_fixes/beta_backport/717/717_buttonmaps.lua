@@ -11,7 +11,6 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("717_buttonmaps", "gmod_subway_81-717_mvm")
 RECIPE.BackportPriority = true
-
 function RECIPE:Inject(ent)
     if SERVER then return end
     local strength = {
@@ -936,6 +935,7 @@ function RECIPE:Inject(ent)
         }
     }
 
+    if not ent.ButtonMap then return end
     for buttonmap_name, overrides in pairs(buttonOverrides) do
         for i, button in pairs(ent.ButtonMap[buttonmap_name].buttons) do
             if overrides[button.ID] then

@@ -11,7 +11,7 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.SpawnerFieldMappings = {} -- lookup table for accessing spawner fields by name and list elements by default, non-translated name
 -- (key: train_class, value: (key: field_name, value: {index = index_of_field, list_elements = (key: name of list element, value: index)}))
-MEL.ButtonmapButtonMappigns = {} -- lookup table for accessing button of buttonmap by its id
+MEL.ButtonmapButtonMappings = {} -- lookup table for accessing button of buttonmap by its id
 --  (key: train_class, value: (key: buttonmap name, value: (key: button id, value: its index))
 
 local SpawnerC = MEL.Constants.Spawner
@@ -49,16 +49,16 @@ local function populateSpawnerFieldMappings()
     end
 end
 
-local function populateButtonmapButtonMappigns()
+local function populateButtonmapButtonMappings()
     if SERVER then return end
     for _, train_class in pairs(MEL.TrainClasses) do
         local ent_table = MEL.EntTables[train_class]
         if not ent_table.ButtonMap then continue end
-        MEL.ButtonmapButtonMappigns[train_class] = {}
+        MEL.ButtonmapButtonMappings[train_class] = {}
         for buttonmap_name, buttonmap in pairs(ent_table.ButtonMap) do
             for i, button in pairs(buttonmap) do
                 if not istable(button) or not button.ID then continue end
-                MEL.ButtonmapButtonMappigns[train_class][button.ID] = i
+                MEL.ButtonmapButtonMappings[train_class][button.ID] = i
             end
         end
     end
@@ -66,6 +66,6 @@ end
 
 
 function MEL._LoadHelpers()
-    populateButtonmapButtonMappigns()
+    populateButtonmapButtonMappings()
     populateSpawnerFieldMappings()
 end

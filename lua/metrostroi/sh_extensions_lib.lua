@@ -309,6 +309,14 @@ local function getEntTables()
     end
 end
 
+function MEL.getEntTable(ent_class)
+    if MEL.EntTables[ent_class] then return MEL.EntTables[ent_class] end
+    local ent_table = scripted_ents.GetStored(ent_class).t
+    ent_table.entclass = entclass -- add entclass for convience
+    MEL.EntTables[entclass] = ent_table
+    return ent_table
+end
+
 local function injectRandomFieldHelper(entclass)
     if not MEL.RandomFields[entclass] then return end
     -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
@@ -437,7 +445,7 @@ local function inject(isBackports)
             if recipe:InjectNeeded(entclass) then
                 recipe:InjectSpawner(entclass)
                 recipe:Inject(MEL.EntTables[entclass], entclass)
-                -- call Inject method on all alredy spawner ent that recipe changes (for example, if we are loaded on server where trains were already spawned)
+                -- call Inject method on all alredy spawned ent that recipe changes (for example, if we are loaded on server where trains were already spawned)
                 -- mark this call of inject as for entity (needed for InjectInto*Function)
                 MEL.InjectIntoSpawnedEnt = true
                 -- yup, this is slow

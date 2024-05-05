@@ -11,7 +11,6 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("717_lights", "gmod_subway_81-717_mvm")
 RECIPE.BackportPriority = true
-
 local newLights = {
     [8] = {
         "light",
@@ -296,22 +295,24 @@ local newLights = {
 function RECIPE:Inject(ent)
     if CLIENT then
         local lights = ent.Lights
-        lights[3].hidden = "salon"
-        lights[4].hidden = "salon"
-        lights[40].farz = 7
-        lights[40].hidden = "pult_mvm_classic"
-        lights[41].farz = 7
-        lights[41].hidden = "pult_mvm_classic"
-        lights[42].farz = 7
-        lights[42].hidden = "pult_mvm_classic"
-        lights[43].farz = 7
-        lights[43].hidden = "pult_mvm_classic"
-        lights[44].farz = 5.05
-        lights[44].hidden = "pult_mvm_classic"
-        lights[45].farz = 5.05
-        lights[45].hidden = "pult_mvm_classic"
-        for id, light in pairs(newLights) do
-            ent.Lights[id] = light
+        if ent.Lights then
+            lights[3].hidden = "salon"
+            lights[4].hidden = "salon"
+            lights[40].farz = 7
+            lights[40].hidden = "pult_mvm_classic"
+            lights[41].farz = 7
+            lights[41].hidden = "pult_mvm_classic"
+            lights[42].farz = 7
+            lights[42].hidden = "pult_mvm_classic"
+            lights[43].farz = 7
+            lights[43].hidden = "pult_mvm_classic"
+            lights[44].farz = 5.05
+            lights[44].hidden = "pult_mvm_classic"
+            lights[45].farz = 5.05
+            lights[45].hidden = "pult_mvm_classic"
+            for id, light in pairs(newLights) do
+                ent.Lights[id] = light
+            end
         end
     end
 end

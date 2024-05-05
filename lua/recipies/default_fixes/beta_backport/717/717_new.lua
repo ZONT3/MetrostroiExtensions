@@ -794,96 +794,98 @@ function RECIPE:Inject(ent)
         {true, {10000, 10001, 10002, 10008, 10009, 10010, 10011, 10012, 10013, 10034, 10035, 10038, 10039, 10040, 10057, 10058, 10059, 10060, 10077, 10078, 10079, 10087, 10088, 10089, 10090, 10091, 10092, 10093, 10094, 10099, 10100, 10101, 10102, 10103, 10106, 10107, 10108, 10109, 10113, 10114, 10115, 10116, 10118, 10119, 10120, 10121, 10122, 10123, 10131, 10132, 10141, 10142, 10143, 10144, 10145, 10146, 10149, 10150, 10151, 10152, 10153, 10154, 10155, 10156, 10157, 10158, 10159, 10160, 10161, 10164, 10165, 10166, 10167, 10168, 10169, 10170, 10190, 10191, 10197, 10199, 10206, 10207}, {true, true, true, true, {"Def_717MSKWhite", "Def_717MSKWood4"}, function(id) return id <= 10010 end, true}},
     }
 
-    MEL.NewButtonMapButton(ent, "Block2_1", {
-        ID = "!LampLEKK",
-        x = 215.5 - 0.4 * 1,
-        y = 31.8 + 19.7 * 0,
-        tooltip = "",
-        radius = 3,
-        model = {
-            name = "RLEKK",
-            lamp = {
-                speed = 24,
-                model = "models/metrostroi_train/81-502/lamps/svetodiod_small_502.mdl",
-                color = Color(175, 250, 20),
-                z = -3.5,
-                var = "LN"
-            },
-            sprite = {
-                bright = 0.5,
-                size = 0.25,
-                scale = 0.01,
-                color = Color(175, 250, 20),
-                z = -1,
-            }
-        }
-    })
-
-    MEL.NewButtonMapButton(ent, "Block7", {
-        ID = "VKSTToggle",
-        x = 28,
-        y = 57,
-        radius = 20,
-        tooltip = "",
-        model = {
-            model = "models/metrostroi_train/81-717/udkst.mdl",
-            ang = 180,
-            z = -2.4,
-            var = "VKST",
-            speed = 16,
-            sndvol = 1,
-            snd = function(val) return val and "switch_on" or "switch_off" end,
-            sndmin = 90,
-            sndmax = 1e3,
-            sndang = Angle(-90, 0, 0),
-        }
-    })
-
-    MEL.NewButtonMapButton(ent, "Block7", {
-        ID = "!IST",
-        x = 43,
-        y = 57,
-        radius = 8,
-        tooltip = "",
-        model = {
-            lamp = {
-                model = "models/metrostroi_train/81-502/lamps/svetodiod_small_502.mdl",
-                z = 0,
-                color = Color(255, 50, 45),
-                var = "IST"
-            },
-            sprite = {
-                bright = 0.5,
-                size = 0.25,
-                scale = 0.01,
-                color = Color(255, 50, 45),
-                z = -1.4,
-            }
-        }
-    })
-
-    MEL.NewButtonMap(ent, "AutostopValve", {
-        pos = Vector(365.8, -67.6, -56),
-        ang = Angle(0, 0, 90),
-        width = 130,
-        height = 40,
-        scale = 0.1,
-        hideseat = 0.1,
-        -- hide = true,
-        -- screenHide = true,
-        buttons = {
-            {
-                ID = "AutostopValveSet",
-                x = 0,
-                y = 0,
-                w = 130,
-                h = 40,
-                tooltip = "Сорвать срывной клапан"
-            },
-        }
-    })
-
     if CLIENT then
+        if ent.ButtonMap then
+            table.insert(ent.ButtonMap["Block2_1"].buttons, {
+                ID = "!LampLEKK",
+                x = 215.5 - 0.4 * 1,
+                y = 31.8 + 19.7 * 0,
+                tooltip = "",
+                radius = 3,
+                model = {
+                    name = "RLEKK",
+                    lamp = {
+                        speed = 24,
+                        model = "models/metrostroi_train/81-502/lamps/svetodiod_small_502.mdl",
+                        color = Color(175, 250, 20),
+                        z = -3.5,
+                        var = "LN"
+                    },
+                    sprite = {
+                        bright = 0.5,
+                        size = 0.25,
+                        scale = 0.01,
+                        color = Color(175, 250, 20),
+                        z = -1,
+                    }
+                }
+            })
+
+            table.insert(ent.ButtonMap["Block7"], {
+                ID = "VKSTToggle",
+                x = 28,
+                y = 57,
+                radius = 20,
+                tooltip = "",
+                model = {
+                    model = "models/metrostroi_train/81-717/udkst.mdl",
+                    ang = 180,
+                    z = -2.4,
+                    var = "VKST",
+                    speed = 16,
+                    sndvol = 1,
+                    snd = function(val) return val and "switch_on" or "switch_off" end,
+                    sndmin = 90,
+                    sndmax = 1e3,
+                    sndang = Angle(-90, 0, 0),
+                }
+            })
+
+            table.insert(ent.ButtonMap["Block7"], {
+                ID = "!IST",
+                x = 43,
+                y = 57,
+                radius = 8,
+                tooltip = "",
+                model = {
+                    lamp = {
+                        model = "models/metrostroi_train/81-502/lamps/svetodiod_small_502.mdl",
+                        z = 0,
+                        color = Color(255, 50, 45),
+                        var = "IST"
+                    },
+                    sprite = {
+                        bright = 0.5,
+                        size = 0.25,
+                        scale = 0.01,
+                        color = Color(255, 50, 45),
+                        z = -1.4,
+                    }
+                }
+            })
+
+            ent.ButtonMap["AutostopValve"] = {
+                pos = Vector(365.8, -67.6, -56),
+                ang = Angle(0, 0, 90),
+                width = 130,
+                height = 40,
+                scale = 0.1,
+                hideseat = 0.1,
+                -- hide = true,
+                -- screenHide = true,
+                buttons = {
+                    {
+                        ID = "AutostopValveSet",
+                        x = 0,
+                        y = 0,
+                        w = 130,
+                        h = 40,
+                        tooltip = "Сорвать срывной клапан"
+                    },
+                }
+            }
+        end
+
         function ent.Initialize(wagon)
             wagon.BaseClass.Initialize(wagon)
             --wagon.Train:SetPackedRatio("EmergencyValve_dPdT",leak)

@@ -105,6 +105,9 @@ function MEL.GetMappingValue(ent_or_entclass, field_name, element)
     local ent_class = getSpawnerEntclass(ent_or_entclass)
     if MEL.SpawnerFieldMappings[ent_class] and MEL.SpawnerFieldMappings[ent_class][field_name] and MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] then return MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] end
     local ent_table = MEL.EntTables[ent_class]
+    if not ent_table then
+        ent_table = MEL.getEntTable(ent_class)
+    end
     -- try to find index of it, if it non-existent in our SpawnerFieldMappings cache
     for field_i, field in pairs(ent_table.Spawner) do
         if istable(field) and isstring(field[SpawnerC.NAME]) and field[SpawnerC.NAME] == field_name then
