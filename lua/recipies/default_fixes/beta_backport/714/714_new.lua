@@ -363,12 +363,12 @@ function RECIPE:Inject(ent)
 
             local door1 = wagon:Animate("door1", wagon:GetPackedBool("FrontDoor") and 0.99 or 0, 0, 0.25, 4, 0.5)
             local door2 = wagon:Animate("door2", wagon:GetPackedBool("RearDoor") and (capOpened and 0.25 or 0.99) or 0, 0, 0.25, 4, 0.5)
-            if wagon.Door1 ~= door1 > 0 then
+            if wagon.Door1 ~= (door1 > 0) then
                 wagon.Door1 = door1 > 0
                 wagon:PlayOnce("door1", "bass", wagon.Door1 and 1 or 0)
             end
 
-            if wagon.Door2 ~= door2 > 0 then
+            if wagon.Door2 ~= (door2 > 0) then
                 wagon.Door2 = door2 > 0
                 wagon:PlayOnce("door2", "bass", wagon.Door2 and 1 or 0)
             end
@@ -465,13 +465,13 @@ function RECIPE:Inject(ent)
             wagon:SetSoundState("release2", math.Clamp(0.3 - release1, 0, 0.3) / 0.3 * release1 / 0.3, 1.0)
             local parking_brake = wagon:GetPackedRatio("ParkingBrakePressure_dPdT", 0)
             local parking_brake_abs = math.Clamp(math.abs(parking_brake) - 0.3, 0, 1)
-            if wagon.ParkingBrake1 ~= parking_brake < 1 then
-                wagon.ParkingBrake1 = parking_brake < 1
+            if wagon.ParkingBrake1 ~= (parking_brake < 1) then
+                wagon.ParkingBrake1 = (parking_brake < 1)
                 if wagon.ParkingBrake1 then wagon:PlayOnce("parking_brake_en", "bass", 1, 1) end
             end
 
-            if wagon.ParkingBrake2 ~= parking_brake > -0.8 then
-                wagon.ParkingBrake2 = parking_brake > -0.8
+            if wagon.ParkingBrake2 ~= (parking_brake > -0.8) then
+                wagon.ParkingBrake2 = (parking_brake > -0.8)
                 if wagon.ParkingBrake2 then wagon:PlayOnce("parking_brake_rel", "bass", 0.6, 1) end
             end
 
