@@ -348,7 +348,7 @@ function RECIPE:Inject(ent)
 
             for i = 11, 13 do
                 local col = wagon:GetNW2Vector("lampD" .. i)
-                if wagon.LightsOverride[i].vec ~= col then
+                if wagon.LightsOverride and wagon.LightsOverride[i].vec ~= col then
                     wagon.LightsOverride[i].vec = col
                     wagon.LightsOverride[i][4] = Color(col.x, col.y, col.z)
                     wagon:SetLightPower(i, false)
