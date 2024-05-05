@@ -113,10 +113,7 @@ function RECIPE:Inject(ent, entclass)
     ent.CustomThinks = ent.CustomThinks or {}
     ent.CustomSpawnerUpdates = ent.CustomSpawnerUpdates or {}
     local function destroySound(snd, nogc)
-        if IsValid(snd) then
-            snd:Stop() -- ????
-        end
-
+        if IsValid(snd) then snd:Stop() end
         if not nogc and snd and snd.__gc then snd:__gc() end
     end
 
@@ -134,8 +131,6 @@ function RECIPE:Inject(ent, entclass)
     ent.MirrorCams = {Vector(450, 71, 24), Angle(1, 180, 0), 15, Vector(450, -71, 24), Angle(1, 180, 0), 15,}
     function ent.CreateBASSSound(wagon, name, callback, noblock, onerr)
         if wagon.StopSounds or not wagon.ClientPropsInitialized or wagon.CreatingCSEnts then return end
-        --if wagon.SoundSpawned and name:find(".wav") then return end
-        --wagon.SoundSpawned = true
         sound.PlayFile(Sound("sound/" .. name), "3d noplay mono" .. (noblock and " noblock" or ""), function(snd, err, errName)
             if not IsValid(wagon) then
                 destroySound(snd)
@@ -163,8 +158,6 @@ function RECIPE:Inject(ent, entclass)
     end
 
     function ent.SetSoundState(wagon, soundid, volume, pitch, time)
-        --volume = (input.IsKeyDown( KEY_LALT ) and soundid == "horn") and 0 or 1+math.sin(CurTime()*3)*0.2
-        --pitch = (input.IsKeyDown( KEY_LALT ) and soundid == "horn") and 1 or 1+math.sin(CurTime()*3)*0.2
         if wagon.StopSounds or not wagon.ClientPropsInitialized or wagon.CreatingCSEnts then return end
         local name = wagon.SoundNames and wagon.SoundNames[soundid]
         local tbl = wagon.SoundPositions[soundid]
@@ -822,15 +815,40 @@ function RECIPE:Inject(ent, entclass)
         hook.Remove("PostDrawTranslucentRenderables", "MetrostroiTrainDebug")
         cvars.AddChangeCallback("metrostroi_drawdebug", enableDebug)
         enableDebug()
-        MEL.InjectIntoClientFunction(ent, "Initialize", function(wagon)
+        function ent.Initialize(wagon)
+            -- Create clientside props
+            wagon.ClientEnts = {}
+            wagon.HiddenPanels = {}
+            wagon.HiddenPanelsDistance = {}
             wagon.HiddenLamps = {}
+            wagon.Hidden = {
+                anim = {},
+                button = {},
+                override = {},
+            }
+
+            wagon.Anims = {}
+            wagon.SmoothHide = {}
+            -- Create sounds
+            wagon:InitializeSounds()
             wagon.Sounds = {
                 loop = {},
                 isloop = {},
             }
 
+            wagon.CurrentCamera = 0
             wagon.Sprites = {}
+            if wagon.NoTrain then return end
+            wagon.ButtonMapMatrix = {}
+            -- Passenger models
+            wagon.PassengerEnts = {}
             wagon.PassengerEntsStucked = {}
+            wagon.PassengerPositions = {}
+            --wagon.HiddenQuele = {}
+            -- Systems defined in the train
+            wagon.Systems = {}
+            -- Initialize train systems
+            wagon:InitializeSystems()
             wagon.GlowingLights = {}
             wagon.LightBrightness = {}
             wagon.LightsOverride = {}
@@ -839,7 +857,15 @@ function RECIPE:Inject(ent, entclass)
                     if lightData.changable then wagon.LightsOverride[i] = table.Copy(lightData) end
                 end
             end
-        end, 1)
+
+            --wagon:EntIndex()
+            wagon.PassengerModels = {"models/metrostroi/passengers/f1.mdl", "models/metrostroi/passengers/f2.mdl", "models/metrostroi/passengers/f3.mdl", "models/metrostroi/passengers/f4.mdl", "models/metrostroi/passengers/m1.mdl", "models/metrostroi/passengers/m2.mdl", "models/metrostroi/passengers/m4.mdl", "models/metrostroi/passengers/m5.mdl",}
+            wagon.WagonNumber = 0
+            wagon:PostInitializeSystems()
+            wagon.TunnelCoeff = 0
+            wagon.StreetCoeff = 0
+            wagon.Street = 0
+        end
 
         function ent.OnRemove(wagon, nfinal)
             wagon.RenderBlock = RealTime()
