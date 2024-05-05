@@ -935,7 +935,11 @@ function RECIPE:Inject(ent)
         }
     }
 
-    if not ent.ButtonMap then return end
+    if not ent.ButtonMap then
+        print("ahtung!")
+        return
+    end
+
     for buttonmap_name, overrides in pairs(buttonOverrides) do
         for i, button in pairs(ent.ButtonMap[buttonmap_name].buttons) do
             if overrides[button.ID] then

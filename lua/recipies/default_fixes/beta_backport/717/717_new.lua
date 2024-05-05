@@ -821,7 +821,7 @@ function RECIPE:Inject(ent)
                 }
             })
 
-            table.insert(ent.ButtonMap["Block7"], {
+            table.insert(ent.ButtonMap["Block7"].buttons, {
                 ID = "VKSTToggle",
                 x = 28,
                 y = 57,
@@ -841,7 +841,7 @@ function RECIPE:Inject(ent)
                 }
             })
 
-            table.insert(ent.ButtonMap["Block7"], {
+            table.insert(ent.ButtonMap["Block7"].buttons, {
                 ID = "!IST",
                 x = 43,
                 y = 57,
@@ -884,6 +884,9 @@ function RECIPE:Inject(ent)
                     },
                 }
             }
+        end
+        if not ent.ButtonMap then
+            print("lol wtf")
         end
 
         function ent.Initialize(wagon)
