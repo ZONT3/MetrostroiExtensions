@@ -193,6 +193,10 @@ function TRAIN_SYSTEM:Initialize()
         bass = true
     })
 
+    self.Train:LoadSystem("CabFusesCapOpen", "Relay", "Switch", {
+        bass = true
+    })
+
     self.Train:LoadSystem("AIS", "Relay", "VA21-29")
     -- Автоматические выключатели (АВ)
     self.Train:LoadSystem("A11", "Relay", "VA21-29")
