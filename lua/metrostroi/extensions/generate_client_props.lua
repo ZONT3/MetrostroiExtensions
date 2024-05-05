@@ -12,10 +12,6 @@
 -- да, за это на меня выльется тонна говна.
 -- уважаемые, не нравится - не пользуйтесь экстом))))))))))))
 -- и моделями тоже, пожалуйста
-if not MEL.ButtonMaps then
-    MEL.ButtonMaps = {} -- copies of buttonmaps because GenerateClientProps removes model of every button after creating clientprops
-    -- (key: ent_class, value: (key: name of buttonmap, value: buttonmap copy))
-end
 
 local function newGenerateClientProps()
     function Metrostroi.GenerateClientProps(ent)

@@ -9,7 +9,7 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang, reload_name)
+function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
     if CLIENT then
         local buttonmap = ent.ButtonMap[buttonmap_name]
         if not buttonmap then
@@ -19,12 +19,41 @@ function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang, reload_name)
 
         buttonmap.pos = new_pos
         if new_ang then buttonmap.ang = new_ang end
-        -- TODO: ПЕРЕПИСАТЬ НАХУЙ
         if not buttonmap.buttons then return end
-        for _, button in pairs(buttonmap.buttons) do
-            MEL.UpdateCallback(ent, button.ID, function(wagon, cent) cent:SetPos(wagon:LocalToWorld(Metrostroi.PositionFromPanel(buttonmap_name, button.ID, 0, 0, 0, wagon))) end)
-            if reload_name then MEL.MarkClientPropForReload(ent, button.ID, reload_name) end
+        for i, button in pairs(buttonmap.buttons) do
+            button.model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i].model)
         end
+
+        Metrostroi.GenerateClientProps(ent)
+    end
+end
+
+function MEL.MoveButtonMapButton(ent, buttonmap_name, button_name, x, y)
+    if CLIENT then
+        local buttonmap = ent.ButtonMap[buttonmap_name]
+        if not buttonmap then
+            MEL._LogError(Format("no such buttonmap: %s", bu))
+            return
+        end
+
+        local ent_class = MEL.GetEntclass(ent)
+        local button_index = MEL.ButtonmapButtonMappings[ent_class][buttonmap_name]
+        if not button_index then
+            for i, button in pairs(buttonmap.buttons) do
+                if button.ID == button_name then
+                    button_index = i
+                    break
+                end
+            end
+        end
+        if not button_index then
+            MEL._LogError(Format("can't find button %s in buttonmap %s", button_name, buttonmap_name))
+            return
+        end
+        if x then buttonmap.buttons[button_index].x = x end
+        if y then buttonmap.buttons[button_index].y = y end
+        buttonmap.buttons[button_index].model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[button_index].model)
+        Metrostroi.GenerateClientProps(ent)
     end
 end
 
@@ -42,14 +71,16 @@ end
 function MEL.NewButtonMapButton(ent, buttonmap_name, button_data)
     if CLIENT then
         if not ent.ButtonMap then
-            -- хм
+            -- хм?
             return
         end
+
         local buttonmap = ent.ButtonMap[buttonmap_name]
         if not buttonmap then
             MEL._LogError(Format("no such buttonmap: %s", buttonmap_name))
             return
         end
+
         local ent_class = MEL.GetEntclass(ent)
         local button_index = MEL.ButtonmapButtonMappings[ent_class][buttonmap_name]
         if not button_index then
@@ -60,10 +91,12 @@ function MEL.NewButtonMapButton(ent, buttonmap_name, button_data)
                 end
             end
         end
+
         if button_index then
             buttonmap.buttons[button_index] = button_data
             return
         end
+
         table.insert(buttonmap.buttons, button_data)
     end
 end
