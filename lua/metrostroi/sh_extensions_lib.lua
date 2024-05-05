@@ -227,8 +227,13 @@ end
 local function loadRecipe(filename, scope)
     local File = string.GetFileFromFilename(filename)
     -- load recipe
-    if SERVER and scope ~= "sv" then AddCSLuaFile(filename) end
+    if SERVER and (scope == "sh" or scope == "cl") then 
+        print("SEND RECIPE FOR CLIENT " .. filename)
+        AddCSLuaFile(filename) 
+    end
+
     include(filename)
+
     if not RECIPE then
         MEL._LogError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
         return
@@ -280,11 +285,10 @@ local function discoverRecipies()
 
         -- todo: think about scope
         local scope = string.sub(string.GetFileFromFilename(recipe_file), 1, 2)
-        if scope == "sv" and SERVER then -- Чтобы не дай бог не попало клиенту
-            loadRecipe(recipe_file, train_type, "sv")
-        else
-            loadRecipe(recipe_file, train_type, scope)
-        end
+        if CLIENT and scope == "sv" then return end
+        if not SERVER and scope == "sv" then return end
+        
+        loadRecipe(recipe_file, scope)
     end
 end
 
@@ -394,7 +398,7 @@ local function injectFunction(key, tbl)
         local buildedInject = function(wagon, ...)
             for i = #beforeStack, 1, -1 do
                 for _, functionToInject in pairs(beforeStack[i]) do
-                    injectReturnValue = {functionToInject(wagon, unpack({...} or {}), true)}
+                    injectReturnValue = {functionToInject(wagon, unpack({...} or {}))}
                     if injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
                 end
             end
@@ -402,7 +406,7 @@ local function injectFunction(key, tbl)
             local returnValue = MEL.FunctionDefaults[key][functionName](wagon, unpack({...} or {}))
             for i = 1, #afterStack do
                 for _, functionToInject in pairs(afterStack[i]) do
-                    injectReturnValue = {functionToInject(wagon, returnValue, unpack({...} or {}), false)}
+                    injectReturnValue = {functionToInject(wagon, returnValue, unpack({...} or {}))}
                     if injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
                 end
             end
