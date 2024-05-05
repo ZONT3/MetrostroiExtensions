@@ -17,6 +17,7 @@ MEL.BaseRecipies = {}
 MEL.Recipes = {}
 MEL.DisabledRecipies = {}
 MEL.InjectStack = {}
+MEL.ScopedRecipies = false
 MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
 -- lookup table for train families
 MEL.TrainFamilies = {
@@ -227,11 +228,14 @@ end
 local function loadRecipe(filename, scope)
     local File = string.GetFileFromFilename(filename)
     -- load recipe
-    if SERVER and (scope == "sh" or scope == "cl") then 
+    if MEL.ScopedRecipies and SERVER and (scope == "sh" or scope == "cl") then 
         print("SEND RECIPE FOR CLIENT " .. filename)
-        AddCSLuaFile(filename) 
+        AddCSLuaFile(filename)
     end
 
+    if not MEL.ScopedRecipies then
+        AddCSLuaFile(filename)
+    end
     include(filename)
 
     if not RECIPE then
