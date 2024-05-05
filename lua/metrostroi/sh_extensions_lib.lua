@@ -504,11 +504,6 @@ if SERVER then
         MEL.RandomFields = {}
         MEL.MetrostroiClasses = {}
         discoverRecipies()
-        if Metrostroi.Version <= 1537278077 then
-            getEntTables()
-            inject(true)
-        end
-
         getEntTables()
         inject()
     end)
@@ -530,11 +525,6 @@ if CLIENT then
         MEL.RandomFields = {}
         MEL.MetrostroiClasses = {}
         discoverRecipies()
-        if Metrostroi.Version <= 1537278077 then
-            getEntTables()
-            inject(true)
-        end
-
         getEntTables()
         inject()
         -- try to reload all spawned trains csents and buttonmaps
