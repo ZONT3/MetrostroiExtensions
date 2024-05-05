@@ -20,6 +20,7 @@ local function newGenerateClientProps()
         if not wagon.AutoAnimNames then wagon.AutoAnimNames = {} end
         if not wagon.ButtonMap then
             MEL._LogWarning(Format("weird, but ButtonMap for wagon with class %s is nil. lol", MEL.GetEntclass(wagon)))
+            return
         end
         for id, panel in pairs(wagon.ButtonMap) do
             if not wagon.ButtonMapCopy[id] then wagon.ButtonMapCopy[id] = table.Copy(panel) end
