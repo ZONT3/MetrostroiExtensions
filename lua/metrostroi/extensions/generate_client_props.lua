@@ -18,11 +18,14 @@ local function newGenerateClientProps()
         local wagon = ent or ENT
         if not wagon.ButtonMapCopy then wagon.ButtonMapCopy = {} end
         if not wagon.AutoAnimNames then wagon.AutoAnimNames = {} end
+        if not wagon.ButtonMap then
+            MEL._LogWarning(Format("weird, but ButtonMap for wagon with class %s is nil. lol", MEL.GetEntclass(wagon)))
+        end
         for id, panel in pairs(wagon.ButtonMap) do
             if not wagon.ButtonMapCopy[id] then wagon.ButtonMapCopy[id] = table.Copy(panel) end
             if not panel.buttons then continue end
             if not panel.props then panel.props = {} end
-            for name, buttons in pairs(panel.buttons) do
+            for name, buttons in pairs(panel.buttons or {}) do
                 --if reti > 8 then reti=0; ret=ret.."\n" end
                 if buttons.tooltipFunc then
                     local func = buttons.tooltipFunc
