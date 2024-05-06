@@ -796,7 +796,7 @@ function RECIPE:Inject(ent)
 
     if CLIENT then
         if ent.ButtonMap then
-            table.insert(ent.ButtonMap["Block2_1"].buttons, {
+            local LampLEKK = {
                 ID = "!LampLEKK",
                 x = 215.5 - 0.4 * 1,
                 y = 31.8 + 19.7 * 0,
@@ -819,9 +819,11 @@ function RECIPE:Inject(ent)
                         z = -1,
                     }
                 }
-            })
+            }
 
-            table.insert(ent.ButtonMap["Block7"].buttons, {
+            table.insert(ent.ButtonMap["Block2_1"].buttons, LampLEKK)
+            table.insert(ent.ButtonMapCopy["Block2_1"].buttons, LampLEKK)
+            local VKSTToggle = {
                 ID = "VKSTToggle",
                 x = 28,
                 y = 57,
@@ -839,9 +841,11 @@ function RECIPE:Inject(ent)
                     sndmax = 1e3,
                     sndang = Angle(-90, 0, 0),
                 }
-            })
+            }
 
-            table.insert(ent.ButtonMap["Block7"].buttons, {
+            table.insert(ent.ButtonMap["Block7"].buttons, VKSTToggle)
+            table.insert(ent.ButtonMapCopy["Block7"].buttons, VKSTToggle)
+            local IST = {
                 ID = "!IST",
                 x = 43,
                 y = 57,
@@ -862,7 +866,10 @@ function RECIPE:Inject(ent)
                         z = -1.4,
                     }
                 }
-            })
+            }
+
+            table.insert(ent.ButtonMap["Block7"].buttons, IST)
+            table.insert(ent.ButtonMapCopy["Block7"].buttons, IST)
 
             ent.ButtonMap["AutostopValve"] = {
                 pos = Vector(365.8, -67.6, -56),
@@ -885,10 +892,8 @@ function RECIPE:Inject(ent)
                 }
             }
         end
-        if not ent.ButtonMap then
-            print("lol wtf")
-        end
 
+        if not ent.ButtonMap then print("lol wtf") end
         function ent.Initialize(wagon)
             wagon.BaseClass.Initialize(wagon)
             --wagon.Train:SetPackedRatio("EmergencyValve_dPdT",leak)

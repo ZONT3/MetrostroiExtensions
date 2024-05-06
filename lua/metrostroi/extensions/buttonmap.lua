@@ -21,6 +21,7 @@ function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
         if new_ang then buttonmap.ang = new_ang end
         if not buttonmap.buttons then return end
         for i, button in pairs(buttonmap.buttons) do
+            if not ent.ButtonMapCopy[buttonmap_name].buttons[i].model then continue end
             button.model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i].model)
         end
 
