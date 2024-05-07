@@ -455,7 +455,7 @@ local function newGenerateClientProps()
             if not v.hidden then continue end
             local cP = wagon.ClientProps[v.hidden]
             if not cP then
-                ErrorNoHalt("No clientProp " .. v.hidden .. " in entity " .. wagon.Folder .. "\n")
+                -- ErrorNoHalt("No clientProp " .. v.hidden .. " in entity " .. wagon.Folder .. "\n")
                 continue
             end
 
