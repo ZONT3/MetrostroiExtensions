@@ -1601,6 +1601,7 @@ function RECIPE:Inject(ent, entclass)
         function ent.SetLightPower(wagon, index, power, brightness)
             if wagon.HiddenLamps[index] then return end
             local lightData = wagon.LightsOverride[index] or wagon.Lights[index]
+            if not lightData then return end
             brightness = brightness or 1
             if lightData[1] == "glow" or lightData[1] == "light" then
                 if lightData.panel and not wagon.SpritesEnabled or lightData.aa and wagon.AAEnabled then return end
