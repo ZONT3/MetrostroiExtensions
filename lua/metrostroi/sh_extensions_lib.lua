@@ -228,12 +228,12 @@ end
 local function loadRecipe(filename, scope)
     local File = string.GetFileFromFilename(filename)
     -- load recipe
-    if MEL.ScopedRecipies and SERVER and (scope == "sh" or scope == "cl") then 
+    if MEL.ScopedRecipies and SERVER and (scope == "sh" or scope == "cl") then
         print("SEND RECIPE FOR CLIENT " .. filename)
         AddCSLuaFile(filename)
     end
 
-    if not MEL.ScopedRecipies then
+    if not MEL.ScopedRecipies and SERVER then
         AddCSLuaFile(filename)
     end
     include(filename)
@@ -439,7 +439,7 @@ local function inject(isBackports)
     end
     if isBackports then
         table.sort(MEL.InjectStack, function(a, b)
-            return (a.BackportPriority or 9999) > (b.BackportPriority or 9999)
+            return (a.BackportPriority or 9999) < (b.BackportPriority or 9999)
         end)
     end
 

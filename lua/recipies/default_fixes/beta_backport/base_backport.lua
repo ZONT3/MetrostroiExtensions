@@ -852,6 +852,7 @@ function RECIPE:Inject(ent, entclass)
             wagon.GlowingLights = {}
             wagon.LightBrightness = {}
             wagon.LightsOverride = {}
+            print(wagon.LightsOverride, type(wagon.LightsOverride))
             if wagon.Lights then
                 for i, lightData in pairs(wagon.Lights) do
                     if lightData.changable then wagon.LightsOverride[i] = table.Copy(lightData) end
