@@ -10,7 +10,7 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("platform_backport", {"gmod_track_platform"})
-RECIPE.BackportPriority = true
+RECIPE.BackportPriority = 2
 function RECIPE:Inject(ent)
     -- MEL.InjectIntoClientFunction(ent, "Initialize", function(wagon) wagon:DrawShadow(false) end, 1)
     -- MEL.InjectIntoServerFunction(ent, "Initialize", function(wagon) wagon:DrawShadow(false) end, 1)

@@ -10,7 +10,7 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("base_backport", "gmod_subway_base")
-RECIPE.BackportPriority = true
+RECIPE.BackportPriority = 1
 RECIPE.Description = "This recipe backports changes for gmod_subway_base from metrostroi beta"
 -- local C_DisableHUD          = GetConVar("metrostroi_disablehud")
 local C_RenderDistance = GetConVar("metrostroi_renderdistance")

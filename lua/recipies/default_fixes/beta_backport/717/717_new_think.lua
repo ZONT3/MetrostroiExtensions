@@ -10,7 +10,7 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("717_new_think", "gmod_subway_81-717_mvm")
-RECIPE.BackportPriority = true
+RECIPE.BackportPriority = 9
 
 local Cpos = {0, 0.2, 0.4, 0.5, 0.6, 0.8, 1}
 function RECIPE:Inject(ent)

@@ -437,6 +437,11 @@ local function inject(isBackports)
 
         recipe:BeforeInject()
     end
+    if isBackports then
+        table.sort(MEL.InjectStack, function(a, b)
+            return (a.BackportPriority or 9999) > (b.BackportPriority or 9999)
+        end)
+    end
 
     for _, recipe in pairs(MEL.InjectStack) do
         if isBackports and not recipe.BackportPriority then -- we do this cause all backports recipies will be in start of table

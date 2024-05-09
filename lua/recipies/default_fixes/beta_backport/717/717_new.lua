@@ -10,7 +10,7 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("717_new", "gmod_subway_81-717_mvm")
-RECIPE.BackportPriority = true
+RECIPE.BackportPriority = 7
 function RECIPE:Inject(ent)
     -- Setup door positions
     local function GetDoorPosition(i, k)

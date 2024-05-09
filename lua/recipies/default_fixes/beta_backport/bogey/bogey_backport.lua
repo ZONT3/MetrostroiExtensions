@@ -10,7 +10,7 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("bogey_backport", {"gmod_train_bogey"})
-RECIPE.BackportPriority = true
+RECIPE.BackportPriority = 3
 local C_Require3rdRail = GetConVar("metrostroi_train_requirethirdrail")
 function RECIPE:Inject(ent)
     if CLIENT then
