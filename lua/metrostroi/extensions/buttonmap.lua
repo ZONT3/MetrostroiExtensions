@@ -66,6 +66,7 @@ function MEL.NewButtonMap(ent, buttonmap_name, buttonmap_data, do_not_override)
         end
 
         ent.ButtonMap[buttonmap_name] = buttonmap_data
+        Metrostroi.GenerateClientProps(ent)
     end
 end
 
