@@ -935,91 +935,100 @@ function RECIPE:Inject(ent)
         }
     }
 
-    if not ent.ButtonMap then
-        print("ahtung!")
-        return
-    end
+    timer.Simple(1, function()
+        for buttonmap_name, overrides in pairs(buttonOverrides) do
+            for i, button in pairs(ent.ButtonMap[buttonmap_name].buttons) do
+                if overrides[button.ID] then
+                    local override = overrides[button.ID]
+                    if not ent.ButtonMapCopy[buttonmap_name] then
+                        MEL._LogWarning(Format("no such buttonmap %s", buttonmap_name))
+                        continue
+                    end
 
-    for buttonmap_name, overrides in pairs(buttonOverrides) do
-        for i, button in pairs(ent.ButtonMap[buttonmap_name].buttons) do
-            if overrides[button.ID] then
-                local override = overrides[button.ID]
-                if not ent.ButtonMapCopy[buttonmap_name] then
-                    MEL._LogWarning(Format("no such buttonmap %s", buttonmap_name))
-                    continue
-                end
+                    if not ent.ButtonMapCopy[buttonmap_name].buttons[i] then
+                        MEL._LogWarning(Format("no such buttonmap (%s) button (%d, %s)", buttonmap_name, i, button.ID))
+                        continue
+                    end
 
-                if not ent.ButtonMapCopy[buttonmap_name].buttons[i] then
-                    MEL._LogWarning(Format("no such buttonmap (%s) button (%d, %s)", buttonmap_name, i, button.ID))
-                    continue
-                end
+                    local copy_button = ent.ButtonMapCopy[buttonmap_name].buttons[i]
+                    if ent.ButtonMapCopy[buttonmap_name].buttons[i].model then
+                        button.model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i].model)
+                        if override.sprite then
+                            button.model.sprite = override.sprite
+                            copy_button.model.sprite = table.Copy(override.sprite)
+                        end
 
-                local copy_button = ent.ButtonMapCopy[buttonmap_name].buttons[i]
-                if ent.ButtonMapCopy[buttonmap_name].buttons[i].model then
-                    button.model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i].model)
-                    if override.sprite then
-                        button.model.sprite = override.sprite
-                        copy_button.model.sprite = table.Copy(override.sprite)
-                    end
-                    if override.lamp then
-                        button.model.lamp = override.lamp
-                        copy_button.model.lamp = table.Copy(override.lamp)
-                    end
-                    if override.plomb then
-                        button.model.plomb = override.plomb
-                        copy_button.model.plomb = table.Copy(override.plomb)
-                    end
-                    if override.noTooltip then
-                        button.model.noTooltip = override.noTooltip
-                        copy_button.model.noTooltip = override.noTooltip
-                    end
-                    if override.tooltip then
-                        button.model.tooltip = override.tooltip
-                        copy_button.model.tooltip = override.tooltip
-                    end
-                    if override.states then
-                        button.model.states = override.states
-                        copy_button.model.states = table.Copy(override.states)
-                    end
-                    if override.var then
-                        button.model.var = override.var
-                        copy_button.model.var = override.var
-                    end
-                    if override.varTooltip then
-                        button.model.varTooltip = override.varTooltip
-                        copy_button.model.varTooltip = override.varTooltip
-                    end
-                    if override.tooltipFunc then
-                        button.model.tooltipFunc = override.tooltipFunc
-                        copy_button.model.tooltipFunc = override.tooltipFunc
-                    end
-                else
-                    if override.tooltip then
-                        button.tooltip = override.tooltip
-                        copy_button.tooltip = override.tooltip
-                    end
-                    if override.states then
-                        button.states = override.states
-                        copy_button.states = table.Copy(override.states)
-                    end
-                    if override.var then
-                        button.var = override.var
-                        copy_button.var = override.var
-                    end
-                    if override.varTooltip then
-                        button.varTooltip = override.varTooltip
-                        copy_button.varTooltip = override.varTooltip
-                    end
-                    if override.tooltipFunc then
-                        button.tooltipFunc = override.tooltipFunc
-                        copy_button.tooltipFunc = override.tooltipFunc
+                        if override.lamp then
+                            button.model.lamp = override.lamp
+                            copy_button.model.lamp = table.Copy(override.lamp)
+                        end
+
+                        if override.plomb then
+                            button.model.plomb = override.plomb
+                            copy_button.model.plomb = table.Copy(override.plomb)
+                        end
+
+                        if override.noTooltip then
+                            button.model.noTooltip = override.noTooltip
+                            copy_button.model.noTooltip = override.noTooltip
+                        end
+
+                        if override.tooltip then
+                            button.model.tooltip = override.tooltip
+                            copy_button.model.tooltip = override.tooltip
+                        end
+
+                        if override.states then
+                            button.model.states = override.states
+                            copy_button.model.states = table.Copy(override.states)
+                        end
+
+                        if override.var then
+                            button.model.var = override.var
+                            copy_button.model.var = override.var
+                        end
+
+                        if override.varTooltip then
+                            button.model.varTooltip = override.varTooltip
+                            copy_button.model.varTooltip = override.varTooltip
+                        end
+
+                        if override.tooltipFunc then
+                            button.model.tooltipFunc = override.tooltipFunc
+                            copy_button.model.tooltipFunc = override.tooltipFunc
+                        end
+                    else
+                        if override.tooltip then
+                            button.tooltip = override.tooltip
+                            copy_button.tooltip = override.tooltip
+                        end
+
+                        if override.states then
+                            button.states = override.states
+                            copy_button.states = table.Copy(override.states)
+                        end
+
+                        if override.var then
+                            button.var = override.var
+                            copy_button.var = override.var
+                        end
+
+                        if override.varTooltip then
+                            button.varTooltip = override.varTooltip
+                            copy_button.varTooltip = override.varTooltip
+                        end
+
+                        if override.tooltipFunc then
+                            button.tooltipFunc = override.tooltipFunc
+                            copy_button.tooltipFunc = override.tooltipFunc
+                        end
                     end
                 end
             end
         end
-    end
 
-    Metrostroi.GenerateClientProps(ent)
+        Metrostroi.GenerateClientProps(ent)
+    end)
 end
 
 function RECIPE:InjectNeeded()
