@@ -138,5 +138,5 @@ function MEL.OverrideHidePanel(ent, buttonmap_name, value_callback)
     if not MEL.HidePanelOverrides[ent_class] then
         MEL.HidePanelOverrides[ent_class] = {}
     end
-    MEL.HidePanelOverrides[ent_class][clientProp] = value_callback
+    MEL.HidePanelOverrides[ent_class][buttonmap_name] = value_callback
 end
