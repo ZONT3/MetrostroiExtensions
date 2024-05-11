@@ -145,10 +145,6 @@ function MEL.OverrideAnimateValue(ent, clientProp, value_callback)
     if not MEL.AnimateValueOverrides[ent_class] then
         MEL.AnimateValueOverrides[ent_class] = {}
     end
-    if isfunction(min_or_callback) then
-        MEL.AnimateValueOverrides[ent_class][clientProp] = min_or_callback
-        return
-    end
     MEL.AnimateValueOverrides[ent_class][clientProp] = value_callback
 end
 function MEL.UpdateCallback(ent, clientprop_name, new_callback, error_on_nil)

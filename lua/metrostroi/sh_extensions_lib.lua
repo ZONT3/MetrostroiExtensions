@@ -429,6 +429,7 @@ end
 local function inject(isBackports)
     MEL._LoadHelpers()
     MEL._OverrideAnimate(MEL.EntTables["gmod_subway_base"])
+    MEL._OverrideHidePanel(MEL.EntTables["gmod_subway_base"])
     -- method that finalizes inject on all trains. called after init of recipies
     for _, recipe in pairs(MEL.InjectStack) do
         if isBackports then -- TODO: Probably do something with this

@@ -39,7 +39,7 @@
     "prettyprint_cStyle": false,
     "prettyprint_removeRedundantParens": true,
     "prettyprint_minimizeParens": true,
-    "prettyprint_assumeOperatorAssociativity": true,
+    "prettyprint_assumeOperatorAssociativity": false,
     "prettyprint_indentation": "    ",
 
     "log_format": "auto"

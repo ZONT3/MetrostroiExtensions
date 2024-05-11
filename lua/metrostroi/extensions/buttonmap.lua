@@ -9,6 +9,9 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
+MEL.HidePanelOverrides = {} -- table with HidePanel value overrides
+-- (key: ent_class, value: (key: panel name, value: function to get value)) 
+
 function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
     if CLIENT then
         local buttonmap = ent.ButtonMap[buttonmap_name]
@@ -101,4 +104,39 @@ function MEL.NewButtonMapButton(ent, buttonmap_name, button_data)
 
         table.insert(buttonmap.buttons, button_data)
     end
+end
+
+function MEL._OverrideHidePanel(ent)
+    if SERVER then return end
+    function ent.HidePanel(wagon, kp, hide)
+        if MEL.HidePanelOverrides[MEL.GetEntclass(wagon)] and MEL.HidePanelOverrides[MEL.GetEntclass(wagon)][kp] then
+            hide = MEL.HidePanelOverrides[MEL.GetEntclass(wagon)][kp](wagon)
+        end
+        if hide and not wagon.HiddenPanels[kp] then
+            wagon.HiddenPanels[kp] = true
+            if wagon.ButtonMap[kp].props then
+                for _,v in pairs(wagon.ButtonMap[kp].props) do
+                    wagon:ShowHide(v,false,true)
+                    wagon.Hidden.override[v] = true
+                end
+            end
+        end
+        if not hide and wagon.HiddenPanels[kp] then
+            wagon.HiddenPanels[kp] = nil
+            if wagon.ButtonMap[kp].props then
+                for _,v in pairs(wagon.ButtonMap[kp].props) do
+                    wagon.Hidden.override[v] = false
+                    wagon:ShowHide(v,true,true)
+                end
+            end
+        end
+    end
+end
+
+function MEL.OverrideHidePanel(ent, buttonmap_name, value_callback)
+    local ent_class = MEL.GetEntclass(ent)
+    if not MEL.HidePanelOverrides[ent_class] then
+        MEL.HidePanelOverrides[ent_class] = {}
+    end
+    MEL.HidePanelOverrides[ent_class][clientProp] = value_callback
 end

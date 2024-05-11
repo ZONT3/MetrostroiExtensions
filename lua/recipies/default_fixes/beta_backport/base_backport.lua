@@ -280,7 +280,7 @@ function RECIPE:Inject(ent, entclass)
                         print("NO SOUND", soundname, soundid)
                         continue
                     end
-                    
+
                     if type(soundname) == "table" then soundname = table.Random(soundname) end
                     if IsValid(wagon.ClientEnts[esnd[1]]) and not wagon.ClientEnts[esnd[1]].snd then
                         local ent = wagon.ClientEnts[esnd[1]]
@@ -1083,6 +1083,8 @@ function RECIPE:Inject(ent, entclass)
                     if IsValid(seat) then
                         seat:SetRenderMode(disableSeatShadows and RENDERMODE_NONE or RENDERMODE_TRANSALPHA)
                         if disableSeatShadows then
+                            seat:DrawShadow(false)
+                            seat:SetNoDraw(true)
                             seat:AddEffects(EF_NODRAW)
                         else
                             seat:RemoveEffects(EF_NODRAW)
@@ -1090,7 +1092,7 @@ function RECIPE:Inject(ent, entclass)
                     end
                 end
 
-                wagon.DisableSeatShadows = disableSeatShadows
+                wagon.DisableSeatShadows = disableSeatShadows or nil
             end
 
             if GetConVar("metrostroi_disablecamaccel"):GetInt() == 0 then

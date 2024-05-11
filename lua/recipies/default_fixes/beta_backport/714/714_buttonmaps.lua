@@ -72,9 +72,7 @@ function RECIPE:Inject(ent)
                 varTooltip = function(ent) return ent:GetPackedRatio("RV") end
             }
         },
-        
     }
-
     for buttonmap_name, overrides in pairs(buttonOverrides) do
         for i, button in pairs(ent.ButtonMap[buttonmap_name].buttons) do
             if overrides[button.ID] then
