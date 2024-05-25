@@ -843,8 +843,8 @@ function RECIPE:Inject(ent)
                 }
             }
 
+            table.insert(ent.ButtonMapCopy["Block7"].buttons, table.Copy(VKSTToggle))
             table.insert(ent.ButtonMap["Block7"].buttons, VKSTToggle)
-            table.insert(ent.ButtonMapCopy["Block7"].buttons, VKSTToggle)
             local IST = {
                 ID = "!IST",
                 x = 43,
@@ -868,8 +868,8 @@ function RECIPE:Inject(ent)
                 }
             }
 
+            table.insert(ent.ButtonMapCopy["Block7"].buttons, table.Copy(IST))
             table.insert(ent.ButtonMap["Block7"].buttons, IST)
-            table.insert(ent.ButtonMapCopy["Block7"].buttons, IST)
 
             ent.ButtonMap["AutostopValve"] = {
                 pos = Vector(365.8, -67.6, -56),
