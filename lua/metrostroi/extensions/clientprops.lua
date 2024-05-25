@@ -13,13 +13,12 @@ MEL.AnimateOverrides = {} -- table with Animate overrides
 -- (key: ent_class, value: (key: clientProp name, value: sequential table to unpack into animate (starting from min))) 
 MEL.AnimateValueOverrides = {} -- table with Animate value overrides
 -- (key: ent_class, value: (key: clientProp name, value: function to get value)) 
-
 MEL.ShowHideOverrides = {} -- table with ShowHide value overrides
 -- (key: ent_class, value: (key: clientProp name, value: function to get value)) 
 function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, error_on_nil)
     if CLIENT then
-        if error_on_nil and not ent.ClientProps[clientprop_name] then
-            MEL._LogError(Format("no such clientprop with name %s", clientprop_name))
+        if not ent.ClientProps or not ent.ClientProps[clientprop_name] then
+            if error_on_nil then MEL._LogError(Format("no such clientprop with name %s", clientprop_name)) end
             return
         end
 
@@ -34,23 +33,22 @@ end
 function MEL._OverrideAnimate(ent)
     function ent.Animate(wagon, clientProp, value, min, max, speed, damping, stickyness)
         local id = clientProp
-
         -- maybe reuse old function and just unpack our overrides into it?
         if MEL.AnimateOverrides[MEL.GetEntclass(wagon)] and MEL.AnimateOverrides[MEL.GetEntclass(wagon)][id] then
             local override = MEL.AnimateOverrides[MEL.GetEntclass(wagon)][id]
-            if isfunction(override) then
-                override = override(wagon)
-            end
+            if isfunction(override) then override = override(wagon) end
             min = override[1]
             max = override[2]
             speed = override[3]
             damping = override[4]
             stickyness = override[5]
         end
+
         if MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)] and MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)][id] then
             local value_callback = MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)][id]
             value = value_callback(wagon)
         end
+
         local anims = wagon.Anims
         if not anims[id] then
             anims[id] = {}
@@ -133,23 +131,21 @@ end
 
 function MEL.OverrideAnimate(ent, clientProp, min_or_callback, max, speed, damping, stickyness)
     local ent_class = MEL.GetEntclass(ent)
-    if not MEL.AnimateOverrides[ent_class] then
-        MEL.AnimateOverrides[ent_class] = {}
-    end
+    if not MEL.AnimateOverrides[ent_class] then MEL.AnimateOverrides[ent_class] = {} end
     if isfunction(min_or_callback) then
         MEL.AnimateOverrides[ent_class][clientProp] = min_or_callback
         return
     end
+
     MEL.AnimateOverrides[ent_class][clientProp] = {min_or_callback, max, speed, damping, stickyness}
 end
 
 function MEL.OverrideAnimateValue(ent, clientProp, value_callback)
     local ent_class = MEL.GetEntclass(ent)
-    if not MEL.AnimateValueOverrides[ent_class] then
-        MEL.AnimateValueOverrides[ent_class] = {}
-    end
+    if not MEL.AnimateValueOverrides[ent_class] then MEL.AnimateValueOverrides[ent_class] = {} end
     MEL.AnimateValueOverrides[ent_class][clientProp] = value_callback
 end
+
 function MEL.UpdateCallback(ent, clientprop_name, new_callback, error_on_nil)
     if CLIENT then
         if not ent.ClientProps[clientprop_name] then
@@ -192,9 +188,7 @@ function MEL._OverrideShowHide(ent)
     if SERVER then return end
     function ent.ShowHide(wagon, clientProp, value, over)
         -- можно использовать аргумент over, но идея хуйня
-        if MEL.ShowHideOverrides[MEL.GetEntclass(wagon)] and MEL.ShowHideOverrides[MEL.GetEntclass(wagon)][clientProp] then
-            value = MEL.ShowHideOverrides[MEL.GetEntclass(wagon)][clientProp](wagon)
-        end
+        if MEL.ShowHideOverrides[MEL.GetEntclass(wagon)] and MEL.ShowHideOverrides[MEL.GetEntclass(wagon)][clientProp] then value = MEL.ShowHideOverrides[MEL.GetEntclass(wagon)][clientProp](wagon) end
         if wagon.Hidden.override[clientProp] then return end
         if value == true and (wagon.Hidden[clientProp] or over) then
             wagon.Hidden[clientProp] = false
@@ -214,8 +208,6 @@ end
 
 function MEL.OverrideShowHide(ent, clientprop_name, value_callback)
     local ent_class = MEL.GetEntclass(ent)
-    if not MEL.ShowHideOverrides[ent_class] then
-        MEL.ShowHideOverrides[ent_class] = {}
-    end
+    if not MEL.ShowHideOverrides[ent_class] then MEL.ShowHideOverrides[ent_class] = {} end
     MEL.ShowHideOverrides[ent_class][clientprop_name] = value_callback
 end
