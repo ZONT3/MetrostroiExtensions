@@ -320,8 +320,8 @@ end
 function MEL.getEntTable(ent_class)
     if MEL.EntTables[ent_class] then return MEL.EntTables[ent_class] end
     local ent_table = scripted_ents.GetStored(ent_class).t
-    ent_table.entclass = entclass -- add entclass for convience
-    MEL.EntTables[entclass] = ent_table
+    ent_table.entclass = ent_class -- add entclass for convience
+    MEL.EntTables[ent_class] = ent_table
     return ent_table
 end
 
@@ -553,6 +553,7 @@ if CLIENT then
         -- try to reload all spawned trains csents and buttonmaps
         for k, v in ipairs(ents.FindByClass("gmod_subway_*")) do
             v.ClientPropsInitialized = false
+            v:RemoveCSEnts()
             v:ClearButtons()
         end
     end)

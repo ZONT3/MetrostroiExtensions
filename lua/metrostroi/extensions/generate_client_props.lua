@@ -12,7 +12,6 @@
 -- да, за это на меня выльется тонна говна.
 -- уважаемые, не нравится - не пользуйтесь экстом))))))))))))
 -- и моделями тоже, пожалуйста
-
 local function newGenerateClientProps()
     function Metrostroi.GenerateClientProps(ent)
         local wagon = ent or ENT
@@ -22,10 +21,12 @@ local function newGenerateClientProps()
             MEL._LogWarning(Format("weird, but ButtonMap for wagon with class %s is nil. lol", MEL.GetEntclass(wagon)))
             return
         end
+
         for id, panel in pairs(wagon.ButtonMap) do
             if not wagon.ButtonMapCopy[id] then wagon.ButtonMapCopy[id] = table.Copy(panel) end
             if not panel.buttons then continue end
             if not panel.props then panel.props = {} end
+            if not panel.props_kv then panel.props_kv = {} end
             for name, buttons in pairs(panel.buttons or {}) do
                 --if reti > 8 then reti=0; ret=ret.."\n" end
                 if buttons.tooltipFunc then
@@ -81,7 +82,7 @@ local function newGenerateClientProps()
                     end
 
                     if config.model then
-                        table.insert(panel.props, name)
+                        if not panel.props_kv[name] then panel.props_kv[name] = table.insert(panel.props, name) end
                         wagon.ClientProps[name] = {
                             model = config.model or "models/metrostroi/81-717/button07.mdl",
                             pos = Metrostroi.PositionFromPanel(id, config.pos or buttons.ID, config.z or 0.2, config.x or 0, config.y or 0, ent),
@@ -211,7 +212,7 @@ local function newGenerateClientProps()
                         local pconfig = config.plomb
                         local pname = name .. "_pl"
                         if pconfig.model then
-                            table.insert(panel.props, pname)
+                            if not panel.props_kv[pname] then panel.props_kv[pname] = table.insert(panel.props, pname) end
                             wagon.ClientProps[pname] = {
                                 model = pconfig.model,
                                 pos = Metrostroi.PositionFromPanel(id, config.pos or buttons.ID, (config.z or 0.2) + (pconfig.z or 0.2), (config.x or 0) + (pconfig.x or 0), (config.y or 0) + (pconfig.y or 0), ent),
@@ -249,7 +250,7 @@ local function newGenerateClientProps()
                     if config.lamp then
                         local lconfig = config.lamp
                         local lname = name .. "_lamp"
-                        table.insert(panel.props, lname)
+                        if not panel.props_kv[lname] then panel.props_kv[lname] = table.insert(panel.props, lname) end
                         wagon.ClientProps[lname] = {
                             model = lconfig.model or "models/metrostroi/81-717/button07.mdl",
                             pos = Metrostroi.PositionFromPanel(id, config.pos or buttons.ID, (config.z or 0.2) + (lconfig.z or 0.2), (config.x or 0) + (lconfig.x or 0), (config.y or 0) + (lconfig.y or 0), ent),
@@ -324,7 +325,7 @@ local function newGenerateClientProps()
                     if config.lamps then
                         for k, lconfig in ipairs(config.lamps) do
                             local lname = name .. "_lamp" .. k
-                            table.insert(panel.props, lname)
+                            if not panel.props_kv[lname] then panel.props_kv[lname] = table.insert(panel.props, lname) end
                             wagon.ClientProps[lname] = {
                                 model = lconfig.model or "models/metrostroi/81-717/button07.mdl",
                                 pos = Metrostroi.PositionFromPanel(id, config.pos or buttons.ID, (config.z or 0.2) + (lconfig.z or 0.2), (config.x or 0) + (lconfig.x or 0), (config.y or 0) + (lconfig.y or 0), ent),
@@ -422,7 +423,7 @@ local function newGenerateClientProps()
                     if config.labels then
                         for k, aconfig in ipairs(config.labels) do
                             local aname = name .. "_label" .. k
-                            table.insert(panel.props, aname)
+                            if not panel.props_kv[aname] then panel.props_kv[aname] = table.insert(panel.props, aname) end
                             wagon.ClientProps[aname] = {
                                 model = aconfig.model or "models/metrostroi/81-717/button07.mdl",
                                 pos = Metrostroi.PositionFromPanel(id, config.pos or buttons.ID, (config.z or 0.2) + (aconfig.z or 0.2), (config.x or 0) + (aconfig.x or 0), (config.y or 0) + (aconfig.y or 0), ent),

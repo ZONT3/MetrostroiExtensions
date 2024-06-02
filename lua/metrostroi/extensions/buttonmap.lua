@@ -11,6 +11,15 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.HidePanelOverrides = {} -- table with HidePanel value overrides
 -- (key: ent_class, value: (key: panel name, value: function to get value)) 
+function reloadButtonMapProps(ent, buttonmap)
+    if not buttonmap.props then return end
+    for i, prop in pairs(buttonmap.props) do
+        if ent.ClientEnts and IsValid(ent.ClientEnts[prop]) then
+            ent.ClientEnts[prop]:Remove()
+            ent.ClientEnts[prop] = nil
+        end
+    end
+end
 
 function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
     if CLIENT then
@@ -29,35 +38,35 @@ function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
         end
 
         Metrostroi.GenerateClientProps(ent)
+        reloadButtonMapProps(ent, buttonmap)
     end
 end
 
 function MEL.MoveButtonMapButton(ent, buttonmap_name, button_name, x, y)
     if CLIENT then
         local buttonmap = ent.ButtonMap[buttonmap_name]
+        local buttonmap_copy = ent.ButtonMapCopy[buttonmap_name]
         if not buttonmap then
             MEL._LogError(Format("no such buttonmap: %s", bu))
             return
         end
 
-        local ent_class = MEL.GetEntclass(ent)
-        local button_index = MEL.ButtonmapButtonMappings[ent_class][buttonmap_name]
-        if not button_index then
-            for i, button in pairs(buttonmap.buttons) do
-                if button.ID == button_name then
-                    button_index = i
-                    break
-                end
-            end
+        local button_index = MEL.GetButtonmapButtonMapping(ent, buttonmap_name, button_name)
+        if x then
+            buttonmap.buttons[button_index]["x"] = x
+            buttonmap_copy.buttons[button_index]["x"] = x
         end
-        if not button_index then
-            MEL._LogError(Format("can't find button %s in buttonmap %s", button_name, buttonmap_name))
-            return
+
+        if y then
+            buttonmap.buttons[button_index]["y"] = y
+            buttonmap_copy.buttons[button_index]["y"] = y
         end
-        if x then buttonmap.buttons[button_index].x = x end
-        if y then buttonmap.buttons[button_index].y = y end
+
         buttonmap.buttons[button_index].model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[button_index].model)
         Metrostroi.GenerateClientProps(ent)
+
+        reloadButtonMapProps(ent, buttonmap)
+
     end
 end
 
@@ -69,8 +78,10 @@ function MEL.NewButtonMap(ent, buttonmap_name, buttonmap_data, do_not_override)
         end
 
         ent.ButtonMap[buttonmap_name] = buttonmap_data
-        ent.ButtonMapCopy[buttonmap_name] = buttonmap_data
+        ent.ButtonMapCopy[buttonmap_name] = table.Copy(buttonmap_data)
         Metrostroi.GenerateClientProps(ent)
+
+        reloadButtonMapProps(ent, ent.ButtonMap[buttonmap_name])
     end
 end
 
@@ -82,52 +93,46 @@ function MEL.NewButtonMapButton(ent, buttonmap_name, button_data)
         end
 
         local buttonmap = ent.ButtonMap[buttonmap_name]
+        local buttonmap_copy = ent.ButtonMapCopy[buttonmap_name]
         if not buttonmap then
             MEL._LogError(Format("no such buttonmap: %s", buttonmap_name))
             return
         end
 
-        local ent_class = MEL.GetEntclass(ent)
-        local button_index = MEL.ButtonmapButtonMappings[ent_class][buttonmap_name]
-        if not button_index then
-            for i, button in pairs(buttonmap.buttons) do
-                if button.ID == button_data.ID then
-                    button_index = i
-                    return
-                end
-            end
-        end
-
+        local button_index = MEL.GetButtonmapButtonMapping(ent, buttonmap_name, button_data.ID, true)
         if button_index then
             buttonmap.buttons[button_index] = button_data
-            return
+            buttonmap_copy.buttons[button_index] = table.Copy(button_data)
+        else
+            table.insert(buttonmap.buttons, button_data)
+            table.insert(buttonmap_copy.buttons, table.Copy(button_data))
         end
 
-        table.insert(buttonmap.buttons, button_data)
+        Metrostroi.GenerateClientProps(ent)
+        reloadButtonMapProps(ent, buttonmap)
     end
 end
 
 function MEL._OverrideHidePanel(ent)
     if SERVER then return end
     function ent.HidePanel(wagon, kp, hide)
-        if MEL.HidePanelOverrides[MEL.GetEntclass(wagon)] and MEL.HidePanelOverrides[MEL.GetEntclass(wagon)][kp] then
-            hide = MEL.HidePanelOverrides[MEL.GetEntclass(wagon)][kp](wagon)
-        end
+        if MEL.HidePanelOverrides[MEL.GetEntclass(wagon)] and MEL.HidePanelOverrides[MEL.GetEntclass(wagon)][kp] then hide = MEL.HidePanelOverrides[MEL.GetEntclass(wagon)][kp](wagon) end
         if hide and not wagon.HiddenPanels[kp] then
             wagon.HiddenPanels[kp] = true
             if wagon.ButtonMap[kp].props then
-                for _,v in pairs(wagon.ButtonMap[kp].props) do
-                    wagon:ShowHide(v,false,true)
+                for _, v in pairs(wagon.ButtonMap[kp].props) do
+                    wagon:ShowHide(v, false, true)
                     wagon.Hidden.override[v] = true
                 end
             end
         end
+
         if not hide and wagon.HiddenPanels[kp] then
             wagon.HiddenPanels[kp] = nil
             if wagon.ButtonMap[kp].props then
-                for _,v in pairs(wagon.ButtonMap[kp].props) do
+                for _, v in pairs(wagon.ButtonMap[kp].props) do
                     wagon.Hidden.override[v] = false
-                    wagon:ShowHide(v,true,true)
+                    wagon:ShowHide(v, true, true)
                 end
             end
         end
@@ -136,8 +141,6 @@ end
 
 function MEL.OverrideHidePanel(ent, buttonmap_name, value_callback)
     local ent_class = MEL.GetEntclass(ent)
-    if not MEL.HidePanelOverrides[ent_class] then
-        MEL.HidePanelOverrides[ent_class] = {}
-    end
+    if not MEL.HidePanelOverrides[ent_class] then MEL.HidePanelOverrides[ent_class] = {} end
     MEL.HidePanelOverrides[ent_class][buttonmap_name] = value_callback
 end

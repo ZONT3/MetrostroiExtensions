@@ -9,20 +9,53 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
+if not MEL.SpawnerFieldMappings then
 MEL.SpawnerFieldMappings = {} -- lookup table for accessing spawner fields by name and list elements by default, non-translated name
+end
 -- (key: train_class, value: (key: field_name, value: {index = index_of_field, list_elements = (key: name of list element, value: index)}))
-MEL.ButtonmapButtonMappings = {} -- lookup table for accessing button of buttonmap by its id
+if not MEL.ButtonmapButtonMappings then
+    MEL.ButtonmapButtonMappings = {} -- lookup table for accessing button of buttonmap by its id
+end
 --  (key: train_class, value: (key: buttonmap name, value: (key: button id, value: its index))
-
 local SpawnerC = MEL.Constants.Spawner
 MEL.Helpers = {}
-
 function MEL.Helpers.getListElementIndex(field_table, element_name)
     if field_table[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field_table[SpawnerC.List.ELEMENTS]) then
         for list_i, name in pairs(field_table[SpawnerC.List.ELEMENTS]) do
             if name == element_name then return list_i end
         end
     end
+end
+
+function MEL.GetButtonmapButtonMapping(ent_or_entclass, buttonmap_name, button_name, ignore_error)
+    local ent_class = MEL.GetEntclass(ent_or_entclass)
+    if not MEL.getEntTable(ent_class).ButtonMap then
+        return
+    end
+    local buttonmap = MEL.getEntTable(ent_class).ButtonMap[buttonmap_name]
+    if not MEL.ButtonmapButtonMappings[ent_class] then
+        MEL.ButtonmapButtonMappings[ent_class] = {}
+    end
+    if not MEL.ButtonmapButtonMappings[ent_class][buttonmap_name] then
+        MEL.ButtonmapButtonMappings[ent_class][buttonmap_name] = {}
+    end
+    local button_index = MEL.ButtonmapButtonMappings[ent_class][buttonmap_name][button_name]
+    if not button_index and buttonmap_name == "IGLAButtons_C" then
+        print(button_name, "wtf")
+    end
+    if not button_index then
+        for i, button in pairs(buttonmap.buttons) do
+            if button.ID and button.ID == button_name then
+                MEL.ButtonmapButtonMappings[ent_class][buttonmap_name][button_name] = i
+                button_index = i
+            end
+        end
+    end
+    if not ignore_error and not button_index then
+        MEL._LogError(Format("can't find button %s in buttonmap %s", button_name, buttonmap_name))
+        return
+    end
+    return button_index
 end
 
 local function populateSpawnerFieldMappings()
@@ -56,14 +89,15 @@ local function populateButtonmapButtonMappings()
         if not ent_table.ButtonMap then continue end
         MEL.ButtonmapButtonMappings[train_class] = {}
         for buttonmap_name, buttonmap in pairs(ent_table.ButtonMap) do
-            for i, button in pairs(buttonmap) do
+            if not buttonmap.buttons then continue end
+            for i, button in pairs(buttonmap.buttons) do
                 if not istable(button) or not button.ID then continue end
-                MEL.ButtonmapButtonMappings[train_class][button.ID] = i
+                if not MEL.ButtonmapButtonMappings[train_class][buttonmap_name] then MEL.ButtonmapButtonMappings[train_class][buttonmap_name] = {} end
+                MEL.ButtonmapButtonMappings[train_class][buttonmap_name][button.ID] = i
             end
         end
     end
 end
-
 
 function MEL._LoadHelpers()
     populateButtonmapButtonMappings()
