@@ -746,7 +746,7 @@ function RECIPE:Inject(ent)
                 wagon:SetPackedRatio("BLPressure", Pneumatic.BrakeLinePressure / 16.0)
             end
 
-            wagon:SetPackedRatio("TLPressure", Pneumatic.AuxiliaryLinePressure / 16.0)
+            wagon:SetPackedRatio("TLPressure", Pneumatic.TrainLinePressure / 16.0)
             wagon:SetPackedRatio("BCPressure", Pneumatic.BrakeCylinderPressure / 6.0)
             wagon:SetPackedRatio("EnginesVoltage", wagon.Electric.Aux750V / 1000.0)
             wagon:SetPackedRatio("EnginesCurrent2", 0.5 + 0.5 * (wagon.Electric.I13 / 500.0))

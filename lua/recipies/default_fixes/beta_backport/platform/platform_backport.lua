@@ -11,7 +11,6 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("platform_backport", {"gmod_track_platform"})
 RECIPE.BackportPriority = 2
-local C_PassRenderDistance = GetConVar("metrostroi_passengers_distance")
 function RECIPE:Inject(ent)
     -- MEL.InjectIntoClientFunction(ent, "Initialize", function(wagon) wagon:DrawShadow(false) end, 1)
     -- MEL.InjectIntoServerFunction(ent, "Initialize", function(wagon) wagon:DrawShadow(false) end, 1)
@@ -20,7 +19,7 @@ function RECIPE:Inject(ent)
             wagon.PrevTime = wagon.PrevTime or CurTime()
             wagon.DeltaTime = CurTime() - wagon.PrevTime
             wagon.PrevTime = CurTime()
-            if wagon:IsDormant() or Metrostroi and Metrostroi.ReloadClientside then
+            if wagon:IsDormant() then
                 if wagon.Pool then wagon:OnRemove() end
                 return
             end
@@ -58,24 +57,22 @@ function RECIPE:Inject(ent)
             -- If platform is defined and pool is not
             --print(wagon:GetNW2Vector("StationCenter"))
             --print(entStart,entEnd,wagon.Pool)
-            local dataReady = wagon:GetNW2Float("X0", -1) >= 0 and wagon:GetNW2Float("Sigma", -1) > 0
-            local poolReady = wagon.Pool and #wagon.Pool == wagon:PoolSize()
-            if not poolReady and stationCenter:Length() > 0.0 then wagon:PopulatePlatform(platformStart, platformEnd, stationCenter) end
-            local plyPos = LocalPlayer():GetPos()
+            local dataReady = (wagon:GetNW2Float("X0", -1) >= 0) and (wagon:GetNW2Float("Sigma", -1) > 0)
+            local poolReady = wagon.Pool and (#wagon.Pool == wagon:PoolSize())
+            if (not poolReady) and (stationCenter:Length() > 0.0) then wagon:PopulatePlatform(platformStart, platformEnd, stationCenter) end
             local modelCount = 0
             -- Check if set of models changed
-            if CurTime() - (wagon.ModelCheckTimer or 0) > 1.0 and poolReady then
+            if (CurTime() - (wagon.ModelCheckTimer or 0) > 1.0) and poolReady then
                 wagon.ModelCheckTimer = CurTime()
-                local dist = C_PassRenderDistance:GetInt() / 0.01905
                 local WindowStart = wagon:GetNW2Int("WindowStart")
                 local WindowEnd = wagon:GetNW2Int("WindowEnd")
                 for i = 1, wagon:PoolSize() do
                     local in_bounds = false
-                    if WindowStart <= WindowEnd then in_bounds = i >= WindowStart and i < WindowEnd end
-                    if WindowStart > WindowEnd then in_bounds = i >= WindowStart or i <= WindowEnd end
+                    if WindowStart <= WindowEnd then in_bounds = (i >= WindowStart) and (i < WindowEnd) end
+                    if WindowStart > WindowEnd then in_bounds = (i >= WindowStart) or (i <= WindowEnd) end
                     if in_bounds then
                         -- Model in window
-                        if not wagon.ClientModels[i] and plyPos:Distance(wagon.Pool[i].pos) <= dist then
+                        if not wagon.ClientModels[i] then
                             --wagon.ClientModels[i] = ents.CreateClientProp("models/metrostroi/81-717/reverser.mdl")
                             --wagon.ClientModels[i]:SetModel(wagon.Pool[i].model)
                             --hook.Add("MetrostroiBigLag",wagon.ClientModels[i],function(ent)
@@ -86,7 +83,6 @@ function RECIPE:Inject(ent)
                             --    --ent.Spawned = true
                             --end)
                             wagon.ClientModels[i] = ClientsideModel(wagon.Pool[i].model, RENDERGROUP_OPAQUE)
-                            if not IsValid(wagon.ClientModels[i]) then continue end
                             wagon.ClientModels[i]:SetPos(wagon.Pool[i].pos)
                             wagon.ClientModels[i]:SetAngles(wagon.Pool[i].ang)
                             wagon.ClientModels[i]:SetSkin(math.floor(wagon.ClientModels[i]:SkinCount() * wagon.Pool[i].skin))
@@ -99,8 +95,6 @@ function RECIPE:Inject(ent)
                                 wagon.ModelCheckTimer = wagon.ModelCheckTimer - 0.9
                                 break
                             end
-                        elseif IsValid(wagon.ClientModels[i]) and (plyPos:Distance(wagon.Pool[i].pos) > dist or wagon.ClientModels[i]:IsDormant()) then
-                            SafeRemoveEntity(wagon.ClientModels[i])
                         end
                     else
                         -- Model found that is not in window
@@ -132,7 +126,7 @@ function RECIPE:Inject(ent)
 
             -- Add models for cleanup of people who left trains
             wagon.PassengersLeft = wagon.PassengersLeft or wagon:GetNW2Int("PassengersLeft")
-            while poolReady and wagon.PassengersLeft < wagon:GetNW2Int("PassengersLeft") do
+            while poolReady and (wagon.PassengersLeft < wagon:GetNW2Int("PassengersLeft")) do
                 -- Get random door
                 local count = wagon:GetNW2Int("TrainDoorCount", 0)
                 local i = math.max(1, math.min(count, 1 + math.floor((count - 1) * math.random() + 0.5)))
@@ -148,7 +142,6 @@ function RECIPE:Inject(ent)
                 --    --ent.Spawned = true
                 --end)
                 local ent = ClientsideModel(wagon.Pool[i].model, RENDERGROUP_OPAQUE)
-                if not IsValid(ent) then break end
                 ent:SetPos(pos)
                 ent:SetSkin(math.floor(ent:SkinCount() * wagon.Pool[i].skin))
                 ent:SetModelScale(wagon.Pool[i].scale, 0)
@@ -177,10 +170,6 @@ function RECIPE:Inject(ent)
                 if not IsValid(v.ent) then
                     wagon.CleanupModels[k] = nil
                     continue
-                elseif v.ent:IsDormant() then
-                    v.ent:Remove()
-                    wagon.CleanupModels[k] = nil
-                    continue
                 end
 
                 -- Get pos and target in XY plane
@@ -191,7 +180,7 @@ function RECIPE:Inject(ent)
                 local distance = pos:DistToSqr(target)
                 local count = wagon:GetNW2Int("TrainDoorCount", 0)
                 -- Delete if reached the target point
-                if distance < 2 * 256 or math.abs(plyPos.z - v.ent:GetPos().z) > 256 or count == 0 then --[[threshold]]
+                if distance < 2 * 256 or math.abs(LocalPlayer():GetPos().z - v.ent:GetPos().z) > 256 or count == 0 then --[[threshold]]
                     v.ent:Remove()
                     wagon.CleanupModels[k] = nil
                     continue
@@ -252,30 +241,28 @@ function RECIPE:Inject(ent)
     end
 
     if SERVER then
-        local dT = 0.25
-
         local function getPassengerRate(passCount)
             if passCount < 80 then
-                return 1 - (passCount / 80) ^ 3 * 0.2
+                return 1 - ((passCount / 80) ^ 3) * 0.2
             else
-                return 1 - math.min(1, ((passCount - 80) / 220) ^ 0.6 * 0.85 + 0.2)
+                return 1 - math.min(1, (((passCount - 80) / 220) ^ 0.6) * 0.85 + 0.2)
             end
         end
 
         function ent.Think(wagon)
-            if not Metrostroi.Stations[wagon.StationIndex] then return end
+            if not Metrostroi.Stations[self.StationIndex] then return end
             -- Send update to client
-            wagon:SetNW2Int("WindowStart", wagon.WindowStart)
-            wagon:SetNW2Int("WindowEnd", wagon.WindowEnd)
-            wagon:SetNW2Int("PassengersLeft", wagon.PassengersLeft)
+            self:SetNW2Int("WindowStart", self.WindowStart)
+            self:SetNW2Int("WindowEnd", self.WindowEnd)
+            self:SetNW2Int("PassengersLeft", self.PassengersLeft)
             -- Check if any trains are at the platform
-            if Metrostroi.Stations[wagon.StationIndex] then
-                wagon.MustPlayAnnounces = not Metrostroi.Stations[wagon.StationIndex][wagon.PlatformIndex == 2 and 1 or 2] or wagon.PlatformIndex == 1
-                wagon:SetNW2Bool("MustPlaySpooky", (not Metrostroi.Stations[wagon.StationIndex][wagon.PlatformIndex == 2 and 1 or 2]) and wagon.PlatformIndex == 1)
-                if wagon:GetNW2Bool("MustPlaySpooky") then end
-                if not timer.Exists("metrostroi_station_announce_" .. wagon:EntIndex()) and wagon.MustPlayAnnounces then timer.Create("metrostroi_station_announce_" .. wagon:EntIndex(), 0, 0, function() wagon:PlayAnnounce() end) end
-                wagon.SyncAnnounces = wagon.InvertSides and Metrostroi.Stations[wagon.StationIndex][wagon.PlatformIndex == 2 and 1 or 2]
-                wagon:SetNW2Bool("MustPlayAnnounces", wagon.MustPlayAnnounces or wagon.InvertSides)
+            if Metrostroi.Stations[self.StationIndex] then
+                self.MustPlayAnnounces = not Metrostroi.Stations[self.StationIndex][self.PlatformIndex == 2 and 1 or 2] or self.PlatformIndex == 1
+                self:SetNW2Bool("MustPlaySpooky", (not Metrostroi.Stations[self.StationIndex][self.PlatformIndex == 2 and 1 or 2]) and self.PlatformIndex == 1)
+                if self:GetNW2Bool("MustPlaySpooky") then end
+                if not timer.Exists("metrostroi_station_announce_" .. self:EntIndex()) and self.MustPlayAnnounces then timer.Create("metrostroi_station_announce_" .. self:EntIndex(), 0, 0, function() self:PlayAnnounce() end) end
+                self.SyncAnnounces = self.InvertSides and Metrostroi.Stations[self.StationIndex][self.PlatformIndex == 2 and 1 or 2]
+                self:SetNW2Bool("MustPlayAnnounces", self.MustPlayAnnounces or self.InvertSides)
             end
 
             local boardingDoorList = {}
@@ -283,33 +270,33 @@ function RECIPE:Inject(ent)
             local TrainArrivedDist
             local PeopleGoing = false
             local boarding = false
-            local BoardTime = 8 + 7 * wagon.HorliftStation
+            local BoardTime = 8 + 7 * self.HorliftStation
             for k, v in pairs(ents.FindByClass("gmod_subway_*")) do
                 if v.Base ~= "gmod_subway_base" and v:GetClass() ~= "gmod_subway_base" then continue end
-                if not IsValid(v) or v:GetPos():DistToSqr(wagon:GetPos()) > wagon.PlatformStart:DistToSqr(wagon.PlatformEnd) then continue end
-                local platform_distance = ((wagon.PlatformStart - v:GetPos()) - (wagon.PlatformStart - v:GetPos()):Dot(wagon.PlatformNorm) * wagon.PlatformNorm):Length()
-                local vertical_distance = math.abs(v:GetPos().z - wagon.PlatformStart.z)
+                if not IsValid(v) or v:GetPos():DistToSqr(self:GetPos()) > self.PlatformStart:DistToSqr(self.PlatformEnd) then continue end
+                local platform_distance = ((self.PlatformStart - v:GetPos()) - (self.PlatformStart - v:GetPos()):Dot(self.PlatformNorm) * self.PlatformNorm):Length()
+                local vertical_distance = math.abs(v:GetPos().z - self.PlatformStart.z)
                 if vertical_distance >= 192 or platform_distance >= 256 then continue end
                 local minb, maxb = v:LocalToWorld(Vector(-480, 0, 0)), v:LocalToWorld(Vector(480, 0, 0)) --FIXME
                 --[[
         local minb,maxb = v:WorldSpaceAABB() --FIXME
-        if (wagon:GetAngles()-v:GetAngles()):Forward().y > 0 then
+        if (self:GetAngles()-v:GetAngles()):Forward().y > 0 then
             local temp = maxb
             maxb = minb
             minb = temp
         end
-        --local train_start     = (v:LocalToWorld(Vector(480,0,0)) - wagon.PlatformStart):Dot(wagon.PlatformDir) / (wagon.PlatformDir:Length()^2)
-        --local train_end           = (v:LocalToWorld(Vector(-480,0,0)) - wagon.PlatformStart):Dot(wagon.PlatformDir) / (wagon.PlatformDir:Length()^2)]]
-                local train_start = (maxb - wagon.PlatformStart):Dot(wagon.PlatformDir) / wagon.PlatformDir:Length() ^ 2
-                local train_end = (minb - wagon.PlatformStart):Dot(wagon.PlatformDir) / wagon.PlatformDir:Length() ^ 2
+        --local train_start     = (v:LocalToWorld(Vector(480,0,0)) - self.PlatformStart):Dot(self.PlatformDir) / (self.PlatformDir:Length()^2)
+        --local train_end           = (v:LocalToWorld(Vector(-480,0,0)) - self.PlatformStart):Dot(self.PlatformDir) / (self.PlatformDir:Length()^2)]]
+                local train_start = (maxb - self.PlatformStart):Dot(self.PlatformDir) / (self.PlatformDir:Length() ^ 2)
+                local train_end = (minb - self.PlatformStart):Dot(self.PlatformDir) / (self.PlatformDir:Length() ^ 2)
                 local left_side = train_start > train_end
-                if wagon.InvertSides then left_side = not left_side end
+                if self.InvertSides then left_side = not left_side end
                 local doors_open = left_side and v.LeftDoorsOpen or not left_side and v.RightDoorsOpen
-                if train_start < 0 and train_end < 0 then doors_open = false end
-                if train_start > 1 and train_end > 1 then doors_open = false end
+                if (train_start < 0) and (train_end < 0) then doors_open = false end
+                if (train_start > 1) and (train_end > 1) then doors_open = false end
                 if -0.2 < train_start and train_start < 1.2 then
-                    v.BoardTime = wagon.Timer and CurTime() - wagon.Timer
-                    v.Horlift = wagon.HorliftStation > 0
+                    v.BoardTime = self.Timer and CurTime() - self.Timer
+                    v.Horlift = self.HorliftStation > 0
                 end
 
                 if 0 < train_start and train_start < 1 and (not TrainArrivedDist or TrainArrivedDist < train_start) then
@@ -319,27 +306,27 @@ function RECIPE:Inject(ent)
 
                 -- Check horizontal lift station logic
                 local passengers_can_board = false
-                if wagon.HorliftStation > 0 then
+                if self.HorliftStation > 0 then
                     -- Check fine stop
                     local stopped_fine = false
                     for i = 0, 4 do
                         local x_s = 0.99086 - i * 0.1929
                         local x_e = 0.97668 - i * 0.1929
-                        stopped_fine = stopped_fine or train_start < x_s and train_start > x_e
+                        stopped_fine = stopped_fine or ((train_start < x_s) and (train_start > x_e))
                     end
 
                     -- Open doors on station
-                    if stopped_fine and (v.SOSD or wagon.OldOpened and not wagon.OpenedBySOSD) then
-                        wagon.OpenedBySOSD = v.SOSD
-                        wagon.HorliftTimer1 = wagon.HorliftTimer1 or CurTime()
-                        if CurTime() - wagon.HorliftTimer1 > 0.5 then
-                            if not wagon.HorliftTimer2 then wagon:FireHorliftDoors("Open") end
-                            wagon.HorliftTimer2 = CurTime()
+                    if stopped_fine and (v.SOSD or self.OldOpened and not self.OpenedBySOSD) then
+                        self.OpenedBySOSD = v.SOSD
+                        self.HorliftTimer1 = self.HorliftTimer1 or CurTime()
+                        if (CurTime() - self.HorliftTimer1) > 0.5 then
+                            if not self.HorliftTimer2 then self:FireHorliftDoors("Open") end
+                            self.HorliftTimer2 = CurTime()
                         end
                     end
 
                     -- Allow boarding
-                    if wagon.HorliftTimer2 and wagon:GetDoorState() then passengers_can_board = doors_open end
+                    if self.HorliftTimer2 and self:GetDoorState() then passengers_can_board = doors_open end
                 else
                     passengers_can_board = doors_open
                 end
@@ -352,12 +339,12 @@ function RECIPE:Inject(ent)
                     train_start = math.max(0, math.min(1, train_start))
                     train_end = math.max(0, math.min(1, train_end))
                     -- Check if this was the last stop
-                    if v.LastPlatform ~= wagon then
-                        v.LastPlatform = wagon
+                    if v.LastPlatform ~= self then
+                        v.LastPlatform = self
                         if v.AnnouncementToLeaveWagonAcknowledged then v.AnnouncementToLeaveWagonAcknowledged = nil end
                         -- How many passengers must leave on this station
-                        local proportion = math.random() * math.max(0, 1.0 + math.log(wagon.PopularityIndex))
-                        if wagon.PlatformLast then proportion = 1 end
+                        local proportion = math.random() * math.max(0, 1.0 + math.log(self.PopularityIndex))
+                        if self.PlatformLast then proportion = 1 end
                         if v.AnnouncementToLeaveWagon == true then proportion = 1 end
                         -- Total count
                         v.PassengersToLeave = math.floor(proportion * v:GetNW2Float("PassengerCount") + 0.5)
@@ -366,17 +353,17 @@ function RECIPE:Inject(ent)
                     -- Check for announcement
                     if v.AnnouncementToLeaveWagon and not v.AnnouncementToLeaveWagonAcknowledged then v.AnnouncementToLeaveWagonAcknowledged = true end
                     -- Calculate number of passengers near the train
-                    local passenger_density = math.abs(CDF(train_start, wagon.PlatformX0, wagon.PlatformSigma) - CDF(train_end, wagon.PlatformX0, wagon.PlatformSigma))
-                    local passenger_count = passenger_density * wagon:PopulationCount()
+                    local passenger_density = math.abs(CDF(train_start, self.PlatformX0, self.PlatformSigma) - CDF(train_end, self.PlatformX0, self.PlatformSigma))
+                    local passenger_count = passenger_density * self:PopulationCount()
                     -- Get number of doors
                     local door_count = #v.LeftDoorPositions
                     if not left_side then door_count = #v.RightDoorPositions end
                     -- Get maximum boarding rate for normal russian subway train doors
-                    local max_boarding_rate = getPassengerRate(v:GetNW2Float("PassengerCount")) * 1.4 * door_count * dT
+                    local max_boarding_rate = getPassengerRate(v:GetNW2Int("PassengerCount")) * 1.4 * door_count * dT
                     --print(Format("R:%.2f\tS:%.2f\tP:% 3d",max_boarding_rate,getPassengerRate(v:GetNW2Int("PassengerCount")),v:GetNW2Int("PassengerCount")))
                     -- Get boarding rate based on passenger density
                     local boarding_rate = math.min(max_boarding_rate, passenger_count)
-                    if wagon.PlatformLast then boarding_rate = 0 end
+                    if self.PlatformLast then boarding_rate = 0 end
                     -- Get rate of leaving
                     local leaving_rate = 1.4 * door_count * dT
                     if v.PassengersToLeave == 0 and not v.AnnouncementToLeaveWagonAcknowledged then leaving_rate = 0 end
@@ -386,11 +373,11 @@ function RECIPE:Inject(ent)
                     --if v.AnnouncementToLeaveWagonAcknowledged then
                     if v.AnnouncementToLeaveWagonAcknowledged then
                         boarded = 0
-                        left = math.ceil(math.min(math.max(2, leaving_rate + 0.5), v:GetNW2Float("PassengerCount")) * speedLimit * 1.5)
-                        count = v:GetNW2Float("PassengerCount")
+                        left = math.ceil(math.min(math.max(2, leaving_rate + 0.5), v:GetNW2Int("PassengerCount")) * speedLimit * 1.5)
+                        count = v:GetNW2Int("PassengerCount")
                     else
-                        count = wagon:PopulationCount() + v.PassengersToLeave
-                        boarded = math.ceil(math.min(math.max(2, boarding_rate + 0.5), wagon:PopulationCount()) * speedLimit)
+                        count = self:PopulationCount() + v.PassengersToLeave
+                        boarded = math.ceil(math.min(math.max(2, boarding_rate + 0.5), self:PopulationCount()) * speedLimit)
                         left = math.ceil(math.min(math.max(2, leaving_rate + 0.5), v.PassengersToLeave) * speedLimit)
                     end
 
@@ -412,7 +399,7 @@ function RECIPE:Inject(ent)
                     -- People board from platform
                     if boarded > 0 then
                         PeopleGoing = true
-                        wagon.WindowStart = (wagon.WindowStart + boarded) % wagon:PoolSize()
+                        self.WindowStart = (self.WindowStart + boarded) % self:PoolSize()
                     end
 
                     -- People leave to
@@ -425,11 +412,11 @@ function RECIPE:Inject(ent)
 
                         -- Move passengers
                         v.PassengersToLeave = v.PassengersToLeave - left
-                        wagon.PassengersLeft = wagon.PassengersLeft + left
-                        if v.AnnouncementToLeaveWagonAcknowledged and not wagon.PlatformLast then
-                            if math.random() > 0.3 then wagon.WindowStart = (wagon.WindowStart - left) % wagon:PoolSize() end
-                        elseif not wagon.PlatformLast and math.random() > 0.9 then
-                            wagon.WindowStart = (wagon.WindowStart - left) % wagon:PoolSize()
+                        self.PassengersLeft = self.PassengersLeft + left
+                        if v.AnnouncementToLeaveWagonAcknowledged and not self.PlatformLast then
+                            if math.random() > 0.3 then self.WindowStart = (self.WindowStart - left) % self:PoolSize() end
+                        elseif not self.PlatformLast and math.random() > 0.9 then
+                            self.WindowStart = (self.WindowStart - left) % self:PoolSize()
                         end
                     end
 
@@ -453,42 +440,42 @@ function RECIPE:Inject(ent)
                     end
 
                     if v.AnnouncementToLeaveWagonAcknowledged then
-                        BoardTime = math.max(BoardTime, 8 + 7 * wagon.HorliftStation + (v.PassengersToLeave or 0) * dT * 0.6)
+                        BoardTime = math.max(BoardTime, 8 + 7 * self.HorliftStation + (v.PassengersToLeave or 0) * dT * 0.6)
                     else
-                        BoardTime = math.max(BoardTime, 8 + 7 * wagon.HorliftStation + math.max((v.PassengersToLeave or 0) * dT, wagon:PopulationCount() * dT) * 0.5)
+                        BoardTime = math.max(BoardTime, 8 + 7 * self.HorliftStation + math.max((v.PassengersToLeave or 0) * dT, self:PopulationCount() * dT) * 0.5)
                     end
                     -- Add doors to boarding list
-                    --print("BOARDING",boarding_rate,"DELTA = "..passenger_delta,wagon.PlatformLast,v:GetNW2Int("PassengerCount"))
+                    --print("BOARDING",boarding_rate,"DELTA = "..passenger_delta,self.PlatformLast,v:GetNW2Int("PassengerCount"))
                 end
 
-                if v.UPO then v.UPO.AnnouncerPlay = wagon.AnnouncerPlay end
-                v.BoardTimer = wagon.BoardTimer
+                if v.UPO then v.UPO.AnnouncerPlay = self.AnnouncerPlay end
+                v.BoardTimer = self.BoardTimer
                 boarding = boarding or passengers_can_board
             end
 
             --if not boarding then CurrentTrain = nil end
-            wagon.BoardTime = BoardTime
-            if CurrentTrain and not wagon.CurrentTrain then
-                wagon.CurrentTrain = CurrentTrain
-                wagon:PlayAnnounce(1)
-            elseif not CurrentTrain and wagon.CurrentTrain then
-                wagon.CurrentTrain = nil
+            self.BoardTime = BoardTime
+            if CurrentTrain and not self.CurrentTrain then
+                self.CurrentTrain = CurrentTrain
+                self:PlayAnnounce(1)
+            elseif not CurrentTrain and self.CurrentTrain then
+                self.CurrentTrain = nil
             end
 
             --PUI Timer
-            if boarding and not wagon.Timer then wagon.Timer = math.max(CurTime() + 20, CurTime() + wagon.BoardTime) end
-            if not wagon.CurrentTrain and wagon.Timer then wagon.Timer = nil end
-            if wagon.Timer then
-                wagon.BoardTimer = -(CurTime() - wagon.Timer)
-                wagon.AnnouncerPlay = wagon.BoardTimer < 8 + 7 * wagon.HorliftStation + 0.2
-                --print(wagon.PlatformIndex,wagon.BoardTimer,wagon.AnnouncerPlay)
+            if boarding and not self.Timer then self.Timer = math.max(CurTime() + 20, CurTime() + self.BoardTime) end
+            if not self.CurrentTrain and self.Timer then self.Timer = nil end
+            if self.Timer then
+                self.BoardTimer = -(CurTime() - self.Timer)
+                self.AnnouncerPlay = self.BoardTimer < 8 + 7 * self.HorliftStation + 0.2
+                --print(self.PlatformIndex,self.BoardTimer,self.AnnouncerPlay)
             else
-                wagon.BoardTimer = 20
-                wagon.AnnouncerPlay = false
+                self.BoardTimer = 20
+                self.AnnouncerPlay = false
             end
 
-            if IsValid(wagon.PUI) then
-                local train = wagon.CurrentTrain
+            if IsValid(self.PUI) then
+                local train = self.CurrentTrain
                 if IsValid(train) and Metrostroi.EndStations and Metrostroi.EndStations[1] and type(train.SignsIndex) == "number" then
                     local id = Metrostroi.EndStations[1][1]
                     for k, v in pairs(train.SignsList or {}) do
@@ -507,44 +494,44 @@ function RECIPE:Inject(ent)
                     end
 
                     if ends then
-                        wagon.PUI.Last = 0
+                        self.PUI.Last = 0
                     else
-                        wagon.PUI.Last = id
+                        self.PUI.Last = id
                     end
                 else
-                    wagon.PUI.Last = 0
+                    self.PUI.Last = 0
                 end
 
-                if IsValid(wagon.CurrentTrain) and IsValid(wagon.PUI) and wagon.Timer then
-                    if not wagon.PUI.Work then wagon.PUI.Work = true end
-                    wagon.PUI.BoardTime = wagon.BoardTimer
-                    local time = 8 + 7 * wagon.HorliftStation
-                    wagon.PUI.Lamp = time - 0.2 < wagon.BoardTimer and wagon.BoardTimer < time + 0.3
+                if IsValid(self.CurrentTrain) and IsValid(self.PUI) and self.Timer then
+                    if not self.PUI.Work then self.PUI.Work = true end
+                    self.PUI.BoardTime = self.BoardTimer
+                    local time = 8 + 7 * self.HorliftStation
+                    self.PUI.Lamp = time - 0.2 < self.BoardTimer and self.BoardTimer < time + 0.3
                 else
-                    wagon.PUIStartGoing = false
-                    wagon.PUI.Work = false
-                    wagon.PUI.Lamp = false
+                    self.PUIStartGoing = false
+                    self.PUI.Work = false
+                    self.PUI.Lamp = false
                 end
             end
 
             --[[
-    if wagon.CurrentTrain and not wagon.SignOff then
-        if not wagon.TritonePlayed then
-            if false and wagon.CurrentTrain.SignsList and (wagon.CurrentTrain.SignsList[wagon.CurrentTrain.SignsIndex] == "" or wagon.CurrentTrain.SignsList[wagon.CurrentTrain.SignsIndex] and wagon.CurrentTrain.SignsList[wagon.CurrentTrain.SignsIndex][3]) then
-                wagon:PlayAnnounce(2,wagon.NoEntry.arr)
+    if self.CurrentTrain and not self.SignOff then
+        if not self.TritonePlayed then
+            if false and self.CurrentTrain.SignsList and (self.CurrentTrain.SignsList[self.CurrentTrain.SignsIndex] == "" or self.CurrentTrain.SignsList[self.CurrentTrain.SignsIndex] and self.CurrentTrain.SignsList[self.CurrentTrain.SignsIndex][3]) then
+                self:PlayAnnounce(2,self.NoEntry.arr)
                 timer.Simple(20,function()
-                    if not IsValid(wagon.CurrentTrain) then return end
-                    wagon:PlayAnnounce(2,wagon.NoEntry.dep)
-                    if wagon.CurrentTrain.SignsIndex == #wagon.CurrentTrain.SignsList-3 then
-                        timer.Simple(15,function() wagon:PlayAnnounce(2,wagon.NoEntry.depot) end)
+                    if not IsValid(self.CurrentTrain) then return end
+                    self:PlayAnnounce(2,self.NoEntry.dep)
+                    if self.CurrentTrain.SignsIndex == #self.CurrentTrain.SignsList-3 then
+                        timer.Simple(15,function() self:PlayAnnounce(2,self.NoEntry.depot) end)
                     end
                 end)
             else
                 local spec = false
-                if wagon.NoEntry.specarr then
-                    for k,v in pairs( wagon.CurrentTrain.SignsList or {}) do
-                        if v ==  wagon.CurrentTrain.SignsIndex then
-                            if Metrostroi.StationAnnouncesTo[wagon.StationIndex][2] == k then
+                if self.NoEntry.specarr then
+                    for k,v in pairs( self.CurrentTrain.SignsList or {}) do
+                        if v ==  self.CurrentTrain.SignsIndex then
+                            if Metrostroi.StationAnnouncesTo[self.StationIndex][2] == k then
                                 spec = true
                                 break
                             end
@@ -552,89 +539,89 @@ function RECIPE:Inject(ent)
                     end
                 end
                 if spec then
-                    wagon:PlayAnnounce(2,wagon.NoEntry.specarr)
+                    self:PlayAnnounce(2,self.NoEntry.specarr)
                     timer.Simple(20,function()
-                        if not IsValid(wagon.CurrentTrain) then return end
-                        wagon:PlayAnnounce(2,wagon.NoEntry.specdep)
+                        if not IsValid(self.CurrentTrain) then return end
+                        self:PlayAnnounce(2,self.NoEntry.specdep)
                     end)
                 else
-                    wagon:PlayAnnounce(1)
+                    self:PlayAnnounce(1)
                 end
             end
-            wagon.TritonePlayed = true
+            self.TritonePlayed = true
         end
     else
-        wagon.TritonePlayed = nil
+        self.TritonePlayed = nil
     end]]
             -- Add passengers
-            if not wagon.PlatformLast and #boardingDoorList == 0 then
-                local target = math.min((Metrostroi.PassengersScale or 50) * wagon.PopularityIndex, wagon:PoolSize() - 1) --300
+            if (not self.PlatformLast) and (#boardingDoorList == 0) then
+                local target = (Metrostroi.PassengersScale or 50) * self.PopularityIndex --300
                 -- then target = target*0.1 end
                 if target <= 0 then
-                    wagon.WindowEnd = wagon.WindowStart
-                else
-                    local growthDelta = math.max(0, (target - wagon:PopulationCount()) * 0.005)
-                    if growthDelta < 1.0 then -- Accumulate fractional rate
-                        wagon.GrowthAccumulation = (wagon.GrowthAccumulation or 0) + growthDelta
-                        if wagon.GrowthAccumulation > 1.0 then
+                    self.WindowEnd = self.WindowStart
+                elseif self.WindowEnd < self:PoolSize() then
+                    local growthDelta = math.max(0, (target - self:PopulationCount()) * 0.005)
+                    if growthDelta > 0.0 and growthDelta < 1.0 then -- Accumulate fractional rate
+                        self.GrowthAccumulation = (self.GrowthAccumulation or 0) + growthDelta
+                        if self.GrowthAccumulation > 1.0 then
                             growthDelta = 1
-                            wagon.GrowthAccumulation = wagon.GrowthAccumulation - 1.0
+                            self.GrowthAccumulation = self.GrowthAccumulation - 1.0
                         end
                     end
 
-                    wagon.WindowEnd = (wagon.WindowEnd + math.floor(growthDelta + 0.5)) % wagon:PoolSize()
+                    self.WindowEnd = math.min(self:PoolSize(), self.WindowEnd + math.floor(growthDelta + 0.5))
                 end
             end
 
-            if wagon.HorliftStation > 0 then
-                if wagon.HorliftTimer2 then
-                    if CurTime() - wagon.HorliftTimer2 > 1 then
-                        wagon:FireHorliftDoors("Close")
-                        wagon.HorliftTimer1 = nil
-                        wagon.HorliftTimer2 = nil
-                        wagon.HorliftTimer3 = CurTime()
+            if self.HorliftStation > 0 then
+                if self.HorliftTimer2 then
+                    if (CurTime() - self.HorliftTimer2) > 1 then
+                        self:FireHorliftDoors("Close")
+                        self.HorliftTimer1 = nil
+                        self.HorliftTimer2 = nil
+                        self.HorliftTimer3 = CurTime()
                     end
                 end
 
-                if wagon.HorliftTimer3 and CurTime() - wagon.HorliftTimer3 > 2.5 then wagon.HorliftTimer3 = nil end
+                if self.HorliftTimer3 and (CurTime() - self.HorliftTimer3) > 2.5 then self.HorliftTimer3 = nil end
             end
 
-            if wagon.OldOpened ~= wagon:GetDoorState() or wagon.OldPeopleGoing ~= PeopleGoing then
-                wagon.ARSOverride = true
-                wagon.OldOpened = wagon:GetDoorState()
-                wagon.OldPeopleGoing = PeopleGoing
-                if not wagon.OldOpened then wagon.OpenedBySOSD = false end
+            if self.OldOpened ~= self:GetDoorState() or self.OldPeopleGoing ~= PeopleGoing then
+                self.ARSOverride = true
+                self.OldOpened = self:GetDoorState()
+                self.OldPeopleGoing = PeopleGoing
+                if not self.OldOpened then self.OpenedBySOSD = false end
             end
 
             -- Block local ARS sections
-            if wagon.ARSOverride ~= nil then
+            if self.ARSOverride ~= nil then
                 -- Signal override to all signals
-                local ars_ents = ents.FindInSphere(wagon.PlatformEnd, 768)
+                local ars_ents = ents.FindInSphere(self.PlatformEnd, 768)
                 for k, v in pairs(ars_ents) do
-                    local delta_z = math.abs(wagon.PlatformEnd.z - v:GetPos().z)
-                    if v:GetClass() == "gmod_track_signal" and delta_z < 128 then v.OverrideTrackOccupied = wagon:GetDoorState() end
-                    if v:GetClass() == "gmod_track_horlift_signal" and (delta_z < 90 and v:GetNWInt("Type") == 0 or v:GetNWInt("Type") == 1) then
-                        v.WhiteSignal = wagon:GetDoorState()
-                        v.YellowSignal = not wagon:GetDoorState()
+                    local delta_z = math.abs(self.PlatformEnd.z - v:GetPos().z)
+                    if (v:GetClass() == "gmod_track_signal") and (delta_z < 128) then v.OverrideTrackOccupied = self:GetDoorState() end
+                    if (v:GetClass() == "gmod_track_horlift_signal") and (delta_z < 90 and v:GetNWInt("Type") == 0 or v:GetNWInt("Type") == 1) then
+                        v.WhiteSignal = self:GetDoorState()
+                        v.YellowSignal = not self:GetDoorState()
                         v.PeopleGoing = PeopleGoing
                     end
                 end
 
                 -- Finish override
-                wagon.ARSOverride = nil
+                self.ARSOverride = nil
             end
 
-            if wagon.BoardingDoorListLength ~= #boardingDoorList then
+            if self.BoardingDoorListLength ~= #boardingDoorList then
                 -- Send boarding list FIXME make this nicer
                 for k, v in ipairs(boardingDoorList) do
-                    wagon:SetNW2Vector("TrainDoor" .. k, v)
+                    self:SetNW2Vector("TrainDoor" .. k, v)
                 end
 
-                wagon:SetNW2Int("TrainDoorCount", #boardingDoorList)
+                self:SetNW2Int("TrainDoorCount", #boardingDoorList)
             end
 
-            wagon.BoardingDoorListLength = #boardingDoorList
-            wagon:NextThink(CurTime() + dT)
+            self.BoardingDoorListLength = #boardingDoorList
+            self:NextThink(CurTime() + dT)
             return true
         end
     end
