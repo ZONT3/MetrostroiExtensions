@@ -903,6 +903,7 @@ function RECIPE:Inject(ent, entclass)
 
             wagon.PassengerEnts = {}
             wagon.PassengerEntsStucked = {}
+            wagon.DisableSeatShadows = nil
         end
 
         function ent.CalcAbsolutePosition(wagon, pos, ang)
