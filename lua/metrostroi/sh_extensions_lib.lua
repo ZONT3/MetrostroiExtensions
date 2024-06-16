@@ -291,7 +291,7 @@ local function discoverRecipies()
         local scope = string.sub(string.GetFileFromFilename(recipe_file), 1, 2)
         if CLIENT and scope == "sv" then return end
         if not SERVER and scope == "sv" then return end
-        
+
         loadRecipe(recipe_file, scope)
     end
 end

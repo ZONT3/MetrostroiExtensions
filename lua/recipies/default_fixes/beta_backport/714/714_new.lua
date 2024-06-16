@@ -963,7 +963,7 @@ function RECIPE:Inject(ent)
                 wagon:SetPackedRatio("BLPressure", Pneumatic.BrakeLinePressure / 16.0)
             end
 
-            wagon:SetPackedRatio("TLPressure", Pneumatic.TrainLinePressure / 16.0)
+            wagon:SetPackedRatio("TLPressure", Pneumatic.AuxiliaryLinePressure/16.0)
             wagon:SetPackedRatio("BCPressure", Pneumatic.BrakeCylinderPressure / 6.0)
             ----------------------------------*****************************--------------------------------
             --10th wire voltage readout imitation depending on the BPSNs and EKK state, not on the wagon battery switch state
