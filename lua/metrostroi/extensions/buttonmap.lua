@@ -21,7 +21,7 @@ function reloadButtonMapProps(ent, buttonmap)
     end
 end
 
-function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
+function MEL.ModifyButtonMap(ent, buttonmap_name, buttonmap_callback, button_callback)
     if CLIENT then
         local buttonmap = ent.ButtonMap[buttonmap_name]
         if not buttonmap then
@@ -29,17 +29,24 @@ function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
             return
         end
 
-        buttonmap.pos = new_pos
-        if new_ang then buttonmap.ang = new_ang end
+        if buttonmap_callback then buttonmap_callback(buttonmap) end
         if not buttonmap.buttons then return end
         for i, button in pairs(buttonmap.buttons) do
             if not ent.ButtonMapCopy[buttonmap_name].buttons[i].model then continue end
             button.model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i].model)
+            if button_callback then button_callback(button) end
         end
 
         Metrostroi.GenerateClientProps(ent)
         reloadButtonMapProps(ent, buttonmap)
     end
+end
+
+function MEL.MoveButtonMap(ent, buttonmap_name, new_pos, new_ang)
+    MEL.ModifyButtonMap(ent, buttonmap_name, function(buttonmap)
+        if new_pos then buttonmap.pos = new_pos end
+        if new_ang then buttonmap.ang = new_ang end
+    end)
 end
 
 function MEL.MoveButtonMapButton(ent, buttonmap_name, button_name, x, y)

@@ -91,13 +91,15 @@ local function newGenerateClientProps()
                             colora = config.colora,
                             skin = config.skin or 0,
                             config = config,
+                            bodygroup = config.bodygroup,
+                            callback = config.callback,
+                            modelcallback = config.modelcallback,
                             cabin = config.cabin,
                             hide = panel.hide or config.hide,
                             hideseat = panel.hideseat or config.hideseat,
                             bscale = config.bscale,
                             scale = config.scale,
                         }
-
                         --[[if config.varTooltip then
                             local states = config.states or {"Train.Buttons.On","Train.Buttons.Off"}
                             local count = (#states-1)

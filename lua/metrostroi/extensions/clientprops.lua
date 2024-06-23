@@ -15,7 +15,7 @@ MEL.AnimateValueOverrides = {} -- table with Animate value overrides
 -- (key: ent_class, value: (key: clientProp name, value: function to get value)) 
 MEL.ShowHideOverrides = {} -- table with ShowHide value overrides
 -- (key: ent_class, value: (key: clientProp name, value: function to get value)) 
-function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, error_on_nil)
+function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, field_name, error_on_nil)
     if CLIENT then
         if not ent.ClientProps or not ent.ClientProps[clientprop_name] then
             if error_on_nil then MEL._LogError(Format("no such clientprop with name %s", clientprop_name)) end
@@ -27,6 +27,8 @@ function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, error_
             local new_modelpath = new_modelcallback(self)
             return new_modelpath or old_modelcallback(self)
         end
+
+        if field_name then MEL.MarkClientPropForReload(ent, clientprop_name, field_name) end
     end
 end
 
@@ -146,7 +148,7 @@ function MEL.OverrideAnimateValue(ent, clientProp, value_callback)
     MEL.AnimateValueOverrides[ent_class][clientProp] = value_callback
 end
 
-function MEL.UpdateCallback(ent, clientprop_name, new_callback, error_on_nil)
+function MEL.UpdateCallback(ent, clientprop_name, new_callback, field_name, error_on_nil)
     if CLIENT then
         if not ent.ClientProps[clientprop_name] then
             if error_on_nil then MEL._LogError(Format("no such clientprop with name %s", clientprop_name)) end
@@ -158,6 +160,8 @@ function MEL.UpdateCallback(ent, clientprop_name, new_callback, error_on_nil)
             old_callback(self, cent)
             new_callback(self, cent)
         end
+
+        if field_name then MEL.MarkClientPropForReload(ent, clientprop_name, field_name) end
     end
 end
 
