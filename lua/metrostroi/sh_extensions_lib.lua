@@ -116,20 +116,20 @@ function MEL._LogWarning(msg)
 end
 
 function MEL._LogError(msg)
-    if RECIPE then ErrorNoHaltWithStack(Format("%s Error from recipe %s!: %s\n", LOG_PREFIX, RECIPE.Name, msg)) end
+    if RECIPE then ErrorNoHaltWithStack(Format("%s Error from recipe %s!: %s\n", LOG_PREFIX, RECIPE.ClassName, msg)) end
     ErrorNoHaltWithStack(Format("%s Error!: %s\n", LOG_PREFIX, msg))
 end
 
 function MEL.LogErrorFactory()
-    return function(msg) MEL._LogError("error from recipe " .. RECIPE.Name .. ": " .. msg) end
+    return function(msg) MEL._LogError("error from recipe " .. RECIPE.ClassName .. ": " .. msg) end
 end
 
 function MEL.LogWarningFactory()
-    return function(msg) MEL._LogWarning("warning from recipe " .. RECIPE.Name .. ": " .. msg) end
+    return function(msg) MEL._LogWarning("warning from recipe " .. RECIPE.ClassName .. ": " .. msg) end
 end
 
 function MEL.LogInfoFactory()
-    return function(msg) MEL._LogInfo("info from recipe " .. RECIPE.Name .. ": " .. msg) end
+    return function(msg) MEL._LogInfo("info from recipe " .. RECIPE.ClassName .. ": " .. msg) end
 end
 
 -- helper methods
@@ -248,12 +248,12 @@ local function loadRecipe(filename, scope)
     if RECIPE.Name ~= string.sub(File, 1, string.find(File, "%.lua") - 1) then MEL._LogWarning("recipe \"" .. RECIPE.Name .. "\" file name and name defined in DefineRecipe differs. Consider renaming your file.") end
     local class_name = nil
     if istable(RECIPE.TrainType) then
-        class_name = table.concat(RECIPE.TrainType, "-") .. "_" .. RECIPE.Name
+        class_name = table.concat(RECIPE.TrainType, "-") .. "_" .. RECIPE.ClassName
     else
-        class_name = RECIPE.TrainType .. "_" .. RECIPE.Name
+        class_name = RECIPE.TrainType .. "_" .. RECIPE.ClassName
     end
 
-    MEL._LogInfo("loading recipe " .. RECIPE.Name .. " from " .. filename)
+    MEL._LogInfo("loading recipe " .. RECIPE.ClassName .. " from " .. filename)
     RECIPE.ClassName = class_name
     RECIPE.Description = RECIPE.Description or "No description"
     RECIPE.Specific = {}
@@ -263,12 +263,12 @@ local function loadRecipe(filename, scope)
     RECIPE.Inject = RECIPE.Inject or function() end
     RECIPE.InjectSystem = RECIPE.InjectSystem or function() end
     RECIPE.InjectSpawner = RECIPE.InjectSpawner or function() end
-    if MEL.Recipes[RECIPE.Name] then
-        MEL._LogError("recipe with name \"" .. RECIPE.Name .. "\" already exists. Refusing to load recipe from " .. filename .. ".")
+    if MEL.Recipes[RECIPE.ClassName] then
+        MEL._LogError("recipe with name \"" .. RECIPE.ClassName .. "\" already exists. Refusing to load recipe from " .. filename .. ".")
         return
     end
 
-    MEL.Recipes[RECIPE.Name] = RECIPE
+    MEL.Recipes[RECIPE.ClassName] = RECIPE
     -- initialize recipe
     initRecipe(RECIPE)
     RECIPE = nil
@@ -459,7 +459,7 @@ local function inject(isBackports)
             continue
         end
 
-        logDebug(Format("injecting recipe %s", recipe.Name))
+        logDebug(Format("injecting recipe %s", recipe.ClassName))
         -- call Inject method on every ent that recipe changes
         for _, entclass in pairs(MEL.GetEntsByTrainType(recipe.TrainType)) do
             if recipe:InjectNeeded(entclass) then
