@@ -181,10 +181,16 @@ function MEL.GetEntsByTrainType(trainType)
 end
 
 function MEL.DefineRecipe(name, train_type)
-    if not MEL.BaseRecipies[name] then MEL.BaseRecipies[name] = {} end
-    RECIPE = MEL.BaseRecipies[name]
+    if istable(train_type) then
+        class_name = table.concat(train_type, "-") .. "_" .. name
+    else
+        class_name = train_type .. "_" .. name
+    end
+    if not MEL.BaseRecipies[class_name] then MEL.BaseRecipies[class_name] = {} end
+    RECIPE = MEL.BaseRecipies[class_name]
     RECIPE.TrainType = train_type
     RECIPE.Name = name
+    RECIPE.ClassName = class_name
 end
 
 local function findRecipeFiles(folder, recipe_files)
@@ -246,15 +252,7 @@ local function loadRecipe(filename, scope)
     end
 
     if RECIPE.Name ~= string.sub(File, 1, string.find(File, "%.lua") - 1) then MEL._LogWarning("recipe \"" .. RECIPE.Name .. "\" file name and name defined in DefineRecipe differs. Consider renaming your file.") end
-    local class_name = nil
-    if istable(RECIPE.TrainType) then
-        class_name = table.concat(RECIPE.TrainType, "-") .. "_" .. RECIPE.ClassName
-    else
-        class_name = RECIPE.TrainType .. "_" .. RECIPE.ClassName
-    end
-
     MEL._LogInfo("loading recipe " .. RECIPE.ClassName .. " from " .. filename)
-    RECIPE.ClassName = class_name
     RECIPE.Description = RECIPE.Description or "No description"
     RECIPE.Specific = {}
     RECIPE.Init = RECIPE.Init or function() end
