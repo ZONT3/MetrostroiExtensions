@@ -353,6 +353,15 @@ local function injectRandomFieldHelper(entclass)
     end, -1)
 end
 
+local function injectAnimationReloadHelper(entclass)
+    -- add helper inject reload all animations on TrainSpawnerUpdate 
+    MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...)
+        for key, value in pairs(wagon.Anims or {}) do
+            value.val = 0  -- yup, that simple
+        end
+    end, -1)
+end
+
 local function injectFieldUpdateHelper(entclass)
     if not MEL.ClientPropsToReload[entclass] then return end
     -- add helper inject to server UpdateWagonNumber in order to reload all models, that should be reloaded
@@ -475,6 +484,7 @@ local function inject(isBackports)
         injectRandomFieldHelper(entclass)
         injectFieldUpdateHelper(entclass)
         injectFunction(entclass, entTable)
+        injectAnimationReloadHelper(entclass)
     end
 
     -- inject into systems
@@ -484,6 +494,7 @@ local function inject(isBackports)
 
     MEL._LoadHelpers()
     MEL.ReplaceLoadLanguage()
+    -- helper inject to reload all animations
     if CLIENT then Metrostroi.LoadLanguage(Metrostroi.ChoosedLang) end
 end
 
