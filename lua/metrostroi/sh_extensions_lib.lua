@@ -233,11 +233,8 @@ local function loadRecipe(filename, scope)
         AddCSLuaFile(filename)
     end
 
-    if not MEL.ScopedRecipies and SERVER then
-        AddCSLuaFile(filename)
-    end
+    if not MEL.ScopedRecipies and SERVER then AddCSLuaFile(filename) end
     include(filename)
-
     if not RECIPE then
         MEL._LogError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
         return
@@ -291,7 +288,6 @@ local function discoverRecipies()
         local scope = string.sub(string.GetFileFromFilename(recipe_file), 1, 2)
         if CLIENT and scope == "sv" then return end
         if not SERVER and scope == "sv" then return end
-        
         loadRecipe(recipe_file, scope)
     end
 end
@@ -439,12 +435,12 @@ local function inject(isBackports)
 
         recipe:BeforeInject()
     end
-    if isBackports then
-        table.sort(MEL.InjectStack, function(a, b)
-            return (a.BackportPriority or 9999) < (b.BackportPriority or 9999)
-        end)
+
+    for key, value in pairs(MEL.RecipeSpecific) do
+        table.sort(value, function(a, b) return a.name > b.name end)
     end
 
+    if isBackports then table.sort(MEL.InjectStack, function(a, b) return (a.BackportPriority or 9999) < (b.BackportPriority or 9999) end) end
     for _, recipe in pairs(MEL.InjectStack) do
         if isBackports and not recipe.BackportPriority then -- we do this cause all backports recipies will be in start of table
             return
