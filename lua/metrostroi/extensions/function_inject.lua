@@ -1,11 +1,11 @@
 -- Copyright (c) Anatoly Raev, 2024. All right reserved
--- 
--- Unauthorized copying of any file in this repository, via any medium is strictly prohibited. 
+--
+-- Unauthorized copying of any file in this repository, via any medium is strictly prohibited.
 -- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
 -- Proprietary and confidential.
 -- ------------
 -- Авторские права принадлежат Раеву Анатолию Анатольевичу.
--- 
+--
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
@@ -29,8 +29,8 @@ local function injectIntoFunction(key, function_name, function_to_inject, priori
 end
 
 local function injectIntoEntFunction(ent_or_entclass, function_name, function_to_inject, priority)
-    -- that shit is not idempotent, so if there would be like 10 wagons spawned and we will reload anything, same code will be called 10*10 times. 
-    -- very bad, so that flag helps us just ignore that spawned wagons 
+    -- that shit is not idempotent, so if there would be like 10 wagons spawned and we will reload anything, same code will be called 10*10 times.
+    -- very bad, so that flag helps us just ignore that spawned wagons
     if MEL.InjectIntoSpawnedEnt then return end
     local entclass = MEL.GetEntclass(ent_or_entclass)
     injectIntoFunction(entclass, function_name, function_to_inject, priority)

@@ -241,7 +241,7 @@ if CLIENT then
         end
         if State == 7 then
             if Train:GetNW2Bool("ASNP:StopMessage",false) then
-                self:PrintText(3,0,"ПЕРЕД ОТПРАВЛЕНИЕМ")                
+                self:PrintText(3,0,"ПЕРЕД ОТПРАВЛЕНИЕМ")
                 self:PrintText(0,1,"НАЖМИ КНОПКУ   ОБЪЯВИТЬ")
                 return
             end
@@ -795,7 +795,7 @@ function TRAIN_SYSTEM:Think()
     Train:SetNW2Int("ASNP:LastStation",self.LastStation)
     Train:SetNW2Bool("ASNP:Path",self.Path)
     Train:SetNW2Bool("ASNP:StopMessage",self.StopMessage)
-    
+
     if self.State>1 and self.State~=7 then
         self.StateTime = self.StateTime or CurTime()+10
         if self.StateTime and CurTime()>self.StateTime then

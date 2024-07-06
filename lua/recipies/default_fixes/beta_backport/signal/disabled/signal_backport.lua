@@ -1,11 +1,11 @@
 -- Copyright (c) Anatoly Raev, 2024. All right reserved
--- 
--- Unauthorized copying of any file in this repository, via any medium is strictly prohibited. 
+--
+-- Unauthorized copying of any file in this repository, via any medium is strictly prohibited.
 -- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
 -- Proprietary and confidential.
 -- ------------
 -- Авторские права принадлежат Раеву Анатолию Анатольевичу.
--- 
+--
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
@@ -242,7 +242,7 @@ function RECIPE:Inject(ent)
             local nxt = wagon.ARSNextSpeedLimit == 2 and 0 or wagon.ARSNextSpeedLimit ~= 1 and wagon.ARSNextSpeedLimit
             return wagon.ARSSpeedLimit == ARSID or ((wagon.TwoToSix and not Force1_5 or Force2_6) and nxt and nxt == ARSID and wagon.ARSSpeedLimit > nxt)
         end
-        
+
         function ent.GetRS(wagon)
             if wagon.OverrideTrackOccupied or not wagon.TwoToSix or not wagon.ARSSpeedLimit then return false end
             if wagon.ARSSpeedLimit ~= 0 and wagon.ARSSpeedLimit == 2 then return false end

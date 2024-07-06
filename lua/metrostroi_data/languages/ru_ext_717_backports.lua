@@ -1,9 +1,9 @@
 return [[
-# Metrostroi Extensions russian translations for 717 backports 
+# Metrostroi Extensions russian translations for 717 backports
 
 [ru]
 Train.Buttons.RZP = Сработала защита БПСН
-Common.717.VKST                 = ВКСТ: Выключатель контроля состояния тормозов 
+Common.717.VKST                 = ВКСТ: Выключатель контроля состояния тормозов
 Common.717.IST                  = ИСТ: Индикатор состояния тормозов
 Common.717.AV3                  = АВ3: Резервное питание вентиляции
 Common.717.AV2                  = АВ2: Основное питание вентиляции

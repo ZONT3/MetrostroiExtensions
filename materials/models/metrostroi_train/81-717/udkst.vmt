@@ -12,5 +12,5 @@
 	$envmap			env_cubemap
 	$normalmapalphaenvmapmask 1
 	$envmaptint "[0.01 0.01 0.01]"
-	
+
 }

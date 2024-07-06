@@ -377,7 +377,7 @@ function TRAIN_SYSTEM:Think(dT)
                 if self.BLDisconnect then
                     self.ReservoirPressure = self.BrakeLinePressure
                     self:equalizePressure(dT,"BrakeLinePressure", self.TrainToBrakeReducedPressure, pr_speed*0, pr_speed*0.6*a, nil, 1.6)
-                    self.ReservoirPressure_dPdT = self.BrakeLinePressure_dPdT*0.8 
+                    self.ReservoirPressure_dPdT = self.BrakeLinePressure_dPdT*0.8
                 else
                     self:equalizePressure(dT,"ReservoirPressure", self.TrainToBrakeReducedPressure,0,1.55,nil,2)
                 end
@@ -433,7 +433,7 @@ function TRAIN_SYSTEM:Think(dT)
             self.dlreadtimer = self.dlreadtimer or CurTime()
             if CurTime() - self.dlreadtimer > 1.0 then
                 self.dlreadtimer = CurTime()
-                if Train:GetDriver() then 
+                if Train:GetDriver() then
                     PrintMessage(HUD_PRINTTALK, Format("Вагон %u; P ТМ: %.3f; P УР =%.3f; Утечка ТМ %.3f; TLDis = %.3f; pr_speed = %.3f",Train:GetWagonNumber(),self.BrakeLinePressure,self.ReservoirPressure,self.BrakeLinePressure_dPdT, self.TLDisconnectPressure, pr_speed))
                 end
             end
@@ -554,7 +554,7 @@ function TRAIN_SYSTEM:Think(dT)
     local aird_ready = self.WorkingChamberPressure >= 2.2
     self.WCChargeValve = not ((self.WorkingChamberPressure - self.BrakeLinePressure) > 0.2 and (self.WorkingChamberPressure - self.BrakeLinePressure) < 2.5)
     local KLSZ = self.WorkingChamberPressure > 5.2 and not self.WCChargeValve
-    if KLSZ then	
+    if KLSZ then
 	self:equalizePressure(dT,"WorkingChamberPressure",0.0,0.22)	-- КЛСЗ
     end
 
@@ -606,7 +606,7 @@ function TRAIN_SYSTEM:Think(dT)
                     PrintMessage(HUD_PRINTTALK, Format("Это %s", isLVZ and "ЛВЗ" or "не ЛВЗ"))
                 end
             end
-            ---------------debug---------------------]]                
+            ---------------debug---------------------]]
 
         self.cranPres = WcBl and math.max(0,self.BcBl*(self.WorkingChamberPressure - WcBl)*(self.BrakeLinePressure > self.KM013offset and (0.56 + self.PN1*0.43) or 1)) or self.cranPres
         local targetPressure = math.max(0,math.min(self.GN2Offset + self.WeightLoadRatio*1.3, (self.cranPres < (self.PN1 + self.WeightLoadRatio*0.7) and (Train.PneumaticNo1.Value == 1.0) and (self.PN1 + self.WeightLoadRatio*0.7) or self.PN1) + self.PN2 + self.cranPres))

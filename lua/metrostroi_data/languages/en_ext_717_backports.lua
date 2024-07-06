@@ -1,5 +1,5 @@
 return [[
-# Metrostroi Extensions english translations for 717 backports 
+# Metrostroi Extensions english translations for 717 backports
 
 [en]
 

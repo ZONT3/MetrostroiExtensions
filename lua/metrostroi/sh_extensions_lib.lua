@@ -1,11 +1,11 @@
 -- Copyright (c) Anatoly Raev, 2024. All right reserved
--- 
--- Unauthorized copying of any file in this repository, via any medium is strictly prohibited. 
+--
+-- Unauthorized copying of any file in this repository, via any medium is strictly prohibited.
 -- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
 -- Proprietary and confidential.
 -- ------------
 -- Авторские права принадлежат Раеву Анатолию Анатольевичу.
--- 
+--
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
@@ -135,7 +135,7 @@ end
 -- helper methods
 function MEL.GetEntclass(ent_or_entclass)
     if not ent_or_entclass then MEL._LogError("for some reason, ent_or_entclass in GetEntclass is nil. Please report this error.") end
-    -- get entclass from ent table or from str entclass 
+    -- get entclass from ent table or from str entclass
     if istable(ent_or_entclass) then return ent_or_entclass.entclass end
     if isentity(ent_or_entclass) then return ent_or_entclass:GetClass() end
     return ent_or_entclass
@@ -216,7 +216,7 @@ local function initRecipe(recipe)
     end
 
     if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then
-        -- if recipe enabled: 
+        -- if recipe enabled:
         -- add it to inject stack
         if recipe.BackportPriority then
             table.insert(MEL.InjectStack, 1, recipe)
@@ -352,7 +352,7 @@ local function injectRandomFieldHelper(entclass)
 end
 
 local function injectAnimationReloadHelper(entclass)
-    -- add helper inject reload all animations on TrainSpawnerUpdate 
+    -- add helper inject reload all animations on TrainSpawnerUpdate
     MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...)
         for key, value in pairs(wagon.Anims or {}) do
             value.val = 0  -- yup, that simple
@@ -382,7 +382,7 @@ end
 local function injectFunction(key, tbl)
     if not MEL.FunctionInjectStack[key] then return end
     -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
-    -- TODO: probably optimize it - it will cause problems if there would be a lot of ents and systems 
+    -- TODO: probably optimize it - it will cause problems if there would be a lot of ents and systems
     for functionName, priorities in pairs(MEL.FunctionInjectStack[key]) do
         local beforeStack = {}
         local afterStack = {}

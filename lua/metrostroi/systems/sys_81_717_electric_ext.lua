@@ -450,10 +450,10 @@ function TRAIN_SYSTEM:SolveAllInternalCircuits(Train,dT,firstIter)
             Panel.L1 = T[57]
         end
         Panel.M8 = S["V2"]*Train.PVK.Value
-        
+
         Train.C1:TriggerInput("Set", T[1])
         Panel.IST = Train.C1.Value*Train.VKST.Value*T[64]
-        
+
         local ASNP_VV = Train.ASNP_VV
         ASNP_VV.Power = T[10]*Train.R_ASNPOn.Value
         ASNP_VV.AmplifierPower = ASNP_VV.Power*Train.ASNP.LineOut*Train.R_UNch.Value*Train.A26.Value
@@ -743,7 +743,7 @@ function TRAIN_SYSTEM:SolveAllInternalCircuits(Train,dT,firstIter)
     Train:WriteTrainWire(12,S["D1"]*Train.KRZD.Value)
     Panel.DoorsLeft = S[31]
     Panel.DoorsRight = S[32]
-    
+
     S["12A"] = T[12]*Train.A12.Value
     if isLVZ then
         if isPA then AVI.ZD = S[16] end
@@ -756,7 +756,7 @@ function TRAIN_SYSTEM:SolveAllInternalCircuits(Train,dT,firstIter)
         Train:WriteTrainWire(31,S[31]*(Train.KDL.Value+Train.KDLR.Value+Train.VDL.Value) + S["12A"]*Train.A31.Value)
         Train:WriteTrainWire(32,S[32]*Train.KDP.Value + S["12A"]*Train.A32.Value)
     end
-    
+
 
     if isMVM then
         S["15B"] = T[15]*(KV["15A-15B"]+Train.KD.Value)

@@ -1,20 +1,20 @@
 -- Copyright (c) Anatoly Raev, 2024. All right reserved
--- 
--- Unauthorized copying of any file in this repository, via any medium is strictly prohibited. 
+--
+-- Unauthorized copying of any file in this repository, via any medium is strictly prohibited.
 -- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
 -- Proprietary and confidential.
 -- ------------
 -- Авторские права принадлежат Раеву Анатолию Анатольевичу.
--- 
+--
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.AnimateOverrides = {} -- table with Animate overrides
--- (key: ent_class, value: (key: clientProp name, value: sequential table to unpack into animate (starting from min))) 
+-- (key: ent_class, value: (key: clientProp name, value: sequential table to unpack into animate (starting from min)))
 MEL.AnimateValueOverrides = {} -- table with Animate value overrides
--- (key: ent_class, value: (key: clientProp name, value: function to get value)) 
+-- (key: ent_class, value: (key: clientProp name, value: function to get value))
 MEL.ShowHideOverrides = {} -- table with ShowHide value overrides
--- (key: ent_class, value: (key: clientProp name, value: function to get value)) 
+-- (key: ent_class, value: (key: clientProp name, value: function to get value))
 function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, field_name, error_on_nil)
     if CLIENT then
         if not ent.ClientProps or not ent.ClientProps[clientprop_name] then

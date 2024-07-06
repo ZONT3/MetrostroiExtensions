@@ -1,11 +1,11 @@
 -- Copyright (c) Anatoly Raev, 2024. All right reserved
--- 
--- Unauthorized copying of any file in this repository, via any medium is strictly prohibited. 
+--
+-- Unauthorized copying of any file in this repository, via any medium is strictly prohibited.
 -- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
 -- Proprietary and confidential.
 -- ------------
 -- Авторские права принадлежат Раеву Анатолию Анатольевичу.
--- 
+--
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
@@ -219,13 +219,13 @@ function RECIPE:Inject(ent)
                     if wagon.SquealType <= 4 then
                         wagon:SetSoundState(wagon.SquealSound1, soundsmul * brakeSqueal1 * ramp * wagon.SquealVolume, 1 + 0.05 * (1.0 - brakeRamp2))
                         --[[wagon:SetSoundState("brake_loop1",typ==1 and soundsmul*brakeSqueal1*ramp*0.2 or 0,1+0.05*(1.0-brakeRamp2))
-    
+
                     wagon:SetSoundState("brake_loop2",typ==2 and soundsmul*brakeSqueal1*ramp or 0,1+0.05*(1.0-brakeRamp2))
-    
+
                     wagon:SetSoundState("brake_loop3",typ==3 and soundsmul*brakeSqueal1*ramp or 0,1+0.05*(1.0-brakeRamp2))
-    
+
                     wagon:SetSoundState("brake_loop4",typ==4 and soundsmul*brakeSqueal1*ramp or 0,1+0.05*(1.0-brakeRamp2))
-    
+
                     wagon:SetSoundState("brake_loopb",typ<=4 and 0*soundsmul*brakeSqueal1*ramp*0.4 or 0,1+0.05*(1.0-brakeRamp2))]]
                     elseif wagon.SquealType <= 7 then
                         local loop_h = soundsmul * brakeSqueal1 * ramp * 0.5
