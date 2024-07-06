@@ -870,7 +870,6 @@ function RECIPE:Inject(ent)
 
             table.insert(ent.ButtonMapCopy["Block7"].buttons, table.Copy(IST))
             table.insert(ent.ButtonMap["Block7"].buttons, IST)
-
             ent.ButtonMap["AutostopValve"] = {
                 pos = Vector(365.8, -67.6, -56),
                 ang = Angle(0, 0, 90),

@@ -10,25 +10,18 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("kv_types", "gmod_subway_81-717_mvm")
-
 RECIPE.Description = "This recipe adds ability to choose kv's."
-
 local MODELS_ROOT = "models/metrostroi_train/81-717/"
-
 function RECIPE:Init()
-    self.Specific.KVList = {
-        {"Black", MODELS_ROOT .. "kv_black.mdl"},
-        {"White", MODELS_ROOT .. "kv_white.mdl"},
-        {"Wood", MODELS_ROOT .. "kv_wood.mdl"},
-        {"Yellow", MODELS_ROOT .. "kv_yellow.mdl"},
-    }
+    self.Specific.KVList = {{"Black", MODELS_ROOT .. "kv_black.mdl"}, {"White", MODELS_ROOT .. "kv_white.mdl"}, {"Wood", MODELS_ROOT .. "kv_wood.mdl"}, {"Yellow", MODELS_ROOT .. "kv_yellow.mdl"},}
 end
 
 function RECIPE:InjectSpawner(entclass)
     local fields = {"Random"}
     for key, value in pairs(MEL.RecipeSpecific.KVList) do
-       table.insert(fields, value[1])
+        table.insert(fields, value[1])
     end
+
     MEL.AddSpawnerField(entclass, {
         [1] = "KvTypeCustom",
         [2] = "Spawner.717.KvTypeCustom",
@@ -42,11 +35,11 @@ function RECIPE:Inject(ent, entclass)
         if wagon.Anims.Controller then wagon.Anims.Controller.reload = true end
         return MEL.RecipeSpecific.KVList[wagon:GetNW2Int("KvTypeCustom", 1)][2]
     end)
+
     MEL.UpdateCallback(ent, "Controller", function(wagon, cent)
         local callback = MEL.RecipeSpecific.KVList[wagon:GetNW2Int("KvTypeCustom", 1)][3]
-        if callback then
-            callback(wagon, cent)
-        end
+        if callback then callback(wagon, cent) end
     end)
+
     MEL.MarkClientPropForReload(ent, "Controller", "KvTypeCustom")
 end

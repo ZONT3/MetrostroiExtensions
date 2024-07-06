@@ -22,8 +22,8 @@ local function newConvars()
         CreateClientConVar("metrostroi_cabz", 0, true)
         CreateClientConVar("metrostroi_disableseatshadows", 1, true)
         CreateClientConVar("metrostroi_disablehovertextpos", 0, true)
-        CreateClientConVar("metrostroi_signal_distance",8192,true)
-        CreateClientConVar("metrostroi_route_number",61,true,true)
+        CreateClientConVar("metrostroi_signal_distance", 8192, true)
+        CreateClientConVar("metrostroi_route_number", 61, true, true)
     end
 end
 

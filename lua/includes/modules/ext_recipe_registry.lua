@@ -14,17 +14,15 @@ local table_Copy = table.Copy
 local table_Insert = table.insert
 local baseclass_Set = baseclass.Set
 local baseclass_Get = baseclass.Get
-
 module("ext_recipe_registry")
-
 local recipe_classes = recipe_classes or {}
 local recipies = recipies or {}
 recipe_classes.base_recipe = {}
 recipe_classes.base_recipe.Name = "Base Recipe"
 recipe_classes.base_recipe.ID = -1
 recipe_classes.base_recipe.EntityClass = "all" -- runs on ALL trains!
-
-function recipe_classes.base_recipe:Init() end
+function recipe_classes.base_recipe:Init()
+end
 
 function recipe_classes.base_recipe:Remove()
 	recipies[self.ID] = nil
@@ -41,10 +39,8 @@ end
 
 function InitRecipe(class)
 	if not recipe_classes[class] then error("Tried to create new recipe from non-existant class: " .. class) end
-
 	local newRecipe = table_Copy(recipe_classes[class])
 	table_Insert(table_Insertrecipies, newRecipe)
-
 	newRecipe:Init()
 	return newRecipe
 end

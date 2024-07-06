@@ -71,9 +71,7 @@ function MEL.MoveButtonMapButton(ent, buttonmap_name, button_name, x, y)
 
         buttonmap.buttons[button_index].model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[button_index].model)
         Metrostroi.GenerateClientProps(ent)
-
         reloadButtonMapProps(ent, buttonmap)
-
     end
 end
 
@@ -87,7 +85,6 @@ function MEL.NewButtonMap(ent, buttonmap_name, buttonmap_data, do_not_override)
         ent.ButtonMap[buttonmap_name] = buttonmap_data
         ent.ButtonMapCopy[buttonmap_name] = table.Copy(buttonmap_data)
         Metrostroi.GenerateClientProps(ent)
-
         reloadButtonMapProps(ent, ent.ButtonMap[buttonmap_name])
     end
 end

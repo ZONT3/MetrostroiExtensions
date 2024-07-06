@@ -186,6 +186,7 @@ function MEL.DefineRecipe(name, train_type)
     else
         class_name = train_type .. "_" .. name
     end
+
     if not MEL.BaseRecipies[class_name] then MEL.BaseRecipies[class_name] = {} end
     RECIPE = MEL.BaseRecipies[class_name]
     RECIPE.TrainType = train_type
@@ -355,7 +356,7 @@ local function injectAnimationReloadHelper(entclass)
     -- add helper inject reload all animations on TrainSpawnerUpdate
     MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...)
         for key, value in pairs(wagon.Anims or {}) do
-            value.val = 0  -- yup, that simple
+            value.val = 0 -- yup, that simple
         end
     end, -1)
 end

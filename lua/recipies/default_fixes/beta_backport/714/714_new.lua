@@ -466,12 +466,12 @@ function RECIPE:Inject(ent)
             local parking_brake = wagon:GetPackedRatio("ParkingBrakePressure_dPdT", 0)
             local parking_brake_abs = math.Clamp(math.abs(parking_brake) - 0.3, 0, 1)
             if wagon.ParkingBrake1 ~= (parking_brake < 1) then
-                wagon.ParkingBrake1 = (parking_brake < 1)
+                wagon.ParkingBrake1 = parking_brake < 1
                 if wagon.ParkingBrake1 then wagon:PlayOnce("parking_brake_en", "bass", 1, 1) end
             end
 
             if wagon.ParkingBrake2 ~= (parking_brake > -0.8) then
-                wagon.ParkingBrake2 = (parking_brake > -0.8)
+                wagon.ParkingBrake2 = parking_brake > -0.8
                 if wagon.ParkingBrake2 then wagon:PlayOnce("parking_brake_rel", "bass", 0.6, 1) end
             end
 

@@ -359,9 +359,7 @@ function RECIPE:Inject(ent)
                 end
                 return false
             elseif wagon.Connectors[id] == traceEnt then
-                if traceEnt.Coupled == nil then
-                    wagon.Connectors[id] = nil
-                end
+                if traceEnt.Coupled == nil then wagon.Connectors[id] = nil end
                 return false
             elseif traceEnt:GetClass() == "player" and wagon.Voltage > 40 then
                 local pPos = traceEnt:GetPos()

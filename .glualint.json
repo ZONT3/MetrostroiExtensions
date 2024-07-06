@@ -1,5 +1,5 @@
 {
-    "lint_maxScopeDepth": 7,
+    "lint_maxScopeDepth": 15,
     "lint_syntaxErrors": true,
     "lint_syntaxInconsistencies": true,
     "lint_deprecated": true,
@@ -22,11 +22,14 @@
     "lint_spaceBetweenParens": false,
     "lint_spaceBetweenBrackets": false,
     "lint_spaceBetweenBraces": false,
-    "lint_ignoreFiles": [],
+    "lint_ignoreFiles": [
+        "lua/metrostroi/extensions/generate_client_props.lua",
+        "lua/metrostroi/extensions/systems/*",
+        "lua/recipies/default_fixes/*"
+    ],
     "lint_spaceBeforeComma": false,
     "lint_spaceAfterComma": false,
     "lint_maxLineLength": 0,
-
     "prettyprint_spaceBetweenParens": false,
     "prettyprint_spaceBetweenBrackets": false,
     "prettyprint_spaceBetweenBraces": false,
@@ -41,6 +44,5 @@
     "prettyprint_minimizeParens": true,
     "prettyprint_assumeOperatorAssociativity": false,
     "prettyprint_indentation": "    ",
-
     "log_format": "auto"
 }

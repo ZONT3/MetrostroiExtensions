@@ -11,7 +11,6 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("717_new_trainspawnerupdate", "gmod_subway_81-717_mvm")
 RECIPE.BackportPriority = 8
-
 function RECIPE:Inject(ent)
     if SERVER then
         ent.TrainSpawnerUpdate = function(wagon)
@@ -116,6 +115,7 @@ function RECIPE:Inject(ent)
                 wagon.HandRail = wagon:GetNW2Int("HandRail", 1)
                 wagon.BortLampType = wagon:GetNW2Int("BortLampType", 1)
             end
+
             wagon.Announcer.AnnouncerType = wagon:GetNW2Int("Announcer", 1)
             wagon.LampType = wagon:GetNW2Int("LampType", 1)
             wagon.Pneumatic.ValveType = wagon:GetNW2Int("Crane", 1)
@@ -138,7 +138,7 @@ function RECIPE:Inject(ent)
             end
 
             wagon:SetNW2String("RelaysConfig", str)
-            local pneumoPow = 0.8 + (math.random() ^ 1.55) * 0.4
+            local pneumoPow = 0.8 + math.random() ^ 1.55 * 0.4
             if IsValid(wagon.FrontBogey) then
                 wagon.FrontBogey:SetNW2Int("SquealType", math.floor(math.random(4, 7)))
                 wagon.FrontBogey.PneumaticPow = pneumoPow

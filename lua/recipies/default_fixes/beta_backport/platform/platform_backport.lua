@@ -58,19 +58,19 @@ function RECIPE:Inject(ent)
             -- If platform is defined and pool is not
             --print(wagon:GetNW2Vector("StationCenter"))
             --print(entStart,entEnd,wagon.Pool)
-            local dataReady = (wagon:GetNW2Float("X0", -1) >= 0) and (wagon:GetNW2Float("Sigma", -1) > 0)
-            local poolReady = wagon.Pool and (#wagon.Pool == wagon:PoolSize())
-            if (not poolReady) and (stationCenter:Length() > 0.0) then wagon:PopulatePlatform(platformStart, platformEnd, stationCenter) end
+            local dataReady = wagon:GetNW2Float("X0", -1) >= 0 and wagon:GetNW2Float("Sigma", -1) > 0
+            local poolReady = wagon.Pool and #wagon.Pool == wagon:PoolSize()
+            if not poolReady and stationCenter:Length() > 0.0 then wagon:PopulatePlatform(platformStart, platformEnd, stationCenter) end
             local modelCount = 0
             -- Check if set of models changed
-            if (CurTime() - (wagon.ModelCheckTimer or 0) > 1.0) and poolReady then
+            if CurTime() - (wagon.ModelCheckTimer or 0) > 1.0 and poolReady then
                 wagon.ModelCheckTimer = CurTime()
                 local WindowStart = wagon:GetNW2Int("WindowStart")
                 local WindowEnd = wagon:GetNW2Int("WindowEnd")
                 for i = 1, wagon:PoolSize() do
                     local in_bounds = false
-                    if WindowStart <= WindowEnd then in_bounds = (i >= WindowStart) and (i < WindowEnd) end
-                    if WindowStart > WindowEnd then in_bounds = (i >= WindowStart) or (i <= WindowEnd) end
+                    if WindowStart <= WindowEnd then in_bounds = i >= WindowStart and i < WindowEnd end
+                    if WindowStart > WindowEnd then in_bounds = i >= WindowStart or i <= WindowEnd end
                     if in_bounds then
                         -- Model in window
                         if not wagon.ClientModels[i] then
@@ -127,7 +127,7 @@ function RECIPE:Inject(ent)
 
             -- Add models for cleanup of people who left trains
             wagon.PassengersLeft = wagon.PassengersLeft or wagon:GetNW2Int("PassengersLeft")
-            while poolReady and (wagon.PassengersLeft < wagon:GetNW2Int("PassengersLeft")) do
+            while poolReady and wagon.PassengersLeft < wagon:GetNW2Int("PassengersLeft") do
                 -- Get random door
                 local count = wagon:GetNW2Int("TrainDoorCount", 0)
                 local i = math.max(1, math.min(count, 1 + math.floor((count - 1) * math.random() + 0.5)))
@@ -244,9 +244,9 @@ function RECIPE:Inject(ent)
     if SERVER then
         local function getPassengerRate(passCount)
             if passCount < 80 then
-                return 1 - ((passCount / 80) ^ 3) * 0.2
+                return 1 - (passCount / 80) ^ 3 * 0.2
             else
-                return 1 - math.min(1, (((passCount - 80) / 220) ^ 0.6) * 0.85 + 0.2)
+                return 1 - math.min(1, ((passCount - 80) / 220) ^ 0.6 * 0.85 + 0.2)
             end
         end
 
@@ -288,13 +288,13 @@ function RECIPE:Inject(ent)
         end
         --local train_start     = (v:LocalToWorld(Vector(480,0,0)) - wagon.PlatformStart):Dot(wagon.PlatformDir) / (wagon.PlatformDir:Length()^2)
         --local train_end           = (v:LocalToWorld(Vector(-480,0,0)) - wagon.PlatformStart):Dot(wagon.PlatformDir) / (wagon.PlatformDir:Length()^2)]]
-                local train_start = (maxb - wagon.PlatformStart):Dot(wagon.PlatformDir) / (wagon.PlatformDir:Length() ^ 2)
-                local train_end = (minb - wagon.PlatformStart):Dot(wagon.PlatformDir) / (wagon.PlatformDir:Length() ^ 2)
+                local train_start = (maxb - wagon.PlatformStart):Dot(wagon.PlatformDir) / wagon.PlatformDir:Length() ^ 2
+                local train_end = (minb - wagon.PlatformStart):Dot(wagon.PlatformDir) / wagon.PlatformDir:Length() ^ 2
                 local left_side = train_start > train_end
                 if wagon.InvertSides then left_side = not left_side end
                 local doors_open = left_side and v.LeftDoorsOpen or not left_side and v.RightDoorsOpen
-                if (train_start < 0) and (train_end < 0) then doors_open = false end
-                if (train_start > 1) and (train_end > 1) then doors_open = false end
+                if train_start < 0 and train_end < 0 then doors_open = false end
+                if train_start > 1 and train_end > 1 then doors_open = false end
                 if -0.2 < train_start and train_start < 1.2 then
                     v.BoardTime = wagon.Timer and CurTime() - wagon.Timer
                     v.Horlift = wagon.HorliftStation > 0
@@ -313,14 +313,14 @@ function RECIPE:Inject(ent)
                     for i = 0, 4 do
                         local x_s = 0.99086 - i * 0.1929
                         local x_e = 0.97668 - i * 0.1929
-                        stopped_fine = stopped_fine or ((train_start < x_s) and (train_start > x_e))
+                        stopped_fine = stopped_fine or train_start < x_s and train_start > x_e
                     end
 
                     -- Open doors on station
                     if stopped_fine and (v.SOSD or wagon.OldOpened and not wagon.OpenedBySOSD) then
                         wagon.OpenedBySOSD = v.SOSD
                         wagon.HorliftTimer1 = wagon.HorliftTimer1 or CurTime()
-                        if (CurTime() - wagon.HorliftTimer1) > 0.5 then
+                        if CurTime() - wagon.HorliftTimer1 > 0.5 then
                             if not wagon.HorliftTimer2 then wagon:FireHorliftDoors("Open") end
                             wagon.HorliftTimer2 = CurTime()
                         end
@@ -555,8 +555,8 @@ function RECIPE:Inject(ent)
         wagon.TritonePlayed = nil
     end]]
             -- Add passengers
-            if (not wagon.PlatformLast) and (#boardingDoorList == 0) then
-                local target = math.min((Metrostroi.PassengersScale or 50)*wagon.PopularityIndex, wagon:PoolSize() - 1) --300
+            if not wagon.PlatformLast and #boardingDoorList == 0 then
+                local target = math.min((Metrostroi.PassengersScale or 50) * wagon.PopularityIndex, wagon:PoolSize() - 1) --300
                 -- then target = target*0.1 end
                 if target <= 0 then
                     wagon.WindowEnd = wagon.WindowStart
@@ -570,13 +570,13 @@ function RECIPE:Inject(ent)
                         end
                     end
 
-                    wagon.WindowEnd = (wagon.WindowEnd + math.floor(growthDelta+0.5)) % wagon:PoolSize()
+                    wagon.WindowEnd = (wagon.WindowEnd + math.floor(growthDelta + 0.5)) % wagon:PoolSize()
                 end
             end
 
             if wagon.HorliftStation > 0 then
                 if wagon.HorliftTimer2 then
-                    if (CurTime() - wagon.HorliftTimer2) > 1 then
+                    if CurTime() - wagon.HorliftTimer2 > 1 then
                         wagon:FireHorliftDoors("Close")
                         wagon.HorliftTimer1 = nil
                         wagon.HorliftTimer2 = nil
@@ -584,7 +584,7 @@ function RECIPE:Inject(ent)
                     end
                 end
 
-                if wagon.HorliftTimer3 and (CurTime() - wagon.HorliftTimer3) > 2.5 then wagon.HorliftTimer3 = nil end
+                if wagon.HorliftTimer3 and CurTime() - wagon.HorliftTimer3 > 2.5 then wagon.HorliftTimer3 = nil end
             end
 
             if wagon.OldOpened ~= wagon:GetDoorState() or wagon.OldPeopleGoing ~= PeopleGoing then
@@ -600,8 +600,8 @@ function RECIPE:Inject(ent)
                 local ars_ents = ents.FindInSphere(wagon.PlatformEnd, 768)
                 for k, v in pairs(ars_ents) do
                     local delta_z = math.abs(wagon.PlatformEnd.z - v:GetPos().z)
-                    if (v:GetClass() == "gmod_track_signal") and (delta_z < 128) then v.OverrideTrackOccupied = wagon:GetDoorState() end
-                    if (v:GetClass() == "gmod_track_horlift_signal") and (delta_z < 90 and v:GetNWInt("Type") == 0 or v:GetNWInt("Type") == 1) then
+                    if v:GetClass() == "gmod_track_signal" and delta_z < 128 then v.OverrideTrackOccupied = wagon:GetDoorState() end
+                    if v:GetClass() == "gmod_track_horlift_signal" and (delta_z < 90 and v:GetNWInt("Type") == 0 or v:GetNWInt("Type") == 1) then
                         v.WhiteSignal = wagon:GetDoorState()
                         v.YellowSignal = not wagon:GetDoorState()
                         v.PeopleGoing = PeopleGoing

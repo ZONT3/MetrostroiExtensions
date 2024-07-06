@@ -11,7 +11,6 @@
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 MEL.DefineRecipe("717_custom", "gmod_subway_81-717_mvm_custom")
 RECIPE.BackportPriority = 6
-
 function RECIPE:Inject(ent, ent_class)
     MEL.FindSpawnerField(ent_class, "Scheme")[MEL.Constants.Spawner.List.ELEMENTS] = function()
         local Schemes = {}

@@ -100,6 +100,7 @@ local function newGenerateClientProps()
                             bscale = config.bscale,
                             scale = config.scale,
                         }
+
                         --[[if config.varTooltip then
                             local states = config.states or {"Train.Buttons.On","Train.Buttons.Off"}
                             local count = (#states-1)

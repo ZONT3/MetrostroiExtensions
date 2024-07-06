@@ -236,11 +236,11 @@ function RECIPE:Inject(ent)
             end
         end
 
-        function ent.GetARS(wagon, ARSID,Force1_5,Force2_6)
+        function ent.GetARS(wagon, ARSID, Force1_5, Force2_6)
             if wagon.OverrideTrackOccupied then return ARSID == 2 end
             if not wagon.ARSSpeedLimit then return false end
             local nxt = wagon.ARSNextSpeedLimit == 2 and 0 or wagon.ARSNextSpeedLimit ~= 1 and wagon.ARSNextSpeedLimit
-            return wagon.ARSSpeedLimit == ARSID or ((wagon.TwoToSix and not Force1_5 or Force2_6) and nxt and nxt == ARSID and wagon.ARSSpeedLimit > nxt)
+            return wagon.ARSSpeedLimit == ARSID or (wagon.TwoToSix and not Force1_5 or Force2_6) and nxt and nxt == ARSID and wagon.ARSSpeedLimit > nxt
         end
 
         function ent.GetRS(wagon)

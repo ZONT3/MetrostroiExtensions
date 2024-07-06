@@ -17,17 +17,11 @@ local function handle_buttons(id_parts, id, phrase, ent_table, ent_class)
     if not buttonmap then return end
     if not buttonmap.buttons then return end
     local buttonmap_index = MEL.GetButtonmapButtonMapping(ent_class, name, id_parts[LanguageIDC.Buttons.ID], true)
-    if not buttonmap_index then
-        return
-    end
+    if not buttonmap_index then return end
     local button = buttonmap.buttons[buttonmap_index]
     local button_copy = buttonmap_copy.buttons[buttonmap_index]
-    if button then
-        button.tooltip = phrase
-    end
-    if button_copy then
-        button_copy.tooltip = phrase
-    end
+    if button then button.tooltip = phrase end
+    if button_copy then button_copy.tooltip = phrase end
 end
 
 local SpawnerC = MEL.Constants.Spawner
@@ -70,14 +64,9 @@ local WEAPON_HANDLERS = {
         swep_table.PrintName = phrase
         swep_list[swep_class].PrintName = phrase
     end,
-    ["Purpose"] = function(swep_table, swep_list, swep_class, phrase)
-        swep_table.Purpose = phrase
-    end,
-    ["Instructions"] = function(swep_table, swep_list, swep_class, phrase)
-        swep_table.Instructions = phrase
-    end,
+    ["Purpose"] = function(swep_table, swep_list, swep_class, phrase) swep_table.Purpose = phrase end,
+    ["Instructions"] = function(swep_table, swep_list, swep_class, phrase) swep_table.Instructions = phrase end,
 }
-
 
 local metrostroi_language_softreload = GetConVar("metrostroi_language_softreload")
 function MEL.ReplaceLoadLanguage()
@@ -105,9 +94,7 @@ function MEL.ReplaceLoadLanguage()
             elseif string.StartsWith(id, LanguageIDC.Weapons.PREFIX) then
                 local swep_class = id_parts[LanguageIDC.Weapons.CLASS]
                 local swep_table = weapons.GetStored(swep_class)
-                if not swep_table then
-                    continue
-                end
+                if not swep_table then continue end
                 WEAPON_HANDLERS[id_parts[LanguageIDC.Weapons.TYPE]](swep_table, swep_list, swep_class, phrase)
             end
         end
