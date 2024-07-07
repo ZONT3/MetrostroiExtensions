@@ -358,7 +358,6 @@ local function injectAnimationReloadHelper(entclass)
     MEL.InjectIntoClientFunction(entclass, "UpdateWagonNumber", function(wagon, ...)
         for key, value in pairs(wagon.Anims or {}) do
             if MEL.AnimateOverrides[entclass] and isfunction(MEL.AnimateOverrides[entclass][key]) then
-                print(key)
                 wagon:Animate(key, value.val < 0.5 and 1 or 0) -- we need inverted value in order too reload anim
             end
         end
