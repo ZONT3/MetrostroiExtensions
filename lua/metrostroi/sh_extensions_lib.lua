@@ -353,12 +353,16 @@ local function injectRandomFieldHelper(entclass)
 end
 
 local function injectAnimationReloadHelper(entclass)
-    -- add helper inject reload all animations on TrainSpawnerUpdate
-    MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...)
+    -- add helper inject reload all animations on UpdateWagonNumber
+    -- we need this cause AnimateOverrides can change things like min/max on change of some wagon parameter
+    MEL.InjectIntoClientFunction(entclass, "UpdateWagonNumber", function(wagon, ...)
         for key, value in pairs(wagon.Anims or {}) do
-            value.val = 0 -- yup, that simple
+            if MEL.AnimateOverrides[entclass] and isfunction(MEL.AnimateOverrides[entclass][key]) then
+                print(key)
+                wagon:Animate(key, value.val < 0.5 and 1 or 0) -- we need inverted value in order too reload anim
+            end
         end
-    end, -1)
+    end, 1)
 end
 
 local function injectFieldUpdateHelper(entclass)
@@ -394,7 +398,6 @@ local function injectFunction(key, tbl)
                 table.insert(afterStack, functionStack)
             end
         end
-
         -- check for missing function from some table
         if not tbl[functionName] then
             MEL._LogError(Format("can't inject into %s: function %s doesn't exists!", key, functionName))
@@ -423,7 +426,7 @@ local function injectFunction(key, tbl)
 
         tbl[functionName] = buildedInject
         if string.StartsWith(key, "sys_") then return end
-        -- -- reinject this function on already spawned wagons
+        -- reinject this function on already spawned wagons
         for _, ent in ipairs(ents.FindByClass(key) or {}) do
             ent[functionName] = buildedInject
         end
@@ -486,10 +489,10 @@ local function inject(isBackports)
         injectAnimationReloadHelper(entclass)
     end
 
-    -- inject into systems
-    for systemClass, systemTable in pairs(Metrostroi.BaseSystems) do
-        injectFunction(Format("sys_%s", systemClass), systemTable)
-    end
+    -- -- inject into systems
+    -- for systemClass, systemTable in pairs(Metrostroi.BaseSystems) do
+    --     injectFunction(Format("sys_%s", systemClass), systemTable)
+    -- end
 
     MEL._LoadHelpers()
     MEL.ReplaceLoadLanguage()
