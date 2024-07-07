@@ -489,10 +489,10 @@ local function inject(isBackports)
         injectAnimationReloadHelper(entclass)
     end
 
-    -- -- inject into systems
-    -- for systemClass, systemTable in pairs(Metrostroi.BaseSystems) do
-    --     injectFunction(Format("sys_%s", systemClass), systemTable)
-    -- end
+    -- inject into systems
+    for systemClass, systemTable in pairs(Metrostroi.BaseSystems) do
+        injectFunction(Format("sys_%s", systemClass), systemTable)
+    end
 
     MEL._LoadHelpers()
     MEL.ReplaceLoadLanguage()
