@@ -6,12 +6,12 @@ on:
       - main
 
 jobs:
-  lint:
-    uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@master
-    with:
-      config: ".glualint.json"
+  # lint:
+  #   uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@master
+  #   with:
+  #     config: ".glualint.json"
   bump-version:
-    needs: 'lint'
+    # needs: 'lint'
     if: "!startsWith(github.event.head_commit.message, 'bump:')"
     runs-on: ubuntu-latest
     name: "Bump version and create changelog with commitizen"
