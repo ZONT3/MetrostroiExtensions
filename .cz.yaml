@@ -2,13 +2,13 @@
 commitizen:
   allow_abort: true
   annotated_tag: true
+  changelog_incremental: true
   gpg_sign: true
   major_version_zero: true
   name: cz_conventional_commits
   tag_format: $version
   update_changelog_on_bump: true
-  version: 0.1.1
+  version: 0.2.0
   version_files:
   - lua/metrostroi/extensions/version.lua:MEL.Version
   version_scheme: semver
-  changelog_incremental: true
