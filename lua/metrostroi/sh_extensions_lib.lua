@@ -333,20 +333,7 @@ local function injectRandomFieldHelper(entclass)
                 local value = wagon:GetNW2Int(name, 1)
                 if not custom or value == 1 then
                     if data.distribution then
-                        local total = 0
-                        for _, part in pairs(data.distribution) do
-                            total = total + part
-                        end
-
-                        local random = math.random(total)
-                        local cursor = 0
-                        for i = 1, #data.distribution do
-                            cursor = cursor + data.distribution[i]
-                            if cursor >= random then
-                                value = i + 1 -- +1 cause first is random, and we dont include it in distribution table
-                                break
-                            end
-                        end
+                        value = MEL.Helpers.getWeightedRandomValue(data.distribution) + 1 -- +1 cause first is random, and we dont include it in distribution table
                     else
                         value = math.random(2, elements_length)
                     end

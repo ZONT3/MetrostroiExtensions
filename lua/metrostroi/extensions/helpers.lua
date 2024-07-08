@@ -29,6 +29,23 @@ function MEL.Helpers.getListElementIndex(field_table, element_name)
     end
 end
 
+function MEL.Helpers.getWeightedRandomValue(distribution)
+    local total = 0
+    for _, part in pairs(distribution) do
+        total = total + part
+    end
+
+    local random = math.random(total)
+    local cursor = 0
+    for i = 1, #distribution do
+        cursor = cursor + distribution[i]
+        if cursor >= random then
+            return i
+        end
+    end
+    MEL._LogError("getWeightedRandomValue is broken lol. Please report this error")
+end
+
 function MEL.GetButtonmapButtonMapping(ent_or_entclass, buttonmap_name, button_name, ignore_error)
     local ent_class = MEL.GetEntclass(ent_or_entclass)
     if not MEL.getEntTable(ent_class).ButtonMap then return end
