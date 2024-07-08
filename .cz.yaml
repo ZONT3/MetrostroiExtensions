@@ -11,3 +11,4 @@ commitizen:
   version_files:
   - lua/metrostroi/extensions/version.lua:MEL.Version
   version_scheme: semver
+  changelog_incremental: true
