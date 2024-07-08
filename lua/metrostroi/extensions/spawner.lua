@@ -36,7 +36,7 @@ function MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name, field_nam
     table.insert(MEL.ClientPropsToReload[ent_class][field_name], clientprop_name)
 end
 
-function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field, overwrite)
+function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, overwrite)
     local ent_class = getSpawnerEntclass(ent_or_entclass)
     local spawner = MEL.EntTables[ent_class].Spawner
     if not spawner then return end
@@ -47,7 +47,7 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field, overw
         end
     end
 
-    if is_random_field then
+    if random_field_data then
         local entclass_random = MEL.GetEntclass(ent_or_entclass)
         if not MEL.RandomFields[entclass_random] then MEL.RandomFields[entclass_random] = {} end
         local field_type = field_data[SpawnerC.TYPE]
@@ -55,6 +55,10 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, is_random_field, overw
             name = field_data[SpawnerC.NAME],
             type_ = field_type
         }
+
+        if istable(random_field_data) then
+            random_data.distribution = random_field_data
+        end
 
         if field_type == SpawnerC.TYPE_LIST then
             random_data.elements_length = #field_data[SpawnerC.List.ELEMENTS]

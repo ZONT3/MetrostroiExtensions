@@ -331,7 +331,27 @@ local function injectRandomFieldHelper(entclass)
             if data.type_ == "List" then
                 local elements_length = data.elements_length
                 local value = wagon:GetNW2Int(name, 1)
-                if not custom or value == 1 then value = math.random(2, elements_length) end
+                if not custom or value == 1 then
+                    if data.distribution then
+                        local total = 0
+                        for _, part in pairs(data.distribution) do
+                            total = total + part
+                        end
+
+                        local random = math.random(total)
+                        local cursor = 0
+                        for i = 1, #data.distribution do
+                            cursor = cursor + data.distribution[i]
+                            if cursor >= random then
+                                value = i + 1 -- +1 cause first is random, and we dont include it in distribution table
+                                break
+                            end
+                        end
+                    else
+                        value = math.random(2, elements_length)
+                    end
+                end
+
                 wagon:SetNW2Int(name, value - 1)
             elseif data.type_ == "Slider" then
                 local min = data.min
@@ -358,7 +378,7 @@ local function injectAnimationReloadHelper(entclass)
     MEL.InjectIntoClientFunction(entclass, "UpdateWagonNumber", function(wagon, ...)
         for key, value in pairs(wagon.Anims or {}) do
             if MEL.AnimateOverrides[entclass] and isfunction(MEL.AnimateOverrides[entclass][key]) then
-                wagon:Animate(key, value.val < 0.5 and 1 or 0) -- we need inverted value in order too reload anim
+                wagon:Animate(key, value.val < 0.5 and 1 or 0) -- we need inverted value in order to reload anim
             end
         end
     end, 1)
@@ -397,6 +417,7 @@ local function injectFunction(key, tbl)
                 table.insert(afterStack, functionStack)
             end
         end
+
         -- check for missing function from some table
         if not tbl[functionName] then
             MEL._LogError(Format("can't inject into %s: function %s doesn't exists!", key, functionName))
