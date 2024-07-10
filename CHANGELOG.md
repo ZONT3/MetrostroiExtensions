@@ -1,3 +1,9 @@
+## 0.2.2 (2024-07-10)
+
+### Fix
+
+- **platform_backport.lua**: fix errors when trying to load passengers
+
 ## 0.2.1 (2024-07-08)
 
 ### Refactor

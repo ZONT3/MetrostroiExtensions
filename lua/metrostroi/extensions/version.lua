@@ -1,1 +1,1 @@
-MEL.Version = "v0.2.1"
+MEL.Version = "v0.2.2"
