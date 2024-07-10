@@ -242,6 +242,29 @@ function RECIPE:Inject(ent)
     end
 
     if SERVER then
+        local empty_checked = {}
+        local function getTrainDriver(train, checked)
+            if not checked then
+                for k, v in pairs(empty_checked) do
+                    empty_checked[k] = nil
+                end
+
+                checked = empty_checked
+            end
+
+            if not IsValid(train) then return end
+            if checked[train] then return end
+            checked[train] = true
+            local ply = train:GetDriver()
+            if IsValid(ply) then -- and (train.KV.ReverserPosition ~= 0)
+                return ply
+            end
+            return getTrainDriver(train.RearTrain, checked) or getTrainDriver(train.FrontTrain, checked)
+        end
+
+        local function CDF(x,x0,sigma) return 0.5 * (1 + erf((x - x0)/math.sqrt(2*sigma^2))) end
+        local function merge(t1,t2) for k,v in pairs(t2) do table.insert(t1,v) end end
+
         local function getPassengerRate(passCount)
             if passCount < 80 then
                 return 1 - (passCount / 80) ^ 3 * 0.2
