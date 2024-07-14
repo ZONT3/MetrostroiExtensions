@@ -26,6 +26,7 @@ MEL.TrainFamilies = {
     ["717_714"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-717_mvm", "gmod_subway_81-714_lvz", "gmod_subway_81-714_mvm"},
     ["717_714_mvm"] = {"gmod_subway_81-717_mvm", "gmod_subway_81-714_mvm"},
     ["717_714_lvz"] = {"gmod_subway_81-717_lvz", "gmod_subway_81-714_lvz"},
+    ["718_719"] = {"gmod_subway_81-718", "gmod_subway_81-719"},
 }
 
 MEL.InjectIntoSpawnedEnt = false -- temp global variable
@@ -305,6 +306,7 @@ local function getEntTables()
             table.insert(MEL.MetrostroiClasses, entclass)
             local ent_table = scripted_ents.GetStored(entclass).t
             ent_table.entclass = entclass -- add entclass for convience
+            ent_table.spawner = ent_table.Spawner -- add spawner for convience
             MEL.EntTables[entclass] = ent_table
         end
 
@@ -320,48 +322,59 @@ function MEL.getEntTable(ent_class)
     return ent_table
 end
 
-local function injectRandomFieldHelper(entclass)
-    if not MEL.RandomFields[entclass] then return end
-    -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
-    MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...)
-        math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
-        local custom = wagon.CustomSettings and true or false
-        for _, data in pairs(MEL.RandomFields[entclass]) do
-            local name = data.name
-            if data.type_ == "List" then
-                local elements_length = data.elements_length
-                local value = wagon:GetNW2Int(name, 1)
-                if not custom or value == 1 then
-                    if data.distribution then
-                        value = MEL.Helpers.getWeightedRandomValue(data.distribution) + 1 -- +1 cause first is random, and we dont include it in distribution table
-                    else
-                        value = math.random(2, elements_length)
-                    end
+local function randomFieldHelper(wagon, entclass)
+    math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
+    local custom = table.HasValue(MEL.TrainFamilies["717_714"], entclass) and (wagon.CustomSettings and true or false) or true
+    for _, data in pairs(MEL.RandomFields[entclass]) do
+        local name = data.name
+        if data.type_ == "List" then
+            local elements_length = data.elements_length
+            local value = wagon:GetNW2Int(name, 1)
+            if not custom or value == 1 then
+                if data.distribution then
+                    value = MEL.Helpers.getWeightedRandomValue(data.distribution) + 1 -- +1 cause first is random, and we dont include it in distribution table
+                else
+                    value = math.random(2, elements_length)
                 end
+            end
 
-                wagon:SetNW2Int(name, value - 1)
-            elseif data.type_ == "Slider" then
-                local min = data.min
-                local max = data.max
-                local decimals = data.decimals
-                local value = wagon:GetNW2Float(name, min)
-                if not custom or value == min then
-                    if decimals > 0 then
-                        wagon:SetNW2Float(name, math.Rand(min + 1 / decimals, max))
-                    else
-                        wagon:SetNW2Float(name, math.random(min + 1, max))
-                    end
+            wagon:SetNW2Int(name, value - 1)
+        elseif data.type_ == "Slider" then
+            local min = data.min
+            local max = data.max
+            local decimals = data.decimals
+            local value = wagon:GetNW2Float(name, min)
+            if not custom or value == min then
+                if decimals > 0 then
+                    wagon:SetNW2Float(name, math.Rand(min + 1 / decimals, max))
+                else
+                    wagon:SetNW2Float(name, math.random(min + 1, max))
                 end
             end
         end
+    end
 
-        math.randomseed(os.time())
-    end, -1)
+    math.randomseed(os.time())
 end
 
-local function injectAnimationReloadHelper(entclass)
+local function injectRandomFieldHelper(entclass, entTable)
+    if CLIENT then return end
+    if not MEL.RandomFields[entclass] then return end
+    -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
+    MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...) randomFieldHelper(wagon, entclass) end, -1)
+    -- and inject it to interim too
+    if entTable.spawner then
+        -- print("field", entTable.spawner.interim == "gmod_subway_81-719")
+        MEL.InjectIntoServerFunction(entTable.spawner.interim, "TrainSpawnerUpdate", function(wagon, ...)
+            randomFieldHelper(wagon, entclass)
+        end, -1)
+    end
+end
+
+local function injectAnimationReloadHelper(entclass, entTable)
     -- add helper inject reload all animations on UpdateWagonNumber
     -- we need this cause AnimateOverrides can change things like min/max on change of some wagon parameter
+    if not entTable.UpdateWagonNumber then return end
     MEL.InjectIntoClientFunction(entclass, "UpdateWagonNumber", function(wagon, ...)
         for key, value in pairs(wagon.Anims or {}) do
             if MEL.AnimateOverrides[entclass] and isfunction(MEL.AnimateOverrides[entclass][key]) then
@@ -488,12 +501,15 @@ local function inject(isBackports)
 
         recipe:InjectSystem()
     end
-
+    -- inject into functions with some helpers first
     for entclass, entTable in pairs(MEL.EntTables) do
-        injectRandomFieldHelper(entclass)
+        injectRandomFieldHelper(entclass, entTable)
         injectFieldUpdateHelper(entclass)
+        injectAnimationReloadHelper(entclass, entTable)
+    end
+    -- build injects second
+    for entclass, entTable in pairs(MEL.EntTables) do
         injectFunction(entclass, entTable)
-        injectAnimationReloadHelper(entclass)
     end
 
     -- inject into systems
