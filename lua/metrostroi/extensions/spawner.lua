@@ -56,10 +56,7 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
             type_ = field_type
         }
 
-        if istable(random_field_data) then
-            random_data.distribution = random_field_data
-        end
-
+        if istable(random_field_data) then random_data.distribution = random_field_data end
         if field_type == SpawnerC.TYPE_LIST then
             random_data.elements_length = #field_data[SpawnerC.List.ELEMENTS]
         elseif field_type == SpawnerC.TYPE_SLIDER then
@@ -104,10 +101,25 @@ end
 --     end
 -- end
 function MEL.GetMappingValue(ent_or_entclass, field_name, element)
+    if not field_name then
+        MEL._LogError("please provide field_name for which to obtain spawner mapping value")
+        return
+    end
+
+    if not element then
+        MEL._LogError("please provide element for which to obtain spawner mapping value")
+        return
+    end
+
     local ent_class = getSpawnerEntclass(ent_or_entclass)
     if MEL.SpawnerFieldMappings[ent_class] and MEL.SpawnerFieldMappings[ent_class][field_name] and MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] then return MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] end
     local ent_table = MEL.EntTables[ent_class]
     if not ent_table then ent_table = MEL.getEntTable(ent_class) end
+    if not ent_table or not ent_table.Spawner then
+        MEL._LogError(Format("ent_table.Spawner for %s is nil. Please check whenever you provided correct ent_or_entclass", ent_class))
+        return
+    end
+
     -- try to find index of it, if it non-existent in our SpawnerFieldMappings cache
     for field_i, field in pairs(ent_table.Spawner) do
         if istable(field) and isstring(field[SpawnerC.NAME]) and field[SpawnerC.NAME] == field_name then
