@@ -1,3 +1,19 @@
+## 0.4.0 (2024-07-21)
+
+### Feat
+
+- add new spawner mapping helper functions.
+- add fixes for 718 cab
+- add more GetMappingValue error handling
+- new number ranges for 717/714. close #24
+
+### Fix
+
+- add more error handling into AddSpawnerField and GetEntclass
+- inject randomFieldHelper into interim too, check for CustomSetting on 717/714
+- fix KDL light pollution, close #37
+- add additional backports for 718/719
+
 ## 0.3.0 (2024-07-11)
 
 ### Feat
