@@ -135,7 +135,11 @@ end
 
 -- helper methods
 function MEL.GetEntclass(ent_or_entclass)
-    if not ent_or_entclass then MEL._LogError("for some reason, ent_or_entclass in GetEntclass is nil. Please report this error.") end
+    if not ent_or_entclass then
+        MEL._LogError("please provide ent_or_entclass in GetEntclass")
+        return
+    end
+
     -- get entclass from ent table or from str entclass
     if istable(ent_or_entclass) then return ent_or_entclass.entclass end
     if isentity(ent_or_entclass) then return ent_or_entclass:GetClass() end
@@ -365,9 +369,7 @@ local function injectRandomFieldHelper(entclass, entTable)
     -- and inject it to interim too
     if entTable.spawner then
         -- print("field", entTable.spawner.interim == "gmod_subway_81-719")
-        MEL.InjectIntoServerFunction(entTable.spawner.interim, "TrainSpawnerUpdate", function(wagon, ...)
-            randomFieldHelper(wagon, entclass)
-        end, -1)
+        MEL.InjectIntoServerFunction(entTable.spawner.interim, "TrainSpawnerUpdate", function(wagon, ...) randomFieldHelper(wagon, entclass) end, -1)
     end
 end
 
@@ -501,12 +503,14 @@ local function inject(isBackports)
 
         recipe:InjectSystem()
     end
+
     -- inject into functions with some helpers first
     for entclass, entTable in pairs(MEL.EntTables) do
         injectRandomFieldHelper(entclass, entTable)
         injectFieldUpdateHelper(entclass)
         injectAnimationReloadHelper(entclass, entTable)
     end
+
     -- build injects second
     for entclass, entTable in pairs(MEL.EntTables) do
         injectFunction(entclass, entTable)

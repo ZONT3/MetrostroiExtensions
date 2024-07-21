@@ -37,6 +37,10 @@ function MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name, field_nam
 end
 
 function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, overwrite)
+    if not ent_or_entclass then
+        MEL._LogError("please provide ent_or_entclass in AddSpawnerField")
+        return
+    end
     local ent_class = getSpawnerEntclass(ent_or_entclass)
     local spawner = MEL.EntTables[ent_class].Spawner
     if not spawner then return end
