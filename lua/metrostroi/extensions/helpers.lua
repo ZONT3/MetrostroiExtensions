@@ -72,7 +72,7 @@ end
 
 local function populateSpawnerFieldMappings()
     for _, train_class in pairs(MEL.TrainClasses) do
-        local ent_table = MEL.EntTables[train_class]
+        local ent_table = MEL.getEntTable(train_class)
         if not ent_table.Spawner then continue end
         MEL.SpawnerFieldMappings[train_class] = {}
         for field_i, field in pairs(ent_table.Spawner) do
@@ -81,12 +81,14 @@ local function populateSpawnerFieldMappings()
                 if MEL.SpawnerFieldMappings[train_class][field_name] then continue end
                 MEL.SpawnerFieldMappings[train_class][field_name] = {
                     index = field_i,
-                    list_elements = {}
+                    list_elements = {},
+                    list_elements_indexed = {}
                 }
 
                 if field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
                     for list_i, name in pairs(field[SpawnerC.List.ELEMENTS]) do
                         MEL.SpawnerFieldMappings[train_class][field_name].list_elements[name] = list_i
+                        MEL.SpawnerFieldMappings[train_class][field_name].list_elements_indexed[list_i] = name
                     end
                 end
             end

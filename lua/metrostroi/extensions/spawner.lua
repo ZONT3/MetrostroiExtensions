@@ -69,7 +69,7 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
             random_data.decimals = field_data[SpawnerC.Slider.DECIMALS]
         end
 
-        table.insert(MEL.RandomFields[entclass_random], random_data)
+        MEL.RandomFields[entclass_random][field_data[SpawnerC.NAME]] = random_data
     end
 
     table.insert(spawner, field_data)
@@ -117,10 +117,9 @@ function MEL.GetMappingValue(ent_or_entclass, field_name, element)
 
     local ent_class = getSpawnerEntclass(ent_or_entclass)
     if MEL.SpawnerFieldMappings[ent_class] and MEL.SpawnerFieldMappings[ent_class][field_name] and MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] then return MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] end
-    local ent_table = MEL.EntTables[ent_class]
-    if not ent_table then ent_table = MEL.getEntTable(ent_class) end
+    local ent_table = MEL.getEntTable(ent_class)
     if not ent_table or not ent_table.Spawner then
-        MEL._LogError(Format("ent_table.Spawner for %s is nil. Please check whenever you provided correct ent_or_entclass", ent_class))
+        MEL._LogError(Format("Spawner for %s is nil. Please check whenever you provided correct ent_or_entclass", ent_class))
         return
     end
 
@@ -140,4 +139,50 @@ function MEL.GetMappingValue(ent_or_entclass, field_name, element)
             if field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] = MEL.Helpers.getListElementIndex(field, element) end
         end
     end
+end
+
+function MEL.IsRandomField(ent_or_entclass, field_name)
+    local ent_class = MEL.GetEntclass(ent_or_entclass)
+    return MEL.RandomFields[ent_class] and MEL.RandomFields[ent_class][field_name]
+end
+
+function MEL.GetRealSpawnerValue(ent, field_name)
+    if not (isentity(ent) and IsValid(ent)) then
+        MEL._LogError("please pass valid entity inside GetRealSpawnerValue. Make sure that you don't pass ent from recipe, but some entity like from function inject.")
+        return
+    end
+    local ent_class = MEL.GetEntclass(ent)
+    local value = ent:GetNW2Int(field_name)
+    if not value then
+        MEL._LogError(Format("field with name %s doesn't exists in %s. Perhaps a typo?", field_name, ent_class))
+    end
+    if MEL.IsRandomField(ent_class, field_name) then
+        value = value + 1  -- first value - is "random"
+    end
+    return value
+end
+
+function MEL.IsSpawnerSelected(ent, field_name, element)
+    if not (isentity(ent) and IsValid(ent)) then
+        MEL._LogError("please pass valid entity inside IsSpawnerSelected. Make sure that you don't pass ent from recipe, but some entity like from function inject.")
+        return
+    end
+    local ent_class = MEL.GetEntclass(ent)
+    local value = MEL.GetRealSpawnerValue(ent, field_name)
+    return value == MEL.GetMappingValue(ent_class, field_name, element)
+end
+
+function MEL.GetSelectedSpawnerName(ent, field_name)
+    if not (isentity(ent) and IsValid(ent)) then
+        MEL._LogError("please pass valid entity inside GetSelectedSpawnerName. Make sure that you don't pass ent from recipe, but some entity like from function inject.")
+        return
+    end
+    local ent_class = getSpawnerEntclass(ent)
+    local mappings = MEL.SpawnerFieldMappings[ent_class][field_name].list_elements_indexed
+    if not mappings then
+        MEL._LogError(Format("SpawnerFieldMapping for %s is nil. Please check whenever you provided correct ent inside GetSelectedSpawnerName", ent_class))
+        return
+    end
+    local value = MEL.GetRealSpawnerValue(ent, field_name)
+    return mappings[value] -- this could be nil, but it shouldn't lol
 end

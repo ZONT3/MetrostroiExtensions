@@ -329,8 +329,7 @@ end
 local function randomFieldHelper(wagon, entclass)
     math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
     local custom = table.HasValue(MEL.TrainFamilies["717_714"], entclass) and (wagon.CustomSettings and true or false) or true
-    for _, data in pairs(MEL.RandomFields[entclass]) do
-        local name = data.name
+    for name, data in pairs(MEL.RandomFields[entclass]) do
         if data.type_ == "List" then
             local elements_length = data.elements_length
             local value = wagon:GetNW2Int(name, 1)
