@@ -10,38 +10,46 @@
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
 local LanguageIDC = MEL.Constants.LanguageID
-local function handle_buttons(id_parts, id, phrase, ent_table, ent_class)
+local function handle_buttons(id_parts, id, phrase, ent_tables, ent_class)
     local name = id_parts[LanguageIDC.Buttons.NAME]
-    local buttonmap = ent_table.ButtonMap[name]
-    local buttonmap_copy = ent_table.ButtonMapCopy[name]
+    -- check if buttonmap is existent in base SENT
+    local buttonmap = ent_tables[1].ButtonMap[name]
     if not buttonmap then return end
     if not buttonmap.buttons then return end
     local buttonmap_index = MEL.GetButtonmapButtonMapping(ent_class, name, id_parts[LanguageIDC.Buttons.ID], true)
-    if not buttonmap_index then return end
-    local button = buttonmap.buttons[buttonmap_index]
-    local button_copy = buttonmap_copy.buttons[buttonmap_index]
-    if button then button.tooltip = phrase end
-    if button_copy then button_copy.tooltip = phrase end
+    for _, ent_table in pairs(ent_tables) do
+        local buttonmap = ent_table.ButtonMap[name]
+        local buttonmap_copy = ent_table.ButtonMapCopy[name]
+        if not buttonmap then return end
+        if not buttonmap.buttons then return end
+        if not buttonmap_index then return end
+        local button = buttonmap.buttons[buttonmap_index]
+        local button_copy = buttonmap_copy.buttons[buttonmap_index]
+        if button then button.tooltip = phrase end
+        if button_copy then button_copy.tooltip = phrase end
+    end
 end
 
 local SpawnerC = MEL.Constants.Spawner
-local function handle_spawner(id_parts, id, phrase, ent_table, ent_class)
-    if not ent_table.Spawner then return end
-    local field_mapping = MEL.SpawnerFieldMappings[ent_class][id_parts[LanguageIDC.Spawner.NAME]]
-    if not field_mapping then return end
-    local field_index = field_mapping.index
-    local field = ent_table.Spawner[field_index]
-    local field_value = id_parts[LanguageIDC.Spawner.VALUE]
-    if field_value == LanguageIDC.Spawner.VALUE_NAME then
-        field[SpawnerC.TRANSLATION] = phrase
-    elseif field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
-        if field_mapping.list_elements[field_value] then
-            field[SpawnerC.List.ELEMENTS][field_mapping.list_elements[field_value]] = phrase
-        elseif isnumber(tonumber(field_value)) then
-            local number_value = tonumber(field_value)
-            local elements = field[SpawnerC.List.ELEMENTS]
-            if number_value > #elements or number_value < 1 then return end
-            field[SpawnerC.List.ELEMENTS][tonumber(field_value)] = phrase
+local function handle_spawner(id_parts, id, phrase, ent_tables, ent_class)
+    for _, ent_table in pairs(ent_tables) do
+        if not ent_table.Spawner then return end
+        local field_mapping = MEL.SpawnerFieldMappings[ent_class][id_parts[LanguageIDC.Spawner.NAME]]
+        if not field_mapping then return end
+        local field_index = field_mapping.index
+        local field = ent_table.Spawner[field_index]
+        local field_value = id_parts[LanguageIDC.Spawner.VALUE]
+        if field_value == LanguageIDC.Spawner.VALUE_NAME then
+            field[SpawnerC.TRANSLATION] = phrase
+        elseif field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
+            if field_mapping.list_elements[field_value] then
+                field[SpawnerC.List.ELEMENTS][field_mapping.list_elements[field_value]] = phrase
+            elseif isnumber(tonumber(field_value)) then
+                local number_value = tonumber(field_value)
+                local elements = field[SpawnerC.List.ELEMENTS]
+                if number_value > #elements or number_value < 1 then return end
+                field[SpawnerC.List.ELEMENTS][tonumber(field_value)] = phrase
+            end
         end
     end
 end
@@ -87,10 +95,12 @@ function MEL.ReplaceLoadLanguage()
             if string.StartsWith(id, LanguageIDC.Entity.PREFIX) then
                 if id_parts[LanguageIDC.Entity.CLASS] == "Category" then continue end
                 local ent_class = id_parts[LanguageIDC.Entity.CLASS]
-                local ent_table = MEL.EntTables[ent_class]
-                if not ent_table then continue end
+                local ent_tables = {MEL.EntTables[ent_class]}
+                if not ent_tables[1] then continue end
+                -- add all already spawned wagons
+                table.Add(ent_tables, ents.FindByClass(ent_class))
                 local handler = ENTITY_HANDLERS[id_parts[LanguageIDC.Entity.TYPE]]
-                if handler then handler(id_parts, id, phrase, ent_table, ent_class, ent_list) end
+                if handler then handler(id_parts, id, phrase, ent_tables, ent_class, ent_list) end
             elseif string.StartsWith(id, LanguageIDC.Weapons.PREFIX) then
                 local swep_class = id_parts[LanguageIDC.Weapons.CLASS]
                 local swep_table = weapons.GetStored(swep_class)
