@@ -34,7 +34,7 @@ function MEL.ModifyButtonMap(ent, buttonmap_name, buttonmap_callback, button_cal
         for i, button in pairs(buttonmap.buttons) do
             if not ent.ButtonMapCopy[buttonmap_name].buttons[i].model then continue end
             button.model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i].model)
-            if button_callback then button_callback(button) end
+            if button_callback then button_callback(button, table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i])) end
         end
 
         Metrostroi.GenerateClientProps(ent)
