@@ -220,11 +220,11 @@ end
 
 function MEL.CachedDecorator(ent_or_entclass, decorator_name, getter, precision)
     local ent_class = MEL.GetEntclass(ent_or_entclass)
-    if not MEL.DecoratorCache[ent_class] then MEL.DecoratorCache[ent_class] = {} end
-    if not MEL.DecoratorCache[ent_class][decorator_name] then MEL.DecoratorCache[ent_class][decorator_name] = {} end
     if not precision then precision = 2 end
     return function(value)
         local rounded_value = math.Round(value, precision)
+        if not MEL.DecoratorCache[ent_class] then MEL.DecoratorCache[ent_class] = {} end
+        if not MEL.DecoratorCache[ent_class][decorator_name] then MEL.DecoratorCache[ent_class][decorator_name] = {} end
         local cache = MEL.DecoratorCache[ent_class][decorator_name]
         if not cache[rounded_value] then cache[rounded_value] = getter(rounded_value) end
         return cache[rounded_value]
