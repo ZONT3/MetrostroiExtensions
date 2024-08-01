@@ -13,6 +13,293 @@ MEL.DefineRecipe("714_new", "gmod_subway_81-714_mvm")
 RECIPE.BackportPriority = 10
 local Cpos = {0, 0.2, 0.4, 0.5, 0.6, 0.8, 1}
 function RECIPE:Inject(ent)
+    local function GetDoorPosition(i, k)
+        return Vector(359.0 - 35 / 2 - 229.5 * i, -65 * (1 - 2 * k), 7.5)
+    end
+
+    ent.MirrorCams = {Vector(-441, 75, 15), Angle(1, 0, 0), 75, Vector(-441, -75, 15), Angle(1, 0, 0), 75,}
+    -- Setup door positions
+    ent.LeftDoorPositions = {}
+    ent.RightDoorPositions = {}
+    for i = 1, 4 do
+        table.insert(ent.LeftDoorPositions, GetDoorPosition(i - 1, 1))
+        table.insert(ent.RightDoorPositions, GetDoorPosition(i - 1, 0))
+    end
+
+    function ent.InitializeSounds(wagon)
+        wagon.BaseClass.InitializeSounds(wagon)
+        wagon.SoundNames["rolling_5"] = {loop=true,"subway_trains/common/junk/junk_background3.wav"}
+        wagon.SoundNames["rolling_10"] = {loop=true,"subway_trains/717/rolling/10_rolling.wav"}
+        wagon.SoundNames["rolling_40"] = {loop=true,"subway_trains/717/rolling/40_rolling.wav"}
+        wagon.SoundNames["rolling_70"] = {loop=true,"subway_trains/717/rolling/70_rolling.wav"}
+        wagon.SoundNames["rolling_80"] = {loop=true,"subway_trains/717/rolling/80_rolling.wav"}
+        wagon.SoundPositions["rolling_5"] = {480,1e12,Vector(0,0,0),0.15}
+        wagon.SoundPositions["rolling_10"] = {480,1e12,Vector(0,0,0),0.20}
+        wagon.SoundPositions["rolling_40"] = {480,1e12,Vector(0,0,0),0.55}
+        wagon.SoundPositions["rolling_70"] = {480,1e12,Vector(0,0,0),0.60}
+        wagon.SoundPositions["rolling_80"] = {480,1e12,Vector(0,0,0),0.75}
+
+        wagon.SoundNames["rolling_motors"] = {loop=true,"subway_trains/common/junk/wind_background1.wav"}
+        wagon.SoundNames["rolling_motors2"] = {loop=true,"subway_trains/common/junk/wind_background1.wav"}
+        wagon.SoundPositions["rolling_motors"] = {250,1e12,Vector(200,0,0),0.33}
+        wagon.SoundPositions["rolling_motors2"] = {250,1e12,Vector(-250,0,0),0.33}
+
+        wagon.SoundNames["rolling_low"] = {loop=true,"subway_trains/717/rolling/rolling_outside_low.wav"}
+        wagon.SoundNames["rolling_medium1"] = {loop=true,"subway_trains/717/rolling/rolling_outside_medium1.wav"}
+        wagon.SoundNames["rolling_medium2"] = {loop=true,"subway_trains/717/rolling/rolling_outside_medium2.wav"}
+        wagon.SoundNames["rolling_high2"] = {loop=true,"subway_trains/717/rolling/rolling_outside_high2.wav"}
+        wagon.SoundPositions["rolling_low"] = {480,1e12,Vector(0,0,0),0.6}
+        wagon.SoundPositions["rolling_medium1"] = {480,1e12,Vector(0,0,0),0.90}
+        wagon.SoundPositions["rolling_medium2"] = {480,1e12,Vector(0,0,0),0.90}
+        wagon.SoundPositions["rolling_high2"] = {480,1e12,Vector(0,0,0),1.00}
+
+        wagon.SoundNames["pneumo_disconnect2"] = "subway_trains/common/pneumatic/pneumo_close.mp3"
+        wagon.SoundNames["pneumo_disconnect1"] = {
+            "subway_trains/common/pneumatic/pneumo_open.mp3",
+            "subway_trains/common/pneumatic/pneumo_open2.mp3",
+        }
+        wagon.SoundPositions["pneumo_disconnect2"] = {60,1e9,Vector(431.8,-24.1+1.5,-33.7),1}
+        wagon.SoundPositions["pneumo_disconnect1"] = {60,1e9,Vector(431.8,-24.1+1.5,-33.7),1}
+
+        --wagon.SoundNames["avu_off"] = "subway_trains/717/relays/lsd_2.mp3"
+        --wagon.SoundNames["avu_on"] = "subway_trains/717/relays/relay_on.mp3"
+        --wagon.SoundPositions["avu_off"] = {60,1e9, Vector(436.0,-63,-25),1}
+        --wagon.SoundNames["r1_5_close"] = {"subway_trains/drive_on3.wav","subway_trains/drive_on4.wav"}
+        wagon.SoundNames["bpsn1"] = {"subway_trains/717/bpsn/bpsn_ohigh.wav", loop=true}
+        wagon.SoundNames["bpsn2"] = {"subway_trains/717/bpsn/old.wav", loop=true}
+        wagon.SoundNames["bpsn3"] = {"subway_trains/717/bpsn/bpsn_olow.wav", loop=true}
+        wagon.SoundNames["bpsn4"] = {"subway_trains/717/bpsn/bpsn_spb.wav", loop=true}
+        wagon.SoundNames["bpsn5"] = {"subway_trains/717/bpsn/bpsn_tkl.wav", loop=true}
+        wagon.SoundNames["bpsn6"] = {"subway_trains/717/bpsn/bpsn_nnov.wav", loop=true}
+        wagon.SoundNames["bpsn7"] = {"subway_trains/717/bpsn/bpsn_kiyv.wav", loop=true}
+        wagon.SoundNames["bpsn8"] = {"subway_trains/717/bpsn/bpsn_old.wav", loop=true}
+        wagon.SoundNames["bpsn9"] = {"subway_trains/717/bpsn/bpsn_1.wav", loop=true}
+        wagon.SoundNames["bpsn10"] = {"subway_trains/717/bpsn/bpsn_2.wav", loop=true}
+        wagon.SoundNames["bpsn11"] = {"subway_trains/717/bpsn/bpsn_piter.wav", loop=true}
+        wagon.SoundNames["bpsn12"] = {"subway_trains/717/bpsn/bpsn1.wav", loop=true}
+        wagon.SoundPositions["bpsn1"] = {600,1e9,Vector(0,45,-448),0.02}
+        wagon.SoundPositions["bpsn2"] = {600,1e9,Vector(0,45,-448),0.03}
+        wagon.SoundPositions["bpsn3"] = {600,1e9,Vector(0,45,-448),0.02}
+        wagon.SoundPositions["bpsn4"] = {600,1e9,Vector(0,45,-448),0.025}
+        wagon.SoundPositions["bpsn5"] = {600,1e9,Vector(0,45,-448),0.08}
+        wagon.SoundPositions["bpsn6"] = {600,1e9,Vector(0,45,-448),0.03}
+        wagon.SoundPositions["bpsn7"] = {600,1e9,Vector(0,45,-448),0.02}
+        wagon.SoundPositions["bpsn8"] = {600,1e9,Vector(0,45,-448),0.03}
+        wagon.SoundPositions["bpsn9"] = {600,1e9,Vector(0,45,-448),0.02}
+        wagon.SoundPositions["bpsn10"] = {600,1e9,Vector(0,45,-448),0.02}
+        wagon.SoundPositions["bpsn11"] = {600,1e9,Vector(0,45,-448),0.04}
+        wagon.SoundPositions["bpsn12"] = {600,1e9,Vector(0,45,-448),0.04}
+
+        --Подвагонка
+        wagon.SoundNames["lk2_on"] = "subway_trains/717/pneumo/lk2_on.mp3"
+        wagon.SoundNames["lk5_on"] = "subway_trains/717/pneumo/lk1_on.mp3"
+        wagon.SoundNames["lk2_off"] = "subway_trains/717/pneumo/lk2_off.mp3"
+        wagon.SoundNames["lk2c"] = "subway_trains/717/pneumo/ksh1.mp3"
+        wagon.SoundNames["lk3_on"] = "subway_trains/717/pneumo/lk3_on.mp3"
+        wagon.SoundNames["lk3_off"] = "subway_trains/717/pneumo/lk3_off.mp3"
+        --wagon.SoundNames["ksh1_off"] = "subway_trains/717/pneumo/ksh1.mp3"
+        wagon.SoundPositions["lk2_on"] = {440,1e9,Vector(-60,-40,-66),0.22}
+        wagon.SoundPositions["lk5_on"] = {440,1e9,Vector(-60,-40,-66),0.30}
+        wagon.SoundPositions["lk2_off"] = wagon.SoundPositions["lk2_on"]
+        wagon.SoundPositions["lk2c"] = {440,1e9,Vector(-60,-40,-66),0.6}
+        wagon.SoundPositions["lk3_on"] = wagon.SoundPositions["lk2_on"]
+        wagon.SoundPositions["lk3_off"] = wagon.SoundPositions["lk2_on"]
+        --wagon.SoundPositions["ksh1_off"] = wagon.SoundPositions["lk1_on"]
+
+        wagon.SoundNames["compressor"] = {loop=2.0,"subway_trains/d/pneumatic/compressor/compessor_d_start.wav","subway_trains/d/pneumatic/compressor/compessor_d_loop.wav", "subway_trains/d/pneumatic/compressor/compessor_d_end.wav"}
+        wagon.SoundNames["compressor2"] = {loop=1.79,"subway_trains/717/compressor/compressor_717_start2.wav","subway_trains/717/compressor/compressor_717_loop2.wav", "subway_trains/717/compressor/compressor_717_stop2.wav"}
+        wagon.SoundPositions["compressor"] = {600,1e9,Vector(-118,-40,-66),0.15}
+        wagon.SoundPositions["compressor2"] = {480,1e9,Vector(-118,-40,-66),0.55}
+        wagon.SoundNames["rk"] = {loop=0.8,"subway_trains/717/rk/rk_start.wav","subway_trains/717/rk/rk_spin.wav","subway_trains/717/rk/rk_stop.mp3"}
+        wagon.SoundPositions["rk"] = {70,1e3,Vector(110,-40,-75),0.5}
+
+        for i=1,8 do
+            wagon.SoundNames["vent"..i] = {loop=true,"subway_trains/717/vent/vent_cab_"..(i>=7 and "low" or "high")..".wav"}
+        end
+        wagon.SoundPositions["vent1"] = {160,1e9,Vector(225,  -50, -37.5),0.23}
+        wagon.SoundPositions["vent2"] = {160,1e9,Vector(-5,    50, -37.5),0.23}
+        wagon.SoundPositions["vent3"] = {160,1e9,Vector(-230, -50, -37.5),0.23}
+        wagon.SoundPositions["vent8"] = {120,1e9,Vector(416,   50, -37.5),0.23}
+        wagon.SoundPositions["vent4"] = {160,1e9,Vector(225,   50, -37.5),0.23}
+        wagon.SoundPositions["vent5"] = {160,1e9,Vector(-5,   -50, -37.5),0.23}
+        wagon.SoundPositions["vent6"] = {160,1e9,Vector(-230,  50, -37.5),0.23}
+        wagon.SoundPositions["vent7"] = {120,1e9,Vector(-432, -50, -37.5),0.23}
+
+        wagon.SoundNames["vu22_on"] = {"subway_trains/ezh3/vu/vu22_on1.mp3", "subway_trains/ezh3/vu/vu22_on2.mp3", "subway_trains/ezh3/vu/vu22_on3.mp3"}
+        wagon.SoundNames["vu22_off"] = {"subway_trains/ezh3/vu/vu22_off1.mp3", "subway_trains/ezh3/vu/vu22_off2.mp3", "subway_trains/ezh3/vu/vu22_off3.mp3"}
+        wagon.SoundNames["switch_off"] = {
+            "subway_trains/717/switches/tumbler_slim_off1.mp3",
+            "subway_trains/717/switches/tumbler_slim_off2.mp3",
+            "subway_trains/717/switches/tumbler_slim_off3.mp3",
+            "subway_trains/717/switches/tumbler_slim_off4.mp3",
+        }
+        wagon.SoundNames["switch_on"] = {
+            "subway_trains/717/switches/tumbler_slim_on1.mp3",
+            "subway_trains/717/switches/tumbler_slim_on2.mp3",
+            "subway_trains/717/switches/tumbler_slim_on3.mp3",
+            "subway_trains/717/switches/tumbler_slim_on4.mp3",
+        }
+        wagon.SoundNames["button1_off"] = {
+            "subway_trains/717/switches/button1_off1.mp3",
+            "subway_trains/717/switches/button1_off2.mp3",
+            "subway_trains/717/switches/button1_off3.mp3",
+        }
+        wagon.SoundNames["button1_on"] = {
+            "subway_trains/717/switches/button1_on1.mp3",
+            "subway_trains/717/switches/button1_on2.mp3",
+            "subway_trains/717/switches/button1_on3.mp3",
+        }
+        wagon.SoundNames["button2_off"] = {
+            "subway_trains/717/switches/button2_off1.mp3",
+            "subway_trains/717/switches/button2_off2.mp3",
+        }
+        wagon.SoundNames["button2_on"] = {
+            "subway_trains/717/switches/button2_on1.mp3",
+            "subway_trains/717/switches/button2_on2.mp3",
+        }
+        wagon.SoundNames["button3_off"] = {
+            "subway_trains/717/switches/button3_off1.mp3",
+            "subway_trains/717/switches/button3_off2.mp3",
+        }
+        wagon.SoundNames["button3_on"] = {
+            "subway_trains/717/switches/button3_on1.mp3",
+            "subway_trains/717/switches/button3_on2.mp3",
+        }
+
+        wagon.SoundPositions["uava_reset"] = {80,1e9,Vector(429.6,-60.8,-15.9),0.95}
+        wagon.SoundNames["gv_f"] = {"subway_trains/717/kv70/reverser_0-b_1.mp3","subway_trains/717/kv70/reverser_0-b_2.mp3"}
+        wagon.SoundNames["gv_b"] = {"subway_trains/717/kv70/reverser_b-0_1.mp3","subway_trains/717/kv70/reverser_b-0_2.mp3"}
+
+        wagon.SoundNames["pneumo_TL_open"] = {
+            "subway_trains/ezh3/pneumatic/brake_line_on.mp3",
+            "subway_trains/ezh3/pneumatic/brake_line_on2.mp3",
+        }
+        wagon.SoundNames["pneumo_TL_disconnect"] = {
+            "subway_trains/common/334/334_close.mp3",
+        }
+        wagon.SoundPositions["pneumo_TL_open"] = {60,1e9,Vector(431.8,-24.1+1.5,-33.7),0.7}
+        wagon.SoundPositions["pneumo_TL_disconnect"] = {60,1e9,Vector(431.8,-24.1+1.5,-33.7),0.7}
+        wagon.SoundNames["pneumo_BL_disconnect"] = {
+            "subway_trains/common/334/334_close.mp3",
+        }
+        wagon.SoundNames["disconnect_valve"] = "subway_trains/common/switches/pneumo_disconnect_switch.mp3"
+
+        wagon.SoundNames["brake_f"] = {"subway_trains/common/pneumatic/vz_brake_on2.mp3","subway_trains/common/pneumatic/vz_brake_on3.mp3","subway_trains/common/pneumatic/vz_brake_on4.mp3"}
+        wagon.SoundPositions["brake_f"] = {50,1e9,Vector(317-8,0,-82),0.13}
+        wagon.SoundNames["brake_b"] = wagon.SoundNames["brake_f"]
+        wagon.SoundPositions["brake_b"] = {50,1e9,Vector(-317+0,0,-82),0.13}
+        wagon.SoundNames["release1"] = {loop=true,"subway_trains/common/pneumatic/release_0.wav"}
+        wagon.SoundPositions["release1"] = {350,1e9,Vector(-183,0,-70),1}
+        wagon.SoundNames["release2"] = {loop=true,"subway_trains/common/pneumatic/release_low.wav"}
+        wagon.SoundPositions["release2"] = {350,1e9,Vector(-183,0,-70),0.4}
+
+        wagon.SoundNames["parking_brake"] = {loop=true,"subway_trains/common/pneumatic/parking_brake.wav"}
+        wagon.SoundNames["parking_brake_en"] = "subway_trains/common/pneumatic/parking_brake_stop.mp3"
+        wagon.SoundNames["parking_brake_rel"] = "subway_trains/common/pneumatic/parking_brake_stop2.mp3"
+        wagon.SoundPositions["parking_brake"] = {80,1e9,Vector(-454, -55,-63),0.6}
+        wagon.SoundPositions["parking_brake_en"] = wagon.SoundPositions["parking_brake"]
+        wagon.SoundPositions["parking_brake_rel"] = wagon.SoundPositions["parking_brake"]
+        wagon.SoundNames["front_isolation"] = {loop=true,"subway_trains/common/pneumatic/isolation_leak.wav"}
+        wagon.SoundPositions["front_isolation"] = {300,1e9,Vector(443, 0,-63),1}
+        wagon.SoundNames["rear_isolation"] = {loop=true,"subway_trains/common/pneumatic/isolation_leak.wav"}
+        wagon.SoundPositions["rear_isolation"] = {300,1e9,Vector(-456, 0,-63),1}
+
+        wagon.SoundNames["crane013_brake"] = {loop=true,"subway_trains/common/pneumatic/release_2.wav"}
+        wagon.SoundPositions["crane013_brake"] = {80,1e9,Vector(-466,51,-12),0.86}
+        wagon.SoundNames["crane013_brake2"] = {loop=true,"subway_trains/common/pneumatic/013_brake2.wav"}
+        wagon.SoundPositions["crane013_brake2"] = {80,1e9,Vector(-466,51,-12),0.86}
+        wagon.SoundNames["crane013_brake_l"] = {loop=true,"subway_trains/common/pneumatic/013_brake_loud2.wav"}
+        wagon.SoundPositions["crane013_brake_l"] = {80,1e9,Vector(-466,51,-12),0.7}
+        wagon.SoundNames["crane013_release"] = {loop=true,"subway_trains/common/pneumatic/013_release.wav"}
+        wagon.SoundPositions["crane013_release"] = {80,1e9,Vector(-466,51,-12),0.4}
+        wagon.SoundNames["crane334_brake_high"] = {loop=true,"subway_trains/common/pneumatic/334_brake.wav"}
+        wagon.SoundPositions["crane334_brake_high"] = {80,1e9,Vector(-466,51,-12),0.85}
+        wagon.SoundNames["crane334_brake_low"] = {loop=true,"subway_trains/common/pneumatic/334_brake_slow.wav"}
+        wagon.SoundPositions["crane334_brake_low"] = {80,1e9,Vector(-466,51,-12),0.75}
+        wagon.SoundNames["crane334_brake_2"] = {loop=true,"subway_trains/common/pneumatic/334_brake_slow.wav"}
+        wagon.SoundPositions["crane334_brake_2"] = {80,1e9,Vector(-466,51,-12),0.85}
+        wagon.SoundNames["crane334_brake_eq_high"] = {loop=true,"subway_trains/common/pneumatic/334_release_reservuar.wav"}
+        wagon.SoundPositions["crane334_brake_eq_high"] = {80,1e9,Vector(-466,51,-70),0.2}
+        wagon.SoundNames["crane334_brake_eq_low"] = {loop=true,"subway_trains/common/pneumatic/334_brake_slow2.wav"}
+        wagon.SoundPositions["crane334_brake_eq_low"] = {80,1e9,Vector(-466,51,-70),0.2}
+        wagon.SoundNames["crane334_release"] = {loop=true,"subway_trains/common/pneumatic/334_release3.wav"}
+        wagon.SoundPositions["crane334_release"] = {80,1e9,Vector(-466,51,-12),0.2}
+        wagon.SoundNames["crane334_release_2"] = {loop=true,"subway_trains/common/pneumatic/334_release2.wav"}
+        wagon.SoundPositions["crane334_release_2"] = {80,1e9,Vector(-466,51,-12),0.2}
+
+        wagon.SoundNames["valve_brake"] = {loop=true,"subway_trains/common/pneumatic/epv_loop.wav"}
+        wagon.SoundPositions["valve_brake"] = {80,1e9,Vector(-430,-662,-22),1}
+
+        wagon.SoundNames["pak_on"] = "subway_trains/717/switches/rc_on.mp3"
+        wagon.SoundNames["pak_off"] = "subway_trains/717/switches/rc_off.mp3"
+
+        wagon.SoundNames["cab_door_open"] = "subway_trains/common/door/cab/door_open.mp3"
+        wagon.SoundNames["cab_door_close"] = "subway_trains/common/door/cab/door_close.mp3"
+
+        wagon.SoundNames["horn"] = {loop=0.6,"subway_trains/common/pneumatic/horn/horn3_start.wav","subway_trains/common/pneumatic/horn/horn3_loop.wav", "subway_trains/common/pneumatic/horn/horn3_end.wav"}
+        wagon.SoundPositions["horn"] = {1100,1e9,Vector(-470,0,-55),1}
+
+        --DOORS
+        wagon.SoundNames["vdol_on"] = {
+            "subway_trains/common/pneumatic/door_valve/VDO_on.mp3",
+            "subway_trains/common/pneumatic/door_valve/VDO2_on.mp3",
+        }
+        wagon.SoundNames["vdol_off"] = {
+            "subway_trains/common/pneumatic/door_valve/VDO_off.mp3",
+            "subway_trains/common/pneumatic/door_valve/VDO2_off.mp3",
+        }
+        wagon.SoundPositions["vdol_on"] = {300,1e9,Vector(-420,45,-30),1}
+        wagon.SoundPositions["vdol_off"] = {300,1e9,Vector(-420,45,-30),0.4}
+        wagon.SoundNames["vdor_on"] = wagon.SoundNames["vdol_on"]
+        wagon.SoundNames["vdor_off"] = wagon.SoundNames["vdol_off"]
+        wagon.SoundPositions["vdor_on"] = wagon.SoundPositions["vdol_on"]
+        wagon.SoundPositions["vdor_off"] = wagon.SoundPositions["vdol_off"]
+        for i=1,5 do
+            wagon.SoundNames["vdol_loud"..i] = "subway_trains/common/pneumatic/door_valve/vdo"..(2+i).."_on.mp3"
+            wagon.SoundNames["vdop_loud"..i] = wagon.SoundNames["vdol_loud"..i]
+            wagon.SoundNames["vzd_loud"..i] = wagon.SoundNames["vdol_loud"..i]
+            wagon.SoundPositions["vdol_loud"..i] = {100,1e9,Vector(-420,45,-30),1}
+            wagon.SoundPositions["vdop_loud"..i] = wagon.SoundPositions["vdol_loud"..i]
+            wagon.SoundPositions["vzd_loud"..i] = wagon.SoundPositions["vdol_loud"..i]
+        end
+        wagon.SoundNames["vdz_on"] = {
+            "subway_trains/common/pneumatic/door_valve/VDZ_on.mp3",
+            "subway_trains/common/pneumatic/door_valve/VDZ2_on.mp3",
+            "subway_trains/common/pneumatic/door_valve/VDZ3_on.mp3",
+        }
+        wagon.SoundNames["vdz_off"] = {
+            "subway_trains/common/pneumatic/door_valve/VDZ_off.mp3",
+            "subway_trains/common/pneumatic/door_valve/VDZ2_off.mp3",
+            "subway_trains/common/pneumatic/door_valve/VDZ3_off.mp3",
+        }
+        wagon.SoundPositions["vdz_on"] = {60,1e9,Vector(-420,45,-30),1}
+        wagon.SoundPositions["vdz_off"] = {60,1e9,Vector(-420,45,-30),0.4}
+
+        wagon.SoundNames["RKR"] = "subway_trains/common/pneumatic/RKR2.mp3"
+        wagon.SoundPositions["RKR"] = {330,1e9,Vector(-27,-40,-66),0.22}
+
+        wagon.SoundNames["PN2end"] = {"subway_trains/common/pneumatic/vz2_end.mp3","subway_trains/common/pneumatic/vz2_end_2.mp3","subway_trains/common/pneumatic/vz2_end_3.mp3","subway_trains/common/pneumatic/vz2_end_4.mp3"}
+        wagon.SoundPositions["PN2end"] = {350,1e9,Vector(-183,0,-70),0.3}
+        for i=0,3 do
+            for k=0,1 do
+                wagon.SoundNames["door"..i.."x"..k.."r"] = {"subway_trains/common/door/door_roll.wav",loop=true}
+                wagon.SoundPositions["door"..i.."x"..k.."r"] = {150,1e9,GetDoorPosition(i,k),0.11}
+                wagon.SoundNames["door"..i.."x"..k.."o"] = {"subway_trains/common/door/door_open_end5.mp3","subway_trains/common/door/door_open_end6.mp3","subway_trains/common/door/door_open_end7.mp3"}
+                wagon.SoundPositions["door"..i.."x"..k.."o"] = {350,1e9,GetDoorPosition(i,k),2}
+                wagon.SoundNames["door"..i.."x"..k.."c"] = {"subway_trains/common/door/door_close_end.mp3","subway_trains/common/door/door_close_end2.mp3","subway_trains/common/door/door_close_end3.mp3","subway_trains/common/door/door_close_end4.mp3","subway_trains/common/door/door_close_end5.mp3"}
+                wagon.SoundPositions["door"..i.."x"..k.."c"] = {400,1e9,GetDoorPosition(i,k),2}
+            end
+        end
+
+        for k,v in ipairs(wagon.AnnouncerPositions) do
+            wagon.SoundNames["announcer_buzz"..k] = {loop=true,"subway_announcers/asnp/bpsn_ann.wav"}
+            wagon.SoundPositions["announcer_buzz"..k] = {v[2] or 600,1e9,v[1],v[3]/6}
+            wagon.SoundNames["announcer_buzz_o"..k] = {loop=true,"subway_announcers/upo/noiseT2.wav"}
+            --wagon.SoundNames["announcer_buzz_o"..k] = {loop=true,"subway_announcers/riu/bpsn_ann.wav"}
+            wagon.SoundPositions["announcer_buzz_o"..k] = {v[2] or 600,1e9,v[1],v[3]/6}
+        end
+    end
+
     function ent.InitializeSystems(wagon)
         -- Электросистема 81-710
         wagon:LoadSystem("Electric", "81_714_Electric_EXT")

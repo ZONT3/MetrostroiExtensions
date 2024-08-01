@@ -259,7 +259,7 @@ function MEL._OverrideSetLightPower(ent)
                 end
                 return
             elseif lightData[1] == "glow" or lightData[1] == "light" then
-                local brightness = brightness * (lightData.brightness or 0.5)
+                brightness = brightness * (lightData.brightness or 0.5)
                 if brightness ~= wagon.LightBrightness[index] then
                     local light = wagon.GlowingLights[index]
                     light:SetBrightness(brightness)
@@ -286,7 +286,7 @@ function MEL._OverrideSetLightPower(ent)
             light:SetPos(wagon:LocalToWorld(lightData[2]))
             --light:SetLocalAngles(lightData[3])
             -- Set parameters
-            local brightness = brightness * (lightData.brightness or 0.5)
+            brightness = brightness * (lightData.brightness or 0.5)
             light:SetColor(lightData[4])
             light:SetBrightness(brightness)
             light:SetTexture((lightData.texture or "sprites/light_glow02") .. ".vmt", lightData[1] == "light")
