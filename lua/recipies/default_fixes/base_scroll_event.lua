@@ -1,6 +1,5 @@
 MEL.DefineRecipe("base_scroll_event", "gmod_subway_base")
 local C_DrawDebug = GetConVar("metrostroi_drawdebug")
-
 -- господин <вставить текст> (думаю что это будет перз). да, говнокод. да, сделано на коленке. почему так?
 --[[
 я работаю над этим проектом уже полгода. метрострой экстеншс изначально должен был быть выпуском уже готового контента команды
@@ -27,7 +26,6 @@ local C_DrawDebug = GetConVar("metrostroi_drawdebug")
 
 так что не говнись и не высирайся - задай себе вопрос "а что сделал я для коммьюнити"? выпустил один хиленький аддон с панелькой (илья, не в обиду)? или вообще ничего не сделал?
 ]]
-
 function RECIPE:Init()
     if SERVER then util.AddNetworkString("metrostroi-cabin-button-scroll") end
 end
@@ -224,6 +222,49 @@ function RECIPE:Inject(ent, entclass)
         end
 
         hook.Add("InputMouseApply", "metrostroi-cabin-buttons_extscroll", function(cmd, x, y, ang) if cmd:GetMouseWheel() ~= 0 then handleScrollEvent(LocalPlayer(), cmd) end end)
+        hook.Remove("HUDPaint", "metrostroi-draw-crosshair-tooltip")
+        -- по какой-то неведомой причине без этого не работает гитхаб версия МС. впизду
+        hook.Add("HUDPaint", "metrostroi-draw-crosshair-tooltip", function()
+            if IsValid(LocalPlayer()) then
+                local scrX, scrY = ScrW(), ScrH()
+                if canDrawCrosshair then surface.DrawCircle(scrX / 2, scrY / 2, 4.1, drawCrosshair and Color(255, 0, 0) or Color(255, 255, 150)) end
+                if toolTipText ~= nil then
+                    surface.SetFont("MetrostroiLabels")
+                    local w, h = surface.GetTextSize("SomeText")
+                    local height = h * 1.1
+                    local texts = string.Explode("\n", toolTipText)
+                    surface.SetDrawColor(0, 0, 0, 125)
+                    for i, v in ipairs(texts) do
+                        local y = scrY / 2 + height * i
+                        if #v == 0 then continue end
+                        local w2, h2 = surface.GetTextSize(v)
+                        surface.DrawRect(scrX / 2 - w2 / 2 - 5, scrY / 2 - h2 / 2 + height * i, w2 + 10, h2)
+                        --[[if toolTipPosition and i==#texts then
+                            local st,en = v:find(toolTipPosition)
+                            local textSt,textEn = v:sub(1,st-1),v:sub(en+1,-1)
+                            local x1 = 0-w2/2
+                            local x2 = surface.GetTextSize(textSt)-w2/2
+                            local x3 = surface.GetTextSize(textSt)+surface.GetTextSize(toolTipPosition)-w2/2
+                            draw.SimpleText(textSt,"MetrostroiLabels",scrX/2+x1,y, toolTipColor or Color(255,255,255),TEXT_ALIGN_LEFT,TEXT_ALIGN_CENTER)
+                            draw.SimpleText(toolTipPosition,"MetrostroiLabels",scrX/2+x2,y, toolTipColor or Color(0,255,0),TEXT_ALIGN_LEFT,TEXT_ALIGN_CENTER)
+                            draw.SimpleText(textEn,"MetrostroiLabels",scrX/2+x3,y, toolTipColor or Color(255,255,255),TEXT_ALIGN_LEFT,TEXT_ALIGN_CENTER)
+                            Metrostroi.DrawLine(scrX/2+x2,y+h/2-3,scrX/2+x3,y+h/2-3,toolTipColor or Color(0,255,0),1)
+                        else]]
+                        draw.SimpleText(v, "MetrostroiLabels", scrX / 2, y, toolTipColor or Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                        --end
+                    end
+                    --[[
+                    local w1 = surface.GetTextSize(text1)
+                    local w2 = surface.GetTextSize(text2)
+
+                    surface.SetTextColor(toolTipColor or Color(255,255,255))
+                    surface.SetTextPos((scrX-w1)/2,scrY/2+10)
+                    surface.DrawText(text1)
+                    surface.SetTextPos((scrX-w2)/2,scrY/2+30)
+                    surface.DrawText(text2)]]
+                end
+            end
+        end)
     end
 
     if SERVER then

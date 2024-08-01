@@ -457,12 +457,14 @@ end
 local function inject(isBackports)
     MEL._LoadHelpers()
     MEL._OverrideAnimate(MEL.EntTables["gmod_subway_base"])
+    MEL._OverrideSetLightPower(MEL.EntTables["gmod_subway_base"])
     MEL._OverrideHidePanel(MEL.EntTables["gmod_subway_base"])
     MEL._OverrideShowHide(MEL.EntTables["gmod_subway_base"])
     -- we do it on spawned trains too because if we will enter on server and spawn right with some wagon on PVS - this wagon would get old animate, hidepanel and showhide methods
     for _, entclass in pairs(MEL.TrainClasses) do
         for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
             MEL._OverrideAnimate(ent)
+            MEL._OverrideSetLightPower(ent)
             MEL._OverrideHidePanel(ent)
             MEL._OverrideShowHide(ent)
         end
