@@ -232,9 +232,10 @@ function MEL.CachedDecorator(ent_or_entclass, decorator_name, getter, precision)
 end
 
 function MEL._OverrideSetLightPower(ent)
+    if SERVER then return end
     function ent.SetLightPower(wagon, index, power, brightness)
-        if wagon.HiddenLamps[index] then return end
-        local lightData = wagon.LightsOverride[index] or wagon.Lights[index]
+        if wagon.HiddenLamps and wagon.HiddenLamps[index] then return end
+        local lightData = wagon.LightsOverride and wagon.LightsOverride[index] or wagon.Lights[index]
         if not lightData then return end
         brightness = brightness or 1
         if lightData[1] == "glow" or lightData[1] == "light" then
@@ -248,7 +249,7 @@ function MEL._OverrideSetLightPower(ent)
             return
         end
 
-        if power and IsValid(wagon.GlowingLights[index]) then
+        if power and wagon.GlowingLights and IsValid(wagon.GlowingLights[index]) then
             if lightData[1] == "headlight" and IsValid(wagon.GlowingLights[index]) then
                 -- Check if light already glowing
                 if brightness ~= wagon.LightBrightness[index] then
@@ -276,7 +277,7 @@ function MEL._OverrideSetLightPower(ent)
             end
         end
 
-        if IsValid(wagon.GlowingLights[index]) then wagon.GlowingLights[index]:Remove() end
+        if wagon.GlowingLights and IsValid(wagon.GlowingLights[index]) then wagon.GlowingLights[index]:Remove() end
         wagon.GlowingLights[index] = nil
         wagon.LightBrightness[index] = brightness
         if not power then return end
