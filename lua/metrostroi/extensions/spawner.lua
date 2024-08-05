@@ -36,7 +36,7 @@ function MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name, field_nam
     table.insert(MEL.ClientPropsToReload[ent_class][field_name], clientprop_name)
 end
 
-function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, overwrite)
+function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, overwrite, pos)
     if not ent_or_entclass then
         MEL._LogError("please provide ent_or_entclass in AddSpawnerField")
         return
@@ -44,10 +44,14 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
     local ent_class = getSpawnerEntclass(ent_or_entclass)
     local spawner = MEL.EntTables[ent_class].Spawner
     if not spawner then return end
+    local x = -1
     if MEL.Debug or overwrite then
         -- check if we have field with same name, remove it if needed
         for i, field in pairs(spawner) do
-            if istable(field) and isnumber(i) and #field ~= 0 and field[SpawnerC.NAME] == field_data[SpawnerC.NAME] then table.remove(spawner, i) end
+            if istable(field) and isnumber(i) and #field ~= 0 and field[SpawnerC.NAME] == field_data[SpawnerC.NAME] then 
+                x = i -- запоминаем место удалённого поля
+                table.remove(spawner, i) 
+            end
         end
     end
 
@@ -72,7 +76,11 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
         MEL.RandomFields[entclass_random][field_data[SpawnerC.NAME]] = random_data
     end
 
-    table.insert(spawner, field_data)
+    if x == -1 then
+        table.insert(spawner, pos, field_data)
+    else
+        table.insert(spawner, x, field_data)
+    end
 end
 
 function MEL.RemoveSpawnerField(ent_or_entclass, field_name)

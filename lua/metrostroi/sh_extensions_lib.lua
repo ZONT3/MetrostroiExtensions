@@ -240,8 +240,7 @@ end
 local function loadRecipe(filename, scope)
     local File = string.GetFileFromFilename(filename)
     -- load recipe
-    if MEL.ScopedRecipies and SERVER and (scope == "sh" or scope == "cl") then
-        print("SEND RECIPE FOR CLIENT " .. filename)
+    if MEL.ScopedRecipies and SERVER and (scope == "sh" or scope == "cl") then -- тысяча проверок чтобы не дайбог вдруг если сойдётся ретроградный меркурий и сатурн в одном созвездии не улетел св файл клиенту
         AddCSLuaFile(filename)
     end
 
