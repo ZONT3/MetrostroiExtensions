@@ -44,13 +44,13 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
     local ent_class = getSpawnerEntclass(ent_or_entclass)
     local spawner = MEL.EntTables[ent_class].Spawner
     if not spawner then return end
-    local x = -1
+    local old_pos = -1
     if MEL.Debug or overwrite then
         -- check if we have field with same name, remove it if needed
-        for i, field in pairs(spawner) do
-            if istable(field) and isnumber(i) and #field ~= 0 and field[SpawnerC.NAME] == field_data[SpawnerC.NAME] then 
-                x = i -- запоминаем место удалённого поля
-                table.remove(spawner, i) 
+        for i, existing_field in pairs(spawner) do
+            if istable(existing_field) and isnumber(i) and #existing_field ~= 0 and existing_field[SpawnerC.NAME] == field_data[SpawnerC.NAME] then
+                old_pos = i
+                table.remove(spawner, old_pos)
             end
         end
     end
@@ -76,10 +76,10 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
         MEL.RandomFields[entclass_random][field_data[SpawnerC.NAME]] = random_data
     end
 
-    if x == -1 then
+    if old_pos == -1 then
         table.insert(spawner, pos, field_data)
     else
-        table.insert(spawner, x, field_data)
+        table.insert(spawner, old_pos, field_data)
     end
 end
 
