@@ -1,3 +1,9 @@
+## 0.5.1 (2024-08-08)
+
+### Fix
+
+- **AddSpawnerField**: add check for nil pos
+
 ## 0.5.0 (2024-08-08)
 
 ### Feat
