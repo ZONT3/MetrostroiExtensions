@@ -1,3 +1,13 @@
+## 0.5.0 (2024-08-08)
+
+### Feat
+
+- call button_callback for buttons even without model
+
+### Refactor
+
+- AddSpawnerField new changes from f54e459
+
 ## 0.4.0 (2024-07-21)
 
 ### Feat
