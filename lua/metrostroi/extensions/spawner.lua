@@ -77,7 +77,7 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
     end
 
     if old_pos == -1 then
-        table.insert(spawner, pos, field_data)
+        table.insert(spawner, pos or field_data, pos and field_data or nil)
     else
         table.insert(spawner, old_pos, field_data)
     end
