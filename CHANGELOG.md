@@ -1,3 +1,9 @@
+## 0.5.2 (2024-08-08)
+
+### Fix
+
+- **AddSpawnerField**: really fix it now
+
 ## 0.5.1 (2024-08-08)
 
 ### Fix
