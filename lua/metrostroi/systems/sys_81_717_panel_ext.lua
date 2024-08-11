@@ -197,6 +197,18 @@ function TRAIN_SYSTEM:Initialize()
         bass = true
     })
 
+    self.Train:LoadSystem("UESPM_Power", "Relay", "Switch", {
+        bass = true
+    })
+    self.Train:LoadSystem("UESPM_Call", "Relay", "Switch", {
+        bass = true
+    })
+    self.Train:LoadSystem("UESPM_Reset", "Relay", "Switch", {
+        bass = true
+    })
+
+
+
     self.Train:LoadSystem("AIS", "Relay", "VA21-29")
     -- Автоматические выключатели (АВ)
     self.Train:LoadSystem("A11", "Relay", "VA21-29")
