@@ -326,8 +326,14 @@ function MEL.getEntTable(ent_class)
 end
 
 local function randomFieldHelper(wagon, entclass)
+    if entclass ~= wagon:GetClass() then return end
     math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
-    local custom = table.HasValue(MEL.TrainFamilies["717_714"], entclass) and (wagon.CustomSettings and true or false) or true
+    local custom = true
+
+    if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then
+        custom = (wagon.CustomSettings and true or false)
+    end
+
     for name, data in pairs(MEL.RandomFields[entclass]) do
         if data.type_ == "List" then
             local elements_length = data.elements_length
@@ -586,6 +592,7 @@ local function inject(isBackports)
 
     -- inject into functions with some helpers first
     for entclass, entTable in pairs(MEL.EntTables) do
+        
         injectRandomFieldHelper(entclass, entTable)
         injectFieldUpdateHelper(entclass)
         injectAnimationReloadHelper(entclass, entTable)
