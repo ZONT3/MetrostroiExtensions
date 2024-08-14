@@ -403,6 +403,78 @@ local function injectFieldUpdateHelper(entclass)
     end)
 end
 
+--[[
+local function injectFunction(key, tbl)
+    if not MEL.FunctionInjectStack[key] then return end
+
+    for functionName, priorities in pairs(MEL.FunctionInjectStack[key]) do
+        local beforeStack = {}
+        local afterStack = {}
+        for priority, functionStack in SortedPairs(priorities) do
+            if priority < 0 then
+                table.insert(beforeStack, functionStack)
+            elseif priority > 0 then
+                table.insert(afterStack, functionStack)
+            end
+        end
+
+        -- check for missing function from some table
+        if not tbl[functionName] then
+            MEL._LogError(Format("can't inject into %s: function %s doesn't exists!", key, functionName))
+            continue
+        end
+
+        if not MEL.FunctionDefaults[key] then MEL.FunctionDefaults[key] = {} end
+        if not MEL.FunctionDefaults[key][functionName] then MEL.FunctionDefaults[key][functionName] = tbl[functionName] end
+
+        local buildedInjectString = ""
+        buildedInjectString = buildedInjectString .. "local af1, af2, af3, af4, af5, bf1, bf2, bf3, bf4, bf5, orig_func = ...\n"
+        buildedInjectString = buildedInjectString .. "return function(...)\n"
+        buildedInjectString = buildedInjectString .. "  af1(...)\n"
+        buildedInjectString = buildedInjectString .. "  af2(...)\n"
+        buildedInjectString = buildedInjectString .. "  af3(...)\n"
+        buildedInjectString = buildedInjectString .. "  af4(...)\n"
+        buildedInjectString = buildedInjectString .. "  af5(...)\n"
+        buildedInjectString = buildedInjectString .. "  local ret = orig_func(...)\n"
+        buildedInjectString = buildedInjectString .. "  bf1(...)\n"
+        buildedInjectString = buildedInjectString .. "  bf2(...)\n"
+        buildedInjectString = buildedInjectString .. "  bf3(...)\n"
+        buildedInjectString = buildedInjectString .. "  bf4(...)\n"
+        buildedInjectString = buildedInjectString .. "  bf5(...)\n"
+        buildedInjectString = buildedInjectString .. "  return ret\n"
+        buildedInjectString = buildedInjectString .. "end\n"
+
+        local inject_pre_func = CompileString(buildedInjectString)
+        local inject_func = inject_pre_func(unpack(beforeStack), unpack(afterStack), MEL.FunctionDefaults[key][functionName])
+
+
+        -- local buildedInject = function(wagon, ...)
+        --     for i = #beforeStack, 1, -1 do
+        --         for _, functionToInject in pairs(beforeStack[i]) do
+        --             injectReturnValue = {functionToInject(wagon, unpack({...} or {}))}
+        --             if injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
+        --         end
+        --     end
+
+        --     local returnValue = MEL.FunctionDefaults[key][functionName](wagon, unpack({...} or {}))
+        --     for i = 1, #afterStack do
+        --         for _, functionToInject in pairs(afterStack[i]) do
+        --             injectReturnValue = {functionToInject(wagon, returnValue, unpack({...} or {}))}
+        --             if injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
+        --         end
+        --     end
+        --     return returnValue
+        -- end
+
+        -- tbl[functionName] = buildedInject
+        -- if string.StartsWith(key, "sys_") then return end
+        -- -- reinject this function on already spawned wagons
+        -- for _, ent in ipairs(ents.FindByClass(key) or {}) do
+        --     ent[functionName] = buildedInject
+        -- end
+    end
+end
+]]
 local function injectFunction(key, tbl)
     if not MEL.FunctionInjectStack[key] then return end
     -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
@@ -429,15 +501,15 @@ local function injectFunction(key, tbl)
         local buildedInject = function(wagon, ...)
             for i = #beforeStack, 1, -1 do
                 for _, functionToInject in pairs(beforeStack[i]) do
-                    injectReturnValue = {functionToInject(wagon, unpack({...} or {}))}
+                    injectReturnValue = {functionToInject(wagon, ...)}
                     if injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
                 end
             end
 
-            local returnValue = MEL.FunctionDefaults[key][functionName](wagon, unpack({...} or {}))
+            local returnValue = MEL.FunctionDefaults[key][functionName](wagon, ...)
             for i = 1, #afterStack do
                 for _, functionToInject in pairs(afterStack[i]) do
-                    injectReturnValue = {functionToInject(wagon, returnValue, unpack({...} or {}))}
+                    injectReturnValue = {functionToInject(wagon, returnValue, ...)}
                     if injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
                 end
             end
