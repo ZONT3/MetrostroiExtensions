@@ -141,7 +141,7 @@ function MEL.GetEntclass(ent_or_entclass)
     end
 
     -- get entclass from ent table or from str entclass
-    if istable(ent_or_entclass) then return ent_or_entclass.ClassName end
+    if istable(ent_or_entclass) then return ent_or_entclass.entclass end
     if isentity(ent_or_entclass) then return ent_or_entclass:GetClass() end
     return ent_or_entclass
 end
@@ -308,6 +308,7 @@ local function getEntTables()
         if prefixes[prefix] then
             table.insert(MEL.MetrostroiClasses, entclass)
             local ent_table = scripted_ents.GetStored(entclass).t
+            ent_table.entclass = entclass -- add entclass for convience
             ent_table.spawner = ent_table.Spawner -- add spawner for convience
             MEL.EntTables[entclass] = ent_table
         end
@@ -319,6 +320,7 @@ end
 function MEL.getEntTable(ent_class)
     if MEL.EntTables[ent_class] then return MEL.EntTables[ent_class] end
     local ent_table = scripted_ents.GetStored(ent_class).t
+    ent_table.entclass = ent_class -- add entclass for convience
     MEL.EntTables[ent_class] = ent_table
     return ent_table
 end
