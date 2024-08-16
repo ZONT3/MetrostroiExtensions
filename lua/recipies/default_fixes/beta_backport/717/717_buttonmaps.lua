@@ -27,6 +27,18 @@ function RECIPE:Inject(ent)
     }
 
     local buttonOverrides = {
+        OtsekDoor1 = {
+            ["OtsekDoor1"] = {
+                states = {"Train.Buttons.Closed","Train.Buttons.Opened"},
+                var = "OtsekDoor1"
+            }
+        },
+        OtsekDoor2 = {
+            ["OtsekDoor2"] = {
+                states = {"Train.Buttons.Closed","Train.Buttons.Opened"},
+                var = "OtsekDoor2"
+            }
+        },
         Block5_6 = {
             ["!L1Light"] = {
                 sprite = {
