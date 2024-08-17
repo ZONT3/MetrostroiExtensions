@@ -9,7 +9,7 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-MEL.DefineRecipe("salon_seats", "717_714_mvm")
+MEL.DefineRecipe("salon_seats", "717_714")
 RECIPE.Description = "This recipe adds ability to customize salon seats."
 local MODELS_ROOT = "models/metrostroi_train/81-717/"
 function RECIPE:Init()

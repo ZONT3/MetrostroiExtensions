@@ -9,7 +9,7 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-MEL.DefineRecipe("salon_lamp_types", "717_714_mvm")
+MEL.DefineRecipe("salon_lamp_types", "717_714")
 RECIPE.Description = "This recipe adds ability to customize salon lamp types."
 local MODELS_ROOT = "models/metrostroi_train/81-717/"
 local MAX_GLOW_COUNT = 48
@@ -141,6 +141,7 @@ function RECIPE:Inject(ent, entclass)
     -- remove default lamps
     MEL.DeleteClientProp(ent, "lamps1")
     MEL.DeleteClientProp(ent, "lamps2")
+    MEL.DeleteClientProp(ent, "lamps")
     for i = 0, 26 do
         MEL.DeleteClientProp(ent, "lamp1_" .. i + 1)
         MEL.DeleteClientProp(ent, "lamp2_" .. i + 1)
