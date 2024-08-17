@@ -12,15 +12,37 @@
 if not MEL.SpawnerFieldMappings then
     MEL.SpawnerFieldMappings = {} -- lookup table for accessing spawner fields by name and list elements by default, non-translated name
 end
-
 -- (key: train_class, value: (key: field_name, value: {index = index_of_field, list_elements = (key: name of list element, value: index)}))
+
 if not MEL.ButtonmapButtonMappings then
     MEL.ButtonmapButtonMappings = {} -- lookup table for accessing button of buttonmap by its id
 end
-
 --  (key: train_class, value: (key: buttonmap name, value: (key: button id, value: its index))
-local SpawnerC = MEL.Constants.Spawner
+
+local ENTCLASS_714_PATTERN = "714"
+local ENTCLASS_717_PATTERN = "717"
+local ENTCLASS_LVZ_PATTERN = "lvz"
 MEL.Helpers = {}
+
+local function stringContains(str, pattern)
+    local i, _, _ = string.find(str, pattern)
+    return i and true or false
+end
+
+-- helpers for checking wagon families
+function MEL.Helpers.Is717(entclass)
+    return stringContains(entclass, ENTCLASS_717_PATTERN)
+end
+function MEL.Helpers.Is714(entclass)
+    return stringContains(entclass, ENTCLASS_714_PATTERN)
+end
+function MEL.Helpers.IsSPB(entclass)
+    -- we probably should call this function as "IsLVZ", but this causes confusion. fuck metrostroi
+    return stringContains(entclass, ENTCLASS_LVZ_PATTERN)
+end
+
+local SpawnerC = MEL.Constants.Spawner
+
 function MEL.Helpers.getListElementIndex(field_table, element_name)
     if field_table[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field_table[SpawnerC.List.ELEMENTS]) then
         for list_i, name in pairs(field_table[SpawnerC.List.ELEMENTS]) do
@@ -53,7 +75,6 @@ function MEL.GetButtonmapButtonMapping(ent_or_entclass, buttonmap_name, button_n
     if not MEL.ButtonmapButtonMappings[ent_class] then MEL.ButtonmapButtonMappings[ent_class] = {} end
     if not MEL.ButtonmapButtonMappings[ent_class][buttonmap_name] then MEL.ButtonmapButtonMappings[ent_class][buttonmap_name] = {} end
     local button_index = MEL.ButtonmapButtonMappings[ent_class][buttonmap_name][button_name]
-    if not button_index and buttonmap_name == "IGLAButtons_C" then print(button_name, "wtf") end
     if not button_index then
         for i, button in pairs(buttonmap.buttons) do
             if button.ID and button.ID == button_name then
