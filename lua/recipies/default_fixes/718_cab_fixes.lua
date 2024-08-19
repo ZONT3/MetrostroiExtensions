@@ -9,7 +9,7 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
-MEL.DefineRecipe("cab_fixes", "gmod_subway_81-718")
+MEL.DefineRecipe("718_cab_fixes", "gmod_subway_81-718")
 function RECIPE:Inject(ent, entclass)
     -- bruh
     MEL.ModifyButtonMap(ent, "ARS", nil, function(button)

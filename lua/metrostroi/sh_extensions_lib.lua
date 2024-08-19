@@ -289,8 +289,10 @@ local function discoverRecipies()
 
         -- todo: think about scope
         local scope = string.sub(string.GetFileFromFilename(recipe_file), 1, 2)
-        if CLIENT and scope == "sv" then return end
-        if not SERVER and scope == "sv" then return end
+        if (CLIENT or not SERVER) and scope == "sv" then continue end
+
+        if scope ~= "sv" and scope ~= "sh" and scope ~= "cl" then scope = "sh" end
+
         loadRecipe(recipe_file, scope)
     end
 end
