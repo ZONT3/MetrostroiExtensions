@@ -82,6 +82,7 @@ Train.Buttons.Locked         = Locked #NEW
 Train.Buttons.Unlocked       = Unlocked #NEW
 
 Entities.gmod_subway_81-717_mvm_custom.Name     = 81-717 (Moscow custom)
+Entities.gmod_subway_81-717_lvz_custom.Name     = 81-717 (SPB custom)
 Entities.gmod_train_special_box.Name        = Special delivery
 
 Weapons.button_presser.Name                 = Button presser

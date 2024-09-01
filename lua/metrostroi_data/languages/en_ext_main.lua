@@ -2,14 +2,6 @@ return [[
 # Metrostroi Extensions english translations
 
 [en]
-# kv's
-Entities.gmod_subway_81-717_mvm_custom.Spawner.KvTypeCustom.Name = KV
-Entities.gmod_subway_81-717_mvm_custom.Spawner.KvTypeCustom.Random = @[Common.Spawner.Random]
-Entities.gmod_subway_81-717_mvm_custom.Spawner.KvTypeCustom.Black = Black
-Entities.gmod_subway_81-717_mvm_custom.Spawner.KvTypeCustom.White = White
-Entities.gmod_subway_81-717_mvm_custom.Spawner.KvTypeCustom.Wood = Wood
-Entities.gmod_subway_81-717_mvm_custom.Spawner.KvTypeCustom.Yellow = Yellow
-
 # salon lamps
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SalonLampType.Name = Salon lamps
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SalonLampType.Random = @[Common.Spawner.Random]

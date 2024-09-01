@@ -17,6 +17,7 @@ local function getSpawnerEntclass(ent_or_entclass)
     local ent_class = MEL.GetEntclass(ent_or_entclass)
     -- TODO: HasValue is slow, needs refactor
     if table.HasValue(MEL.TrainFamilies["717_714_mvm"], ent_class) then ent_class = "gmod_subway_81-717_mvm_custom" end
+    if table.HasValue(MEL.TrainFamilies["717_714_lvz"], ent_class) then ent_class = "gmod_subway_81-717_lvz_custom" end
     return ent_class
 end
 

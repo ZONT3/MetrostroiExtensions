@@ -87,4 +87,6 @@ Common.ALL.EmergencyBrakeValve              = Стоп-кран
 Common.ARS.AO                               = АО: Сигнал абсолютной остановки
 
 Common.ASNP.ASNPPath        = Выбор пути
+
+Entities.gmod_subway_81-717_lvz_custom.Name     = 81-717 (Номерной СПБ кастом)
 ]]

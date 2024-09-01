@@ -41,10 +41,12 @@ function RECIPE:Inject(ent)
         if type_ == 1 then --PAKSDM
             passtex = isKVR and (num <= 8888 and "Def_717SPBWhite" or num < 10000 and "Def_717SPBWood3" or "Def_717SPBCyan") or "Def_717SPBWhite"
             cabtex = isKVR and "Def_PAKSD2" or "Def_PAKSD"
-            if isKVR and wagon.UPO then -- why UPO is nil?
-                wagon.UPO.Buzz = math.random() > 0.7 and 2 or math.random() > 0.7 and 1
-            else
-                wagon.UPO.Buzz = math.random() > 0.4 and 2 or math.random() > 0.4 and 1
+            if wagon.UPO then  -- why UPO is nil?
+                if isKVR then
+                    wagon.UPO.Buzz = math.random() > 0.7 and 2 or math.random() > 0.7 and 1
+                else
+                    wagon.UPO.Buzz = math.random() > 0.4 and 2 or math.random() > 0.4 and 1
+                end
             end
 
             wagon:SetNW2Bool("NewUSS", isKVR or math.random() > 0.3)
