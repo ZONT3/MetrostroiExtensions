@@ -33,14 +33,15 @@ function RECIPE:Inject(ent)
     MEL.InjectIntoServerFunction(ent, "TrainSpawnerUpdate", function(wagon)
         local isKVR = wagon:GetNW2Int("WagonType") == 2
         wagon:SetNW2Bool("KVR", isKVR)
-        local type_ = self:GetNW2Int("Type")
+        local type_ = wagon:GetNW2Int("Type")
         local passtex = "Def_717SPBWhite"
         local cabtex = "Def_PUAV"
         local seats = false
+        local num = wagon.WagonNumber
         if type_ == 1 then --PAKSDM
             passtex = isKVR and (num <= 8888 and "Def_717SPBWhite" or num < 10000 and "Def_717SPBWood3" or "Def_717SPBCyan") or "Def_717SPBWhite"
             cabtex = isKVR and "Def_PAKSD2" or "Def_PAKSD"
-            if isKVR then
+            if isKVR and wagon.UPO then -- why UPO is nil?
                 wagon.UPO.Buzz = math.random() > 0.7 and 2 or math.random() > 0.7 and 1
             else
                 wagon.UPO.Buzz = math.random() > 0.4 and 2 or math.random() > 0.4 and 1
