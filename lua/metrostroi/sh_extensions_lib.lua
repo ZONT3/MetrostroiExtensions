@@ -529,7 +529,8 @@ local function injectFunction(key, tbl)
         tbl[functionName] = buildedInject
         if string.StartsWith(key, "sys_") then return end
         -- reinject this function on already spawned wagons
-        for _, ent in ipairs(ents.FindByClass(key) or {}) do
+        for ent, _ in pairs(Metrostroi.SpawnedTrains) do
+            if ent:GetClass() ~= key then continue end
             ent[functionName] = buildedInject
         end
     end
@@ -543,7 +544,7 @@ local function inject(isBackports)
     MEL._OverrideShowHide(MEL.EntTables["gmod_subway_base"])
     -- we do it on spawned trains too because if we will enter on server and spawn right with some wagon on PVS - this wagon would get old animate, hidepanel and showhide methods
     for _, entclass in pairs(MEL.TrainClasses) do
-        for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
+        for ent, _ in pairs(Metrostroi.SpawnedTrains) do
             MEL._OverrideAnimate(ent)
             MEL._OverrideSetLightPower(ent)
             MEL._OverrideHidePanel(ent)
@@ -583,7 +584,8 @@ local function inject(isBackports)
                 -- mark this call of inject as for entity (needed for InjectInto*Function)
                 MEL.InjectIntoSpawnedEnt = true
                 -- yup, this is slow
-                for _, ent in ipairs(ents.FindByClass(entclass) or {}) do
+                for ent, _ in pairs(Metrostroi.SpawnedTrains) do
+                    if ent:GetClass() ~= entclass then continue end
                     recipe:Inject(ent, entclass)
                 end
 
@@ -678,10 +680,10 @@ if CLIENT then
         getEntTables()
         inject()
         -- try to reload all spawned trains csents and buttonmaps
-        for k, v in ipairs(ents.FindByClass("gmod_subway_*")) do
-            v.ClientPropsInitialized = false
-            v:RemoveCSEnts()
-            v:ClearButtons()
+        for ent, _ in pairs(Metrostroi.SpawnedTrains) do
+            ent.ClientPropsInitialized = false
+            ent:RemoveCSEnts()
+            ent:ClearButtons()
         end
     end)
 end
