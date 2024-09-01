@@ -343,6 +343,8 @@ local function randomFieldHelper(wagon, entclass)
             if not custom or value == 1 then
                 if data.distribution then
                     value = MEL.Helpers.getWeightedRandomValue(data.distribution) + 1 -- +1 cause first is random, and we dont include it in distribution table
+                elseif data.callback then
+                    value = data.callback(wagon, elements_length)
                 else
                     value = math.random(2, elements_length)
                 end
@@ -594,7 +596,7 @@ local function inject(isBackports)
 
     -- inject into functions with some helpers first
     for entclass, entTable in pairs(MEL.EntTables) do
-        
+
         injectRandomFieldHelper(entclass, entTable)
         injectFieldUpdateHelper(entclass)
         injectAnimationReloadHelper(entclass, entTable)

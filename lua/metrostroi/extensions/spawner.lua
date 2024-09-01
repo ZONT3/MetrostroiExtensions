@@ -78,6 +78,7 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
         }
 
         if istable(random_field_data) then random_data.distribution = random_field_data end
+        if isfunction(random_field_data) then random_data.callback = random_field_data end
         if field_type == SpawnerC.TYPE_LIST then
             random_data.elements_length = #field_data[SpawnerC.List.ELEMENTS]
         elseif field_type == SpawnerC.TYPE_SLIDER then
