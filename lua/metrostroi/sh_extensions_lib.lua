@@ -16,7 +16,6 @@ MEL.Debug = true -- helps with autoreload, but may introduce problems. Disable i
 MEL.BaseRecipies = {}
 MEL.Recipes = {}
 MEL.InjectStack = {}
-MEL.ScopedRecipies = false
 MEL.RecipeSpecific = {} -- table with things, that can and should be shared between recipies
 -- lookup table for train families
 MEL.TrainFamilies = {
@@ -186,16 +185,18 @@ end
 
 function MEL.DefineRecipe(name, train_type)
     if istable(train_type) then
-        class_name = table.concat(train_type, "-") .. "_" .. name
+        class_name = Format("%s_%s", table.concat(train_type, "-"), name)
     else
-        class_name = train_type .. "_" .. name
+        class_name = Format("%s_%s", train_type, name)
     end
 
     if not MEL.BaseRecipies[class_name] then MEL.BaseRecipies[class_name] = {} end
+    if not MEL.BaseRecipies[class_name][CURRENT_SCOPE] then MEL.BaseRecipies[class_name][CURRENT_SCOPE] = {} end
     RECIPE = MEL.BaseRecipies[class_name]
     RECIPE.TrainType = train_type
     RECIPE.Name = name
     RECIPE.ClassName = class_name
+    RECIPE.Scope = CURRENT_SCOPE
 end
 
 local function findRecipeFiles(folder, recipe_files)
@@ -236,15 +237,31 @@ local function initRecipe(recipe)
     end
 end
 
-local function loadRecipe(filename, scope)
-    local File = string.GetFileFromFilename(filename)
-    -- load recipe
-    if MEL.ScopedRecipies and SERVER and (scope == "sh" or scope == "cl") then -- тысяча проверок чтобы не дайбог вдруг если сойдётся ретроградный меркурий и сатурн в одном созвездии не улетел св файл клиенту
-        AddCSLuaFile(filename)
-    end
 
-    if not MEL.ScopedRecipies and SERVER then AddCSLuaFile(filename) end
-    include(filename)
+local scopes = {
+    ["sh_"] = true,
+    ["sv_"] = true,
+    ["cl_"] = true,
+}
+
+local function loadRecipe(filename)
+    local File = string.GetFileFromFilename(filename)
+    CURRENT_SCOPE = string.sub(File, 1, 3)
+    if File[3] == "_" then
+        CURRENT_SCOPE = string.sub(File, 1, 2)
+    end
+    if CURRENT_SCOPE ~= "sv" and CURRENT_SCOPE ~= "sh" and CURRENT_SCOPE ~= "cl" then CURRENT_SCOPE = "sh" end
+    -- load recipe
+    if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then AddCSLuaFile(filename) end
+    if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "sv") or CLIENT and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then include(filename) end
+
+    if SERVER and CURRENT_SCOPE == "cl" then
+        return
+    end
+    if CLIENT and CURRENT_SCOPE == "sv" then
+        MEL._LogError("AHTUNG!!! SERVER RECIPE ON CLIENT!!!")
+        return
+    end
     if not RECIPE then
         MEL._LogError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
         return
@@ -255,8 +272,14 @@ local function loadRecipe(filename, scope)
         return
     end
 
-    if RECIPE.Name ~= string.sub(File, 1, string.find(File, "%.lua") - 1) then MEL._LogWarning("recipe \"" .. RECIPE.Name .. "\" file name and name defined in DefineRecipe differs. Consider renaming your file.") end
-    MEL._LogInfo("loading recipe " .. RECIPE.ClassName .. " from " .. filename)
+    local recipe_file_name = string.sub(File, 1, string.find(File, "%.lua") - 1)
+    if scopes[string.sub(File, 1, 3)] then
+        recipe_file_name = string.sub(File, 4, string.find(File, "%.lua") - 1)
+    end
+    if RECIPE.Name ~= recipe_file_name then
+        MEL._LogWarning(Format("recipe \"%s\" file name and name defined in DefineRecipe (%s) differs. Consider renaming your file.", recipe_file_name, RECIPE.Name))
+    end
+    MEL._LogInfo(Format("[%s] loading recipe %s from %s", CURRENT_SCOPE, RECIPE.ClassName, filename))
     RECIPE.Description = RECIPE.Description or "No description"
     RECIPE.Specific = {}
     RECIPE.Init = RECIPE.Init or function() end
@@ -265,12 +288,13 @@ local function loadRecipe(filename, scope)
     RECIPE.Inject = RECIPE.Inject or function() end
     RECIPE.InjectSystem = RECIPE.InjectSystem or function() end
     RECIPE.InjectSpawner = RECIPE.InjectSpawner or function() end
-    if MEL.Recipes[RECIPE.ClassName] then
-        MEL._LogError("recipe with name \"" .. RECIPE.ClassName .. "\" already exists. Refusing to load recipe from " .. filename .. ".")
+    if not MEL.Recipes[RECIPE.ClassName] then MEL.Recipes[RECIPE.ClassName] = {} end
+    if MEL.Recipes[RECIPE.ClassName][RECIPE.Scope] then
+        MEL._LogError(Format("recipe with name \"%s\" and scope %s already exists. Refusing to load recipe from %s.", RECIPE.ClassName, RECIPE.Scope, filename))
         return
     end
 
-    MEL.Recipes[RECIPE.ClassName] = RECIPE
+    MEL.Recipes[RECIPE.ClassName][RECIPE.Scope] = RECIPE
     -- initialize recipe
     initRecipe(RECIPE)
     RECIPE = nil
@@ -285,12 +309,6 @@ local function discoverRecipies()
         if not recipe_file then -- for some reason, recipe_file can be nil...
             continue
         end
-
-        -- todo: think about scope
-        local scope = string.sub(string.GetFileFromFilename(recipe_file), 1, 2)
-        if (CLIENT or not SERVER) and scope == "sv" then continue end
-
-        if scope ~= "sv" and scope ~= "sh" and scope ~= "cl" then scope = "sh" end
 
         loadRecipe(recipe_file, scope)
     end
@@ -330,11 +348,7 @@ local function randomFieldHelper(wagon, entclass)
     if entclass ~= wagon:GetClass() then return end
     math.randomseed(wagon.WagonNumber + wagon.SubwayTrain.EKKType)
     local custom = true
-
-    if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then
-        custom = (wagon.CustomSettings and true or false)
-    end
-
+    if table.HasValue(MEL.TrainFamilies["717_714_mvm"], entclass) then custom = wagon.CustomSettings and true or false end
     for name, data in pairs(MEL.RandomFields[entclass]) do
         if data.type_ == "List" then
             local elements_length = data.elements_length
@@ -373,9 +387,7 @@ local function injectRandomFieldHelper(entclass, entTable)
     -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
     MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...) randomFieldHelper(wagon, entclass) end, -1)
     -- and inject it to interim too
-    if entTable.spawner then
-        MEL.InjectIntoServerFunction(entTable.spawner.interim, "TrainSpawnerUpdate", function(wagon, ...) randomFieldHelper(wagon, entclass) end, -1)
-    end
+    if entTable.spawner then MEL.InjectIntoServerFunction(entTable.spawner.interim, "TrainSpawnerUpdate", function(wagon, ...) randomFieldHelper(wagon, entclass) end, -1) end
 end
 
 local function injectAnimationReloadHelper(entclass, entTable)
@@ -474,6 +486,7 @@ local function inject(isBackports)
         MEL._OverrideHidePanel(ent)
         MEL._OverrideShowHide(ent)
     end
+
     -- method that finalizes inject on all trains. called after init of recipies
     for _, recipe in pairs(MEL.InjectStack) do
         if isBackports then -- TODO: Probably do something with this
@@ -521,9 +534,7 @@ local function inject(isBackports)
 
     -- inject into functions with some helpers first
     for entclass, entTable in pairs(MEL.EntTables) do
-        if SERVER then
-            injectRandomFieldHelper(entclass, entTable)
-        end
+        if SERVER then injectRandomFieldHelper(entclass, entTable) end
         if CLIENT then
             injectFieldUpdateHelper(entclass)
             injectAnimationReloadHelper(entclass, entTable)
@@ -541,9 +552,10 @@ local function inject(isBackports)
     end
 
     if CLIENT then
-        print(#(table.GetKeys(MEL.getEntTable("gmod_subway_81-717_mvm").AutoAnims)))
+        print(#table.GetKeys(MEL.getEntTable("gmod_subway_81-717_mvm").AutoAnims))
         -- PrintTable(table.GetKeys(MEL.getEntTable("gmod_subway_81-717_mvm")))
     end
+
     MEL._LoadHelpers()
     MEL.ReplaceLoadLanguage()
     -- -- helper inject to reload all animations
