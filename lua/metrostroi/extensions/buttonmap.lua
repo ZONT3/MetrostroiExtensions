@@ -25,7 +25,7 @@ function MEL.ModifyButtonMap(ent, buttonmap_name, buttonmap_callback, button_cal
     if CLIENT then
         local buttonmap = ent.ButtonMap[buttonmap_name]
         if not buttonmap then
-            MEL._LogError(Format("no such buttonmap: %s", bu))
+            MEL._LogError(Format("no such buttonmap: %s", buttonmap_name))
             return
         end
 
@@ -55,7 +55,7 @@ function MEL.MoveButtonMapButton(ent, buttonmap_name, button_name, x, y)
         local buttonmap = ent.ButtonMap[buttonmap_name]
         local buttonmap_copy = ent.ButtonMapCopy[buttonmap_name]
         if not buttonmap then
-            MEL._LogError(Format("no such buttonmap: %s", bu))
+            MEL._LogError(Format("no such buttonmap: %s", buttonmap_name))
             return
         end
 
