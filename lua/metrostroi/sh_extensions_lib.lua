@@ -676,6 +676,10 @@ if CLIENT then
         MEL.TrainClasses = {}
         MEL.RandomFields = {}
         MEL.MetrostroiClasses = {}
+        MEL.ShowHideOverrides = {}
+        MEL.AnimateOverrides = {}
+        MEL.AnimateValueOverrides = {}
+        MEL.HidePanelOverrides = {}
         discoverRecipies()
         getEntTables()
         inject()
