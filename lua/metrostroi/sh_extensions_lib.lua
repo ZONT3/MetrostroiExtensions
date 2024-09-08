@@ -12,7 +12,7 @@
 if SERVER then AddCSLuaFile() end
 if not MetrostroiExtensionsLib then MetrostroiExtensionsLib = {} end
 MEL = MetrostroiExtensionsLib -- alias. 23 symbols vs 3. and we name it MetrostroiExtensionLib because there is fly's old Metrostroi Extensions.
-MEL.Debug = true -- helps with autoreload, but may introduce problems. Disable in production!
+MEL.Debug = false -- helps with autoreload, but may introduce problems. Disable in production!
 MEL.BaseRecipies = {}
 MEL.Recipes = {}
 MEL.InjectStack = {}
@@ -237,7 +237,6 @@ local function initRecipe(recipe)
     end
 end
 
-
 local scopes = {
     ["sh_"] = true,
     ["sv_"] = true,
@@ -247,21 +246,17 @@ local scopes = {
 local function loadRecipe(filename)
     local File = string.GetFileFromFilename(filename)
     CURRENT_SCOPE = string.sub(File, 1, 3)
-    if File[3] == "_" then
-        CURRENT_SCOPE = string.sub(File, 1, 2)
-    end
+    if File[3] == "_" then CURRENT_SCOPE = string.sub(File, 1, 2) end
     if CURRENT_SCOPE ~= "sv" and CURRENT_SCOPE ~= "sh" and CURRENT_SCOPE ~= "cl" then CURRENT_SCOPE = "sh" end
     -- load recipe
     if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then AddCSLuaFile(filename) end
     if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "sv") or CLIENT and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then include(filename) end
-
-    if SERVER and CURRENT_SCOPE == "cl" then
-        return
-    end
+    if SERVER and CURRENT_SCOPE == "cl" then return end
     if CLIENT and CURRENT_SCOPE == "sv" then
-        MEL._LogError("AHTUNG!!! SERVER RECIPE ON CLIENT!!!")
+        MEL._LogError("ACHTUNG!!! SERVER RECIPE ON CLIENT!!!")
         return
     end
+
     if not RECIPE then
         MEL._LogError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
         return
@@ -273,13 +268,9 @@ local function loadRecipe(filename)
     end
 
     local recipe_file_name = string.sub(File, 1, string.find(File, "%.lua") - 1)
-    if scopes[string.sub(File, 1, 3)] then
-        recipe_file_name = string.sub(File, 4, string.find(File, "%.lua") - 1)
-    end
-    if RECIPE.Name ~= recipe_file_name then
-        MEL._LogWarning(Format("recipe \"%s\" file name and name defined in DefineRecipe (%s) differs. Consider renaming your file.", recipe_file_name, RECIPE.Name))
-    end
-    MEL._LogInfo(Format("[%s] loading recipe %s from %s", CURRENT_SCOPE, RECIPE.ClassName, filename))
+    if scopes[string.sub(File, 1, 3)] then recipe_file_name = string.sub(File, 4, string.find(File, "%.lua") - 1) end
+    if RECIPE.Name ~= recipe_file_name then MEL._LogWarning(Format("recipe \"%s\" file name and name defined in DefineRecipe (%s) differs. Consider renaming your file.", recipe_file_name, RECIPE.Name)) end
+    logDebug(Format("[%s] loading recipe %s from %s", CURRENT_SCOPE, RECIPE.ClassName, filename))
     RECIPE.Description = RECIPE.Description or "No description"
     RECIPE.Specific = {}
     RECIPE.Init = RECIPE.Init or function() end
@@ -312,6 +303,7 @@ local function discoverRecipies()
 
         loadRecipe(recipe_file, scope)
     end
+    MEL._LogInfo(Format("loaded %d recipies", #table.GetKeys(MEL.Recipes)))
 end
 
 local prefixes = {
@@ -474,6 +466,8 @@ local function injectFunction(key, tbl)
 end
 
 local function inject(isBackports)
+    local start_time = SysTime()
+    MEL._LogInfo(Format("injecting recipies (isBackports: %s)...", isBackports and "yes" or "no"))
     MEL._LoadHelpers()
     MEL._OverrideAnimate(MEL.EntTables["gmod_subway_base"])
     MEL._OverrideSetLightPower(MEL.EntTables["gmod_subway_base"])
@@ -510,7 +504,7 @@ local function inject(isBackports)
             continue
         end
 
-        logDebug(Format("injecting recipe %s", recipe.ClassName))
+        logDebug(Format("[%s] injecting recipe %s", recipe.Scope, recipe.ClassName))
         -- call Inject method on every ent that recipe changes
         for _, entclass in pairs(MEL.GetEntsByTrainType(recipe.TrainType)) do
             if recipe:InjectNeeded(entclass) then
@@ -551,15 +545,11 @@ local function inject(isBackports)
         injectFunction(Format("sys_%s", systemClass), systemTable)
     end
 
-    if CLIENT then
-        print(#table.GetKeys(MEL.getEntTable("gmod_subway_81-717_mvm").AutoAnims))
-        -- PrintTable(table.GetKeys(MEL.getEntTable("gmod_subway_81-717_mvm")))
-    end
-
     MEL._LoadHelpers()
     MEL.ReplaceLoadLanguage()
     -- -- helper inject to reload all animations
     if CLIENT then Metrostroi.LoadLanguage(Metrostroi.ChoosedLang) end
+    MEL._LogInfo(Format("injected recipies in %f seconds", SysTime() - start_time))
 end
 
 discoverRecipies()
@@ -579,13 +569,13 @@ end)
 
 -- reload command:
 -- reloads all recipies on client and server
-if SERVER then
+if MEL.Debug and SERVER then
     util.AddNetworkString("MetrostroiExtDoReload")
     concommand.Add("metrostroi_ext_reload", function(ply, cmd, args)
         net.Start("MetrostroiExtDoReload")
         net.Broadcast()
         MEL.ApplyBackports()
-        MEL._LogInfo("reloading recipies...")
+        MEL._LogInfo(Format("(%s) reloading recipies...", string.FormattedTime(CurTime(), "%02i:%02i:%02i")))
         -- clear all inject stacks
         MEL.FunctionInjectStack = {}
         MEL.BaseRecipies = {}
@@ -603,9 +593,9 @@ if SERVER then
     end)
 end
 
-if CLIENT then
+if MEL.Debug and CLIENT then
     net.Receive("MetrostroiExtDoReload", function(len, ply)
-        MEL._LogInfo("reloading recipies...")
+        MEL._LogInfo(Format("(%s) reloading recipies...", string.FormattedTime(CurTime(), "%02i:%02i:%02i")))
         MEL.ApplyBackports()
         -- clear all inject stacks
         MEL.FunctionInjectStack = {}
