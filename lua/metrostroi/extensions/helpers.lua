@@ -17,7 +17,9 @@ end
 if not MEL.ButtonmapButtonMappings then
     MEL.ButtonmapButtonMappings = {} -- lookup table for accessing button of buttonmap by its id
 end
---  (key: train_class, value: (key: buttonmap name, value: (key: button id, value: its index))
+
+MEL.SyncTableHashed = {} -- lookup table checking if some value is in SyncTable
+--  (key: train_class, value: (key: sync key, value: always true)
 
 local ENTCLASS_714_PATTERN = "714"
 local ENTCLASS_717_PATTERN = "717"
@@ -134,7 +136,20 @@ local function populateButtonmapButtonMappings()
     end
 end
 
+local function populateSyncTableHashed()
+    if CLIENT then return end
+    for _, train_class in pairs(MEL.TrainClasses) do
+        local ent_table = MEL.EntTables[train_class]
+        if not ent_table.SyncTable then continue end
+        MEL.SyncTableHashed[train_class] = {}
+        for _, sync_key in pairs(ent_table.SyncTable) do
+            MEL.SyncTableHashed[train_class][sync_key] = true
+        end
+    end
+end
+
 function MEL._LoadHelpers()
     populateButtonmapButtonMappings()
     populateSpawnerFieldMappings()
+    populateSyncTableHashed()
 end

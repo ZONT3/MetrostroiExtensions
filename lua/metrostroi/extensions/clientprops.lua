@@ -24,7 +24,17 @@ function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, field_
             return
         end
 
-        local old_modelcallback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
+        local entclass = MEL.GetEntclass(ent)
+        if not MEL.FunctionDefaults[entclass] then
+            MEL.FunctionDefaults[entclass] = {}
+        end
+        if not MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"] then
+            MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"] = {}
+        end
+        if not MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"][clientprop_name] then
+            MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"][clientprop_name] = ent.ClientProps[clientprop_name]["modelcallback"]
+        end
+        local old_modelcallback = MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"][clientprop_name] or function() end
         ent.ClientProps[clientprop_name]["modelcallback"] = function(wagon)
             local new_modelpath = new_modelcallback(wagon)
             return new_modelpath or old_modelcallback(wagon)
@@ -157,7 +167,17 @@ function MEL.UpdateCallback(ent, clientprop_name, new_callback, field_name, erro
             return
         end
 
-        local old_callback = ent.ClientProps[clientprop_name]["modelcallback"] or function() end
+        local entclass = MEL.GetEntclass(ent)
+        if not MEL.FunctionDefaults[entclass] then
+            MEL.FunctionDefaults[entclass] = {}
+        end
+        if not MEL.FunctionDefaults[entclass]["clientprop_callbacks"] then
+            MEL.FunctionDefaults[entclass]["clientprop_callbacks"] = {}
+        end
+        if not MEL.FunctionDefaults[entclass]["clientprop_callbacks"][clientprop_name] then
+            MEL.FunctionDefaults[entclass]["clientprop_callbacks"][clientprop_name] = ent.ClientProps[clientprop_name]["callback"]
+        end
+        local old_callback = MEL.FunctionDefaults[entclass]["clientprop_callbacks"][clientprop_name] or function() end
         ent.ClientProps[clientprop_name]["callback"] = function(wagon, cent)
             old_callback(wagon, cent)
             new_callback(wagon, cent)

@@ -12,11 +12,21 @@
 -- да, за это на меня выльется тонна говна.
 -- уважаемые, не нравится - не пользуйтесь экстом))))))))))))
 -- и моделями тоже, пожалуйста
+local function addAutoAnim(wagon, name, func)
+    if wagon.AutoAnimIndexes[name] then
+        wagon.AutoAnims[wagon.AutoAnimIndexes[name]] = func
+    else
+        wagon.AutoAnimIndexes[name] = table.insert(wagon.AutoAnims, func)
+    end
+    return wagon.AutoAnimIndexes[name]
+end
+
 local function newGenerateClientProps()
     function Metrostroi.GenerateClientProps(ent)
         local wagon = ent or ENT
         if not wagon.ButtonMapCopy then wagon.ButtonMapCopy = {} end
         if not wagon.AutoAnimNames then wagon.AutoAnimNames = {} end
+        if not wagon.AutoAnimIndexes then wagon.AutoAnimIndexes = {} end
         if not wagon.ButtonMap then
             MEL._LogWarning(Format("weird, but ButtonMap for wagon with class %s is nil. lol", MEL.GetEntclass(wagon)))
             return
@@ -136,53 +146,53 @@ local function newGenerateClientProps()
                             local i
                             if func then
                                 if config.disable then
-                                    i = table.insert(wagon.AutoAnims, function(ent)
+                                    i = addAutoAnim(wagon, name, function(ent)
                                         ent:Animate(name, func(ent, vmin, vmax, var), min, max, speed, damping, stickyness)
                                         ent:HideButton(config.disable, ent:GetPackedBool(var))
                                     end)
                                 elseif config.disableinv then
-                                    i = table.insert(wagon.AutoAnims, function(ent)
+                                    i = addAutoAnim(wagon, name, function(ent)
                                         ent:Animate(name, func(ent, vmin, vmax, var), min, max, speed, damping, stickyness)
                                         ent:HideButton(config.disableinv, not ent:GetPackedBool(var))
                                     end)
                                 elseif config.disableoff and config.disableon then
-                                    i = table.insert(wagon.AutoAnims, function(ent)
+                                    i = addAutoAnim(wagon, name, function(ent)
                                         ent:Animate(name, func(ent, vmin, vmax, var), min, max, speed, damping, stickyness)
                                         ent:HideButton(config.disableoff, ent:GetPackedBool(var))
                                         ent:HideButton(config.disableon, not ent:GetPackedBool(var))
                                     end)
                                 elseif config.disablevar then
-                                    i = table.insert(wagon.AutoAnims, function(ent)
+                                    i = addAutoAnim(wagon, name, function(ent)
                                         ent:HideButton(name, ent:GetPackedBool(config.disablevar))
                                         ent:Animate(name, func(ent, vmin, vmax, var), min, max, speed, damping, stickyness)
                                     end)
                                 else
-                                    i = table.insert(wagon.AutoAnims, function(ent) ent:Animate(name, func(ent, vmin, vmax), min, max, speed, damping, stickyness) end)
+                                    i = addAutoAnim(wagon, name, function(ent) ent:Animate(name, func(ent, vmin, vmax), min, max, speed, damping, stickyness) end)
                                 end
                             else
                                 if config.disable then
-                                    i = table.insert(wagon.AutoAnims, function(ent)
+                                    i = addAutoAnim(wagon, name, function(ent)
                                         ent:Animate(name, ent:GetPackedBool(var) and vmax or vmin, min, max, speed, damping, stickyness)
                                         ent:HideButton(config.disable, ent:GetPackedBool(var))
                                     end)
                                 elseif config.disableinv then
-                                    i = table.insert(wagon.AutoAnims, function(ent)
+                                    i = addAutoAnim(wagon, name, function(ent)
                                         ent:Animate(name, ent:GetPackedBool(var) and vmax or vmin, min, max, speed, damping, stickyness)
                                         ent:HideButton(config.disableinv, not ent:GetPackedBool(var))
                                     end)
                                 elseif config.disableoff and config.disableon then
-                                    i = table.insert(wagon.AutoAnims, function(ent)
+                                    i = addAutoAnim(wagon, name, function(ent)
                                         ent:Animate(name, ent:GetPackedBool(var) and vmax or vmin, min, max, speed, damping, stickyness)
                                         ent:HideButton(config.disableoff, ent:GetPackedBool(var))
                                         ent:HideButton(config.disableon, not ent:GetPackedBool(var))
                                     end)
                                 elseif config.disablevar then
-                                    i = table.insert(wagon.AutoAnims, function(ent)
+                                    i = addAutoAnim(wagon, name, function(ent)
                                         ent:HideButton(name, ent:GetPackedBool(config.disablevar))
                                         ent:Animate(name, ent:GetPackedBool(var) and vmax or vmin, min, max, speed, damping, stickyness)
                                     end)
                                 else
-                                    i = table.insert(wagon.AutoAnims, function(ent) ent:Animate(name, ent:GetPackedBool(var) and vmax or vmin, min, max, speed, damping, stickyness) end)
+                                    i = addAutoAnim(wagon, name, function(ent) ent:Animate(name, ent:GetPackedBool(var) and vmax or vmin, min, max, speed, damping, stickyness) end)
                                 end
                             end
 
@@ -234,7 +244,7 @@ local function newGenerateClientProps()
                         if pconfig.var then
                             local var = pconfig.var
                             if pconfig.model then
-                                local i = table.insert(wagon.AutoAnims, function(ent) ent:SetCSBodygroup(pname, 1, ent:GetPackedBool(var) and 0 or 1) end)
+                                local i = addAutoAnim(wagon, pname, function(ent) ent:SetCSBodygroup(pname, 1, ent:GetPackedBool(var) and 0 or 1) end)
                                 wagon.AutoAnimNames[i] = pname
                             end
 
@@ -270,7 +280,7 @@ local function newGenerateClientProps()
                         }
 
                         if lconfig.anim then
-                            local i = table.insert(wagon.AutoAnims, function(ent) ent:AnimateFrom(lname, name) end)
+                            local i = addAutoAnim(wagon, lname, function(ent) ent:AnimateFrom(lname, name) end)
                             wagon.AutoAnimNames[i] = lname
                         end
 
@@ -309,18 +319,22 @@ local function newGenerateClientProps()
                             local func = lconfig.getfunc
                             local light = lconfig.lcolor
                             if func then
-                                table.insert(wagon.AutoAnims, function(ent)
+                                local i = addAutoAnim(wagon, animvar, function(ent)
                                     local val = ent:Animate(animvar, func(ent, min, max, var), 0, 1, speed, false)
                                     ent:ShowHideSmooth(lname, val)
                                     if light then ent:SetLightPower(lname, val > 0, val) end
                                 end)
+                                wagon.AutoAnimNames[i] = animvar
+
                             else
-                                local i = table.insert(wagon.AutoAnims, function(ent)
+                                local i = addAutoAnim(wagon, animvar, function(ent)
                                     --print(lname,ent.SmoothHide[lname])
                                     local val = ent:Animate(animvar, ent:GetPackedBool(var) and max or min, 0, 1, speed, false)
                                     ent:ShowHideSmooth(lname, val)
                                     if light then ent:SetLightPower(lname, val > 0, val) end
                                 end)
+                                wagon.AutoAnimNames[i] = animvar
+
                             end
                         end
                     end
@@ -351,17 +365,24 @@ local function newGenerateClientProps()
                                 local min, max = lconfig.min or 0, lconfig.max or 1
                                 local speed = lconfig.speed or 10
                                 local func = lconfig.getfunc
+                                local light = lconfig.lcolor
                                 if func then
-                                    table.insert(wagon.AutoAnims, function(ent)
+                                    local i = addAutoAnim(wagon, lname, function(ent)
                                         local val = ent:Animate(animvar, func(ent, min, max, var), 0, 1, speed, false)
                                         ent:ShowHideSmooth(lname, val)
+                                        if light then ent:SetLightPower(lname, val > 0, val) end
                                     end)
+                                    wagon.AutoAnimNames[i] = animvar
+
                                 else
-                                    table.insert(wagon.AutoAnims, function(ent)
+                                    local i = addAutoAnim(wagon, lname, function(ent)
                                         --print(lname,ent.SmoothHide[lname])
                                         local val = ent:Animate(animvar, ent:GetPackedBool(var) and max or min, 0, 1, speed, false)
                                         ent:ShowHideSmooth(lname, val)
+                                        if light then ent:SetLightPower(lname, val > 0, val) end
                                     end)
+                                    wagon.AutoAnimNames[i] = animvar
+
                                 end
                             end
                         end
@@ -370,6 +391,7 @@ local function newGenerateClientProps()
                     if config.sprite then
                         local sconfig = config.sprite
                         local hideName = sconfig.hidden or config.lamp and name .. "_lamp" or name
+                        local sname = name .. "_sprite"
                         wagon.Lights[sconfig.lamp or name] = {
                             sconfig.glow and "glow" or "light",
                             Metrostroi.PositionFromPanel(id, config.pos or buttons.ID, (config.z or 0.5) + (sconfig.z or 0.2), (config.x or 0) + (sconfig.x or 0), (config.y or 0) + (sconfig.y or 0), ent),
@@ -388,7 +410,7 @@ local function newGenerateClientProps()
                         local i
                         if sconfig.getfunc then
                             local func = sconfig.getfunc
-                            i = table.insert(wagon.AutoAnims, function(ent)
+                            i = addAutoAnim(wagon, hideName, function(ent)
                                 local val = func(ent)
                                 ent:SetLightPower(name, not ent.Hidden[hideName] and val > 0, val)
                             end)
@@ -397,20 +419,20 @@ local function newGenerateClientProps()
                             --reti = reti + 1
                             local var, animvar = sconfig.var, name .. "_sanim"
                             local speed = sconfig.speed or 10
-                            i = table.insert(wagon.AutoAnims, function(ent)
+                            i = addAutoAnim(wagon, hideName, function(ent)
                                 local val = ent:Animate(animvar, ent:GetPackedBool(var) and 1 or 0, 0, 1, speed, false)
                                 ent:SetLightPower(name, val > 0, val)
                             end)
                         elseif sconfig.lamp then
                             local lightName = sconfig.lamp
-                            i = table.insert(wagon.AutoAnims, function(ent)
+                            i = addAutoAnim(wagon, hideName, function(ent)
                                 local val = ent.Anims[lightName] and ent.Anims[lightName].value or 0
                                 ent:SetLightPower(lightName, val > 0, val)
                             end)
                         elseif config.lamp and config.lamp.var then
                             local lname = name .. "_lamp"
                             local lightName = lname .. "_anim"
-                            i = table.insert(wagon.AutoAnims, function(ent)
+                            i = addAutoAnim(wagon, hideName, function(ent)
                                 local val = ent.Anims[lightName] and ent.Anims[lightName].value or 0
                                 ent:SetLightPower(name, val > 0, val)
                             end)

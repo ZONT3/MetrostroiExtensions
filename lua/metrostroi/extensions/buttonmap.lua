@@ -21,6 +21,15 @@ function reloadButtonMapProps(ent, buttonmap)
     end
 end
 
+function MEL.AddToSyncTable(ent, sync_key)
+    if SERVER then
+        local ent_class = MEL.GetEntclass(ent)
+        if not MEL.SyncTableHashed[ent_class][sync_key] then
+            table.insert(ent.SyncTable, sync_key)
+        end
+    end
+end
+
 function MEL.ModifyButtonMap(ent, buttonmap_name, buttonmap_callback, button_callback)
     if CLIENT then
         local buttonmap = ent.ButtonMap[buttonmap_name]

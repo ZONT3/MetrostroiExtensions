@@ -36,6 +36,7 @@ local function addToReloadTable(ent_class, clientprop_name, field_name)
 end
 
 function MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name, field_name_or_names)
+    if SERVER then return end
     local ent_class = MEL.GetEntclass(ent_or_entclass)
     if not MEL.ClientPropsToReload[ent_class] then MEL.ClientPropsToReload[ent_class] = {} end
     if isstring(field_name_or_names) then
