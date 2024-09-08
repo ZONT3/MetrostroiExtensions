@@ -22,7 +22,6 @@ function RECIPE:InjectSpawner(entclass)
         if type_ == 1 then
             isKVR = wagon.WagonNumber >= 8875 or math.random() > 0.5
         elseif typ == 3 then
-            --PAM
             isKVR = true
         end
         return isKVR and 3 or 2
@@ -33,6 +32,7 @@ function RECIPE:Inject(ent)
     MEL.InjectIntoServerFunction(ent, "TrainSpawnerUpdate", function(wagon)
         local isKVR = wagon:GetNW2Int("WagonType") == 2
         wagon:SetNW2Bool("KVR", isKVR)
+        wagon:SetNW2Bool("Dot5", isKVR)
         local type_ = wagon:GetNW2Int("Type")
         local passtex = "Def_717SPBWhite"
         local cabtex = "Def_PUAV"
@@ -55,7 +55,7 @@ function RECIPE:Inject(ent)
             wagon:SetNW2Bool("NewUSS", isKVR or math.random() > 0.3)
         end
 
-        wagon:SetNW2Int("Crane", isKVR and 1 or 0)
+        -- wagon:SetNW2Int("Crane", isKVR and 1 or 0)
         wagon:SetNW2Bool("NewSeats", isKVR or seats)
         wagon:SetNW2String("PassTexture", passtex)
         wagon:SetNW2String("CabTexture", cabtex)
