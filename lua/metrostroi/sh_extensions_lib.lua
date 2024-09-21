@@ -192,7 +192,7 @@ function MEL.DefineRecipe(name, train_type)
 
     if not MEL.BaseRecipies[class_name] then MEL.BaseRecipies[class_name] = {} end
     if not MEL.BaseRecipies[class_name][CURRENT_SCOPE] then MEL.BaseRecipies[class_name][CURRENT_SCOPE] = {} end
-    RECIPE = MEL.BaseRecipies[class_name]
+    RECIPE = MEL.BaseRecipies[class_name][CURRENT_SCOPE]
     RECIPE.TrainType = train_type
     RECIPE.Name = name
     RECIPE.ClassName = class_name
@@ -248,14 +248,14 @@ local function loadRecipe(filename)
     CURRENT_SCOPE = string.sub(File, 1, 3)
     if File[3] == "_" then CURRENT_SCOPE = string.sub(File, 1, 2) end
     if CURRENT_SCOPE ~= "sv" and CURRENT_SCOPE ~= "sh" and CURRENT_SCOPE ~= "cl" then CURRENT_SCOPE = "sh" end
-    -- load recipe
-    if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then AddCSLuaFile(filename) end
-    if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "sv") or CLIENT and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then include(filename) end
     if SERVER and CURRENT_SCOPE == "cl" then return end
     if CLIENT and CURRENT_SCOPE == "sv" then
         MEL._LogError("ACHTUNG!!! SERVER RECIPE ON CLIENT!!!")
         return
     end
+    -- load recipe
+    if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then AddCSLuaFile(filename) end
+    if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "sv") or CLIENT and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then include(filename) end
 
     if not RECIPE then
         MEL._LogError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
@@ -270,7 +270,7 @@ local function loadRecipe(filename)
     local recipe_file_name = string.sub(File, 1, string.find(File, "%.lua") - 1)
     if scopes[string.sub(File, 1, 3)] then recipe_file_name = string.sub(File, 4, string.find(File, "%.lua") - 1) end
     if RECIPE.Name ~= recipe_file_name then MEL._LogWarning(Format("recipe \"%s\" file name and name defined in DefineRecipe (%s) differs. Consider renaming your file.", recipe_file_name, RECIPE.Name)) end
-    logDebug(Format("[%s] loading recipe %s from %s", CURRENT_SCOPE, RECIPE.ClassName, filename))
+    logDebug(Format("[%s] loading recipe %s from %s", RECIPE.Scope, RECIPE.ClassName, filename))
     RECIPE.Description = RECIPE.Description or "No description"
     RECIPE.Specific = {}
     RECIPE.Init = RECIPE.Init or function() end
