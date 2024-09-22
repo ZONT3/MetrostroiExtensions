@@ -248,14 +248,15 @@ local function loadRecipe(filename)
     CURRENT_SCOPE = string.sub(File, 1, 3)
     if File[3] == "_" then CURRENT_SCOPE = string.sub(File, 1, 2) end
     if CURRENT_SCOPE ~= "sv" and CURRENT_SCOPE ~= "sh" and CURRENT_SCOPE ~= "cl" then CURRENT_SCOPE = "sh" end
+    -- load recipe
+    -- send shared or client recipe to client
+    if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then AddCSLuaFile(filename) end
     if SERVER and CURRENT_SCOPE == "cl" then return end
+    include(filename)
     if CLIENT and CURRENT_SCOPE == "sv" then
         MEL._LogError("ACHTUNG!!! SERVER RECIPE ON CLIENT!!!")
         return
     end
-    -- load recipe
-    if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then AddCSLuaFile(filename) end
-    if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "sv") or CLIENT and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then include(filename) end
 
     if not RECIPE then
         MEL._LogError("looks like RECIPE table for " .. filename .. " is nil. Ensure that DefineRecipe was called.")
@@ -303,6 +304,7 @@ local function discoverRecipies()
 
         loadRecipe(recipe_file, scope)
     end
+
     MEL._LogInfo(Format("loaded %d recipies", #table.GetKeys(MEL.Recipes)))
 end
 
