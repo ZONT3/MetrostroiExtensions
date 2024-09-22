@@ -12,7 +12,7 @@
 if SERVER then AddCSLuaFile() end
 if not MetrostroiExtensionsLib then MetrostroiExtensionsLib = {} end
 MEL = MetrostroiExtensionsLib -- alias. 23 symbols vs 3. and we name it MetrostroiExtensionLib because there is fly's old Metrostroi Extensions.
-MEL.Debug = false -- helps with autoreload, but may introduce problems. Disable in production!
+MEL.Debug = true -- helps with autoreload, but may introduce problems. Disable in production!
 MEL.BaseRecipies = {}
 MEL.Recipes = {}
 MEL.InjectStack = {}
