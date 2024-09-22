@@ -614,6 +614,7 @@ if MEL.Debug and CLIENT then
         MEL.AnimateValueOverrides = {}
         MEL.HidePanelOverrides = {}
         MEL.ClientPropsToReload = {}
+        MEL.DecoratorCache = {}
         discoverRecipies()
         getEntTables()
         inject()
