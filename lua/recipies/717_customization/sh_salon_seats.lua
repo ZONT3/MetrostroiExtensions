@@ -60,11 +60,12 @@ function RECIPE:InjectSpawner(entclass)
 end
 
 function RECIPE:Inject(ent, entclass)
+    local is_717 = MEL.Helpers.Is717(entclass)
     MEL.DeleteClientProp(ent, "seats_new")
     MEL.DeleteClientProp(ent, "seats_new_cap")
     MEL.DeleteClientProp(ent, "seats_old")
     MEL.DeleteClientProp(ent, "seats_old_cap")
-    if string.find(entclass, "717") then
+    if is_717 then
         MEL.NewClientProp(ent, "seats", {
             model = "models/metrostroi_train/81-717/couch_old.mdl",
             modelcallback = function(wagon) return MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatTypeCustom", 1)].head.model end,
@@ -81,8 +82,9 @@ function RECIPE:Inject(ent, entclass)
             model = "models/metrostroi_train/81-717/couch_cap_l.mdl",
             modelcallback = function(wagon) return MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatTypeCustom", 1)].head.cap_model end,
             callback = function(wagon, cent)
-                local callback = MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatTypeCustom", 1)].head.cap_callback
-                if callback then callback(wagon, cent) end
+                local config = MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatTypeCustom", 1)].head
+                if config.cap_callback then config.cap_callback(wagon, cent) end
+                if not config.cap_model then cent:SetNoDraw(true) end
             end,
             pos = Vector(0, 0, 0),
             ang = Angle(0, 0, 0),
