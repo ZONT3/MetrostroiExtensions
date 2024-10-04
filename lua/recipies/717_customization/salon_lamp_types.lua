@@ -33,13 +33,14 @@ function RECIPE:Init()
     self.Specific.SalonLampList = {
         {
             name = "Type1",
+            base_needed = true,
             head = {
                 model = MODELS_ROOT .. "lamps_type1.mdl",
                 glow = {
                     model = MODELS_ROOT .. "lamps/lamp_typ1.mdl",
                     count = 12,
                     callback = function(wagon, cent, i) cent:SetPos(wagon:LocalToWorld(Vector(333.949 - 66.66 * (i - 1), 0, 67.7))) end
-                }
+                },
             },
             int = {
                 model = MODELS_ROOT .. "lamps_type1_int.mdl",
@@ -69,6 +70,7 @@ function RECIPE:Init()
         },
         {
             name = "Type2",
+            base_needed = true,
             head = {
                 model = MODELS_ROOT .. "lamps_type2.mdl",
                 glow = {
