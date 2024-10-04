@@ -22,7 +22,11 @@ function RECIPE:Init()
             },
             int = {
                 model = MODELS_ROOT .. "couch_old_int.mdl",
-                cap_model = MODELS_ROOT .. "couch_cap_l.mdl"
+                cap_model = MODELS_ROOT .. "couch_cap_l.mdl",
+                cap_o_callback = function(wagon, cent)
+                    cent:SetLocalAngles(Angle(0, 70, -70))
+                    cent:SetLocalPos(Vector(-285, 410, 13))
+                end
             }
         },
         {
@@ -33,7 +37,11 @@ function RECIPE:Init()
             },
             int = {
                 model = MODELS_ROOT .. "couch_new_int.mdl",
-                cap_model = MODELS_ROOT .. "couch_new_cap.mdl"
+                cap_model = MODELS_ROOT .. "couch_new_cap.mdl",
+                cap_o_callback = function(wagon, cent)
+                    cent:SetLocalAngles(Angle(0, 70, -70))
+                    cent:SetLocalPos(Vector(-285, 410, 13))
+                end
             }
         },
     }
@@ -127,8 +135,8 @@ function RECIPE:Inject(ent, entclass)
                 local callback = MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatTypeCustom", 1)].int.cap_o_callback
                 if callback then callback(wagon, cent) end
             end,
-            pos = Vector(-285, 410, 13),
-            ang = Angle(0, 70, -70),
+            pos = Vector(0, 0, 0),
+            ang = Angle(0, 0, 0),
             hideseat = 0.8,
         }, "SeatTypeCustom")
 
