@@ -253,7 +253,7 @@ local function loadRecipe(filename)
     if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then AddCSLuaFile(filename) end
     if SERVER and CURRENT_SCOPE == "cl" then return end
     include(filename)
-    if CLIENT and CURRENT_SCOPE == "sv" then
+    if CLIENT and CURRENT_SCOPE == "sv" and not game.SinglePlayer() then
         MEL._LogError("ACHTUNG!!! SERVER RECIPE ON CLIENT!!!")
         return
     end
