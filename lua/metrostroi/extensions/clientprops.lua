@@ -63,12 +63,17 @@ function MEL._OverrideAnimate(ent)
             stickyness = override[5]
         end
 
+        if not min or not max or not speed then
+            return
+        end
+
         if MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)] and MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)][id] then
             local value_callback = MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)][id]
             value = value_callback(wagon)
         end
 
         local anims = wagon.Anims
+        if not anims then return end
         if not anims[id] then
             anims[id] = {}
             anims[id].val = value

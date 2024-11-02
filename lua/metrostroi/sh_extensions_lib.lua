@@ -28,6 +28,7 @@ MEL.TrainFamilies = {
 }
 
 MEL.InjectIntoSpawnedEnt = false -- temp global variable
+MEL.FirstTimeInject = true -- temp global variable
 MEL.EntTables = {}
 MEL.MetrostroiClasses = {}
 MEL.TrainClasses = {}
@@ -418,6 +419,7 @@ end
 
 local function injectFunction(key, tbl)
     if not MEL.FunctionInjectStack[key] then return end
+    local builedInjects = {}
     -- yep, this is O(N^2). funny, cause there is probably better way to achieve priority system
     -- TODO: probably optimize it - it will cause problems if there would be a lot of ents and systems
     for functionName, priorities in pairs(MEL.FunctionInjectStack[key]) do
@@ -457,12 +459,28 @@ local function injectFunction(key, tbl)
             return returnValue
         end
 
+        builedInjects[functionName] = buildedInject
         tbl[functionName] = buildedInject
-        if string.StartsWith(key, "sys_") then return end
-        -- reinject this function on already spawned wagons
-        for ent, _ in pairs(Metrostroi.SpawnedTrains) do
-            if ent:GetClass() ~= key then continue end
+    end
+
+    if string.StartsWith(key, "sys_") then return end
+    for ent, _ in pairs(Metrostroi.SpawnedTrains) do
+        if ent:GetClass() ~= key then continue end
+        -- reinject functions on already spawned wagons
+        for functionName, buildedInject in pairs(builedInjects) do
             ent[functionName] = buildedInject
+        end
+
+        -- call all Initialize injects on client
+        -- we need this cause Initialize would be called before MEL would build injects
+        if CLIENT and MEL.FirstTimeInject then
+            for _, functionName in pairs({"Initialize", "InitializeSystems", "InitializeSounds"}) do
+                for priority, functionStack in SortedPairs(MEL.FunctionInjectStack[key][functionName]) do
+                    for _, func in pairs(functionStack) do
+                        func(ent)
+                    end
+                end
+            end
         end
     end
 end
@@ -562,6 +580,7 @@ local function inject(isBackports)
     MEL.ReplaceLoadLanguage()
     -- -- helper inject to reload all animations
     if CLIENT then Metrostroi.LoadLanguage(Metrostroi.ChoosedLang) end
+    MEL.FirstTimeInject = false
     MEL._LogInfo(Format("injected recipies in %f seconds", SysTime() - start_time))
 end
 
