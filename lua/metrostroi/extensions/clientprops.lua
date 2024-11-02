@@ -35,8 +35,14 @@ function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, field_
             MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"][clientprop_name] = ent.ClientProps[clientprop_name]["modelcallback"]
         end
         local old_modelcallback = MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"][clientprop_name] or function() end
+        local new_modelcallback_function = new_modelcallback
+        if isstring(new_modelcallback) then
+            new_modelcallback_function = function()
+                return new_modelcallback
+            end
+        end
         ent.ClientProps[clientprop_name]["modelcallback"] = function(wagon)
-            local new_modelpath = new_modelcallback(wagon)
+            local new_modelpath = new_modelcallback_function(wagon)
             return new_modelpath or old_modelcallback(wagon)
         end
 
