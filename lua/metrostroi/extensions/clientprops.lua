@@ -206,7 +206,7 @@ end
 
 function MEL.NewClientProp(ent, clientprop_name, clientprop_info, field_name, do_not_override)
     if CLIENT then
-        if override and ent.ClientProps[clientprop_name] then
+        if do_not_override and ent.ClientProps[clientprop_name] then
             MEL._LogError(Format("there is already clientprop with name %s! are you sure you want to override it?", clientprop_name))
             return
         end
