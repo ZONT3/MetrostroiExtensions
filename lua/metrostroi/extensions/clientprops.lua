@@ -17,7 +17,12 @@ MEL.ShowHideOverrides = {} -- table with ShowHide value overrides
 -- (key: ent_class, value: (key: clientProp name, value: function to get value))
 MEL.DecoratorCache = {} -- table with cached values like angles and vectors for CachedDecorator
 -- (key: ent_class, value: (key: decorator name, (key: key, value: cached value)))
-function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, field_name, error_on_nil)
+MEL.ModelPrecacheTable = {} -- table with model paths to precache
+function MEL.AddToModelPrecacheTable(model)
+    if not MEL.ModelPrecacheTable[model] then MEL.ModelPrecacheTable[model] = model end
+end
+
+function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, field_name, error_on_nil, do_not_precache)
     if CLIENT then
         if not ent.ClientProps or not ent.ClientProps[clientprop_name] then
             if error_on_nil then MEL._LogError(Format("no such clientprop with name %s", clientprop_name)) end
@@ -25,22 +30,16 @@ function MEL.UpdateModelCallback(ent, clientprop_name, new_modelcallback, field_
         end
 
         local entclass = MEL.GetEntclass(ent)
-        if not MEL.FunctionDefaults[entclass] then
-            MEL.FunctionDefaults[entclass] = {}
-        end
-        if not MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"] then
-            MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"] = {}
-        end
-        if not MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"][clientprop_name] then
-            MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"][clientprop_name] = ent.ClientProps[clientprop_name]["modelcallback"]
-        end
+        if not MEL.FunctionDefaults[entclass] then MEL.FunctionDefaults[entclass] = {} end
+        if not MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"] then MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"] = {} end
+        if not MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"][clientprop_name] then MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"][clientprop_name] = ent.ClientProps[clientprop_name]["modelcallback"] end
         local old_modelcallback = MEL.FunctionDefaults[entclass]["clientprop_modelcallbacks"][clientprop_name] or function() end
         local new_modelcallback_function = new_modelcallback
         if isstring(new_modelcallback) then
-            new_modelcallback_function = function()
-                return new_modelcallback
-            end
+            if not do_not_precache then MEL.AddToModelPrecacheTable(new_modelcallback) end
+            new_modelcallback_function = function() return new_modelcallback end
         end
+
         ent.ClientProps[clientprop_name]["modelcallback"] = function(wagon)
             local new_modelpath = new_modelcallback_function(wagon)
             return new_modelpath or old_modelcallback(wagon)
@@ -174,15 +173,9 @@ function MEL.UpdateCallback(ent, clientprop_name, new_callback, field_name, erro
         end
 
         local entclass = MEL.GetEntclass(ent)
-        if not MEL.FunctionDefaults[entclass] then
-            MEL.FunctionDefaults[entclass] = {}
-        end
-        if not MEL.FunctionDefaults[entclass]["clientprop_callbacks"] then
-            MEL.FunctionDefaults[entclass]["clientprop_callbacks"] = {}
-        end
-        if not MEL.FunctionDefaults[entclass]["clientprop_callbacks"][clientprop_name] then
-            MEL.FunctionDefaults[entclass]["clientprop_callbacks"][clientprop_name] = ent.ClientProps[clientprop_name]["callback"]
-        end
+        if not MEL.FunctionDefaults[entclass] then MEL.FunctionDefaults[entclass] = {} end
+        if not MEL.FunctionDefaults[entclass]["clientprop_callbacks"] then MEL.FunctionDefaults[entclass]["clientprop_callbacks"] = {} end
+        if not MEL.FunctionDefaults[entclass]["clientprop_callbacks"][clientprop_name] then MEL.FunctionDefaults[entclass]["clientprop_callbacks"][clientprop_name] = ent.ClientProps[clientprop_name]["callback"] end
         local old_callback = MEL.FunctionDefaults[entclass]["clientprop_callbacks"][clientprop_name] or function() end
         ent.ClientProps[clientprop_name]["callback"] = function(wagon, cent)
             old_callback(wagon, cent)
@@ -204,7 +197,7 @@ function MEL.DeleteClientProp(ent, clientprop_name, error_on_nil)
     end
 end
 
-function MEL.NewClientProp(ent, clientprop_name, clientprop_info, field_name, do_not_override)
+function MEL.NewClientProp(ent, clientprop_name, clientprop_info, field_name, do_not_override, do_not_precache)
     if CLIENT then
         if do_not_override and ent.ClientProps[clientprop_name] then
             MEL._LogError(Format("there is already clientprop with name %s! are you sure you want to override it?", clientprop_name))
@@ -212,6 +205,7 @@ function MEL.NewClientProp(ent, clientprop_name, clientprop_info, field_name, do
         end
 
         ent.ClientProps[clientprop_name] = clientprop_info
+        if not do_not_precache then MEL.AddToModelPrecacheTable(clientprop_info.model) end
         if field_name then MEL.MarkClientPropForReload(ent, clientprop_name, field_name) end
     end
 end

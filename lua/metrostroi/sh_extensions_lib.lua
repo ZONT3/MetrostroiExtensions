@@ -528,6 +528,17 @@ local function inject(isBackports)
         recipe:InjectSystem()
     end
 
+    if CLIENT then
+        logDebug("Precaching models...")
+        local model_count = 0
+        for _, model in pairs(MEL.ModelPrecacheTable) do
+            model_count = model_count + 1
+            util.PrecacheModel(model)
+        end
+
+        logDebug(Format("Precached %d models", model_count))
+    end
+
     -- inject into functions with some helpers first
     for entclass, entTable in pairs(MEL.EntTables) do
         if SERVER then injectRandomFieldHelper(entclass, entTable) end
