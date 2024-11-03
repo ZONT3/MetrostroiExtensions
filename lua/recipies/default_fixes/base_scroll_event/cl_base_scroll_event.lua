@@ -245,7 +245,7 @@ function RECIPE:Inject(ent, entclass)
                             draw.SimpleText(textEn,"MetrostroiLabels",scrX/2+x3,y, toolTipColor or Color(255,255,255),TEXT_ALIGN_LEFT,TEXT_ALIGN_CENTER)
                             Metrostroi.DrawLine(scrX/2+x2,y+h/2-3,scrX/2+x3,y+h/2-3,toolTipColor or Color(0,255,0),1)
                         else]]
-                    draw.SimpleText(v, "MetrostroiLabels", scrX / 2, y, toolTipColor or Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                    draw.SimpleText(v, "MetrostroiLabels", scrX / 2, y, toolTipColor or color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                     --end
                 end
                 --[[

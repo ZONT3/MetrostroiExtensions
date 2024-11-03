@@ -29,8 +29,8 @@ function RECIPE:Inject(ent, entclass)
     -- add new clientprops
     MEL.NewClientProp(ent, "salon_lamps_base", {
         model = MODELS_ROOT .. "lamps_type1.mdl",
-        pos = Vector(0, 0, 0),
-        ang = Angle(0, 0, 0),
+        pos = vector_origin,
+        ang = angle_zero,
         hide = 1.5,
         modelcallback = function(wagon) return getLampData(wagon).model end,
         callback = function(wagon, cent)
@@ -43,8 +43,8 @@ function RECIPE:Inject(ent, entclass)
         -- first two glows always used (first one is emergency lighting, second one is main lighting)
         MEL.NewClientProp(ent, "salon_lamps_glow" .. i, {
             model = MODELS_ROOT .. "lamps/lamp_typ1.mdl",
-            pos = Vector(0, 0, 0),
-            ang = Angle(0, 0, 0),
+            pos = vector_origin,
+            ang = angle_zero,
             hideseat = 1.1,
             modelcallback = function(wagon)
                 local glow_data = getGlowData(wagon)

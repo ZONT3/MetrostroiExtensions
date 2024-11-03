@@ -89,7 +89,7 @@ if CLIENT then
         for i = 1, #str do
             local char = utf8.char(str[i])
             if inverse then
-                draw.SimpleText(string.char(0x7f), "Metrostroi_ILGAo", (x + i) * 30, 42, Color(0, 0, 0), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                draw.SimpleText(string.char(0x7f), "Metrostroi_ILGAo", (x + i) * 30, 42, color_black, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                 draw.SimpleText(char, "Metrostroi_ILGAo", (x + i) * 30, 42, Color(140, 190, 0, 150), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
             else
                 draw.SimpleText(char, "Metrostroi_ILGAo", (x + i) * 30, 42, Color(0, 0, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)

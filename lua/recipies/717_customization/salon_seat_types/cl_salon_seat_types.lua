@@ -14,8 +14,8 @@ function RECIPE:Inject(ent, entclass)
                 local callback = MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatTypeCustom", 1)].head.callback
                 if callback then callback(wagon, cent) end
             end,
-            pos = Vector(0, 0, 0),
-            ang = Angle(0, 0, 0),
+            pos = vector_origin,
+            ang = angle_zero,
             hide = 1.5,
         }, "SeatTypeCustom")
 
@@ -27,8 +27,8 @@ function RECIPE:Inject(ent, entclass)
                 if config.cap_callback then config.cap_callback(wagon, cent) end
                 if not config.cap_model then cent:SetNoDraw(true) end
             end,
-            pos = Vector(0, 0, 0),
-            ang = Angle(0, 0, 0),
+            pos = vector_origin,
+            ang = angle_zero,
             hideseat = 0.8,
         }, "SeatTypeCustom")
     else
@@ -41,8 +41,8 @@ function RECIPE:Inject(ent, entclass)
                 local callback = MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatTypeCustom", 1)].int.callback
                 if callback then callback(wagon, cent) end
             end,
-            pos = Vector(0, 0, 0),
-            ang = Angle(0, 0, 0),
+            pos = vector_origin,
+            ang = angle_zero,
             hide = 1.5,
         }, "SeatTypeCustom")
 
@@ -53,8 +53,8 @@ function RECIPE:Inject(ent, entclass)
                 local callback = MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatTypeCustom", 1)].int.cap_callback
                 if callback then callback(wagon, cent) end
             end,
-            pos = Vector(0, 0, 0),
-            ang = Angle(0, 0, 0),
+            pos = vector_origin,
+            ang = angle_zero,
             hideseat = 0.8,
         }, "SeatTypeCustom")
 
@@ -68,8 +68,8 @@ function RECIPE:Inject(ent, entclass)
                 local callback = MEL.RecipeSpecific.SalonSeatList[wagon:GetNW2Int("SeatTypeCustom", 1)].int.cap_o_callback
                 if callback then callback(wagon, cent) end
             end,
-            pos = Vector(0, 0, 0),
-            ang = Angle(0, 0, 0),
+            pos = vector_origin,
+            ang = angle_zero,
             hideseat = 0.8,
         }, "SeatTypeCustom")
 

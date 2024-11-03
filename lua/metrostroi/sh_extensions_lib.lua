@@ -88,7 +88,6 @@ local LOG_PREFIX = "[MetrostroiExtensionsLib] "
 local WARNING_COLOR = Color(255, 255, 0)
 local DEBUG_COLOR = Color(255, 0, 191)
 local INFO_COLOR = Color(0, 4, 255)
-local WHITE = Color(255, 255, 255)
 -- logger methods
 local function printPrefix()
     if SERVER then
@@ -107,7 +106,7 @@ end
 
 function MEL._LogInfo(msg)
     printPrefix()
-    MsgC(INFO_COLOR, "Info: ", WHITE, msg, "\n")
+    MsgC(INFO_COLOR, "Info: ", color_white, msg, "\n")
 end
 
 function MEL._LogWarning(msg)
