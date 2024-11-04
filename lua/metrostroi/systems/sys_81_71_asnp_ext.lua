@@ -88,7 +88,7 @@ if CLIENT then
 
     createFont("ASNP", "Liquid Crystal Display", 30, 400)
     function TRAIN_SYSTEM:ClientThink()
-        if not self.Train:ShouldDrawPanel("ASNPScreen") then return end
+        -- if not self.Train:ShouldDrawPanel("ASNPScreen") then return end
         --RunConsoleCommand("say","президент!!!")
         if not self.DrawTimer then
             render.PushRenderTarget(self.Train.ASNP, 0, 0, 512, 128)
