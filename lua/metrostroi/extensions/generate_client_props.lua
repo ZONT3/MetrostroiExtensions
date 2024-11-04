@@ -463,6 +463,7 @@ local function newGenerateClientProps()
                                 hideseat = panel.hideseat or config.hideseat,
                                 bscale = aconfig.bscale or config.bscale,
                                 scale = aconfig.scale or config.scale,
+                                callback = aconfig.callback
                             }
                         end
                     end
