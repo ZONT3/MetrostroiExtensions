@@ -51,7 +51,6 @@ function RECIPE:Inject(ent, entclass)
                 wagon.MotorSoundArr = wagon.EngineSNDConfig
             end
         end
-        PrintTable(wagon.MotorSoundArr)
         if not wagon.DisableEngines and wagon.MotorSoundArr then
             wagon.MotorPowerSound = math.Clamp(wagon.MotorPowerSound + (motorPower - wagon.MotorPowerSound) * wagon.DeltaTime * 3, -1.5, 1.5)
             local t = RealTime() * 2.5
