@@ -1,0 +1,71 @@
+site_name: MetrostroiExtensions
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+      fallback_to_build_date: true
+  - git-committers:
+      repository: MetrostroiExtensions/MetrostroiExtensions
+      branch: main
+  - autorefs
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+        remove_comments: true
+      cache_safe: true
+repo_url: https://github.com/MetrostroiExtensions/MetrostroiExtensions
+repo_name: MetrostroiExtensions/MetrostroiExtensions
+edit_uri: edit/main/docs/
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+  features:
+    - content.action.view
+    - search.suggest
+    - search.highlight
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.prune
+    - navigation.indexes
+    - toc.follow
+    - toc.integrate
+    - navigation.top
+
+markdown_extensions:
+  - toc:
+      permalink: true
+      title: "На этой странице:"
+  - tables
+  - pymdownx.blocks.admonition
+  - pymdownx.blocks.tab:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.highlight:
+      auto_title: true
+      use_pygments: true
+      linenums: true
+      guess_lang: true
+      default_lang: python
+  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+# nav:
+#   - Введение: index.md
+#   - API:
+#       - marketplace_apis: reference/
