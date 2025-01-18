@@ -202,7 +202,9 @@ end
 local function findRecipeFiles(folder, recipe_files)
     local found_files, found_folders = file.Find(folder .. "/*", "LUA")
     for _, recipe_file in pairs(found_files) do
-        if string.GetExtensionFromFilename(recipe_file) ~= "lua" then continue end
+        if string.GetExtensionFromFilename(recipe_file) ~= "lua"
+        or recipe_file == "warning.lua"
+        or recipe_file == "license.lua" then continue end
         table.insert(recipe_files, folder .. "/" .. recipe_file)
     end
 

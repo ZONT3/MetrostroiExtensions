@@ -1,3 +1,5 @@
+-- WARNING!!!
+--[[
 This part of Metrostroi Extensions have code which had been backported from github repository of Metrostroi Update (https://github.com/metrostroi-repo/MetrostroiAddon/).
 This code still belongs to contributors.
 Thanks to:
@@ -22,3 +24,4 @@ Used pull requests:
 * https://github.com/metrostroi-repo/MetrostroiAddon/pull/586
 * https://github.com/metrostroi-repo/MetrostroiAddon/pull/504
 * https://github.com/metrostroi-repo/MetrostroiAddon/pull/549
+--]]
