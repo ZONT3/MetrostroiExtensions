@@ -1,6 +1,4 @@
-<h1 align="center">
-<b>MetrostroiExtensionsLib</b> - простой способ написать инжект!
-</h1>
+![logo](images/rm_logo_MEL_white.svg)
 
 **MetrostroiExtensionsLib** добавляет библиотеку для инжекта в поезда аддона *Metrostroi*.
 
