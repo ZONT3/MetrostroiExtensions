@@ -20,7 +20,7 @@
     </style>
   </defs>
   <rect class="cls-4" x="45" y="0" width="45" height="45"/>
-  <rect class="cls-1" y="0" width="45" height="45"/>
+  <rect class="cls-1" x="0" y="0" width="45" height="45"/>
   <rect class="cls-2" x="90" y="0" width="232.33" height="45"/>
   <g>
     <path class="cls-3" d="M106.94,33.09l-5.77-20.41h3.53l4.29,15.95,4.64-15.95h3.09l4.61,15.95,4.29-15.95h3.53l-5.77,20.41h-3.88l-4.32-14.9-4.35,14.9h-3.88Z"/>
