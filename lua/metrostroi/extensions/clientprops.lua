@@ -1,14 +1,18 @@
--- Copyright (c) Anatoly Raev, 2024. All right reserved
+-- Copyright (C) 2025 Anatoly Raev
 --
--- Unauthorized copying of any file in this repository, via any medium is strictly prohibited.
--- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
--- Proprietary and confidential.
--- ------------
--- Авторские права принадлежат Раеву Анатолию Анатольевичу.
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU Affero General Public License as
+-- published by the Free Software Foundation, either version 3 of the
+-- License, or (at your option) any later version.
 --
--- Копирование любого файла, через любой носитель абсолютно запрещено.
--- Все авторские права защищены на основании ГК РФ Глава 70.
--- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU Affero General Public License for more details.
+--
+-- You should have received a copy of the GNU Affero General Public License
+-- along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 MEL.AnimateOverrides = {} -- table with Animate overrides
 -- (key: ent_class, value: (key: clientProp name, value: sequential table to unpack into animate (starting from min)))
 MEL.AnimateValueOverrides = {} -- table with Animate value overrides
@@ -153,21 +157,21 @@ function MEL._OverrideAnimate(ent)
     end
 end
 
-function MEL.OverrideAnimate(ent, clientProp, min_or_callback, max, speed, damping, stickyness)
+function MEL.OverrideAnimate(ent, clientprop_name, min_or_callback, max, speed, damping, stickyness)
     local ent_class = MEL.GetEntclass(ent)
     if not MEL.AnimateOverrides[ent_class] then MEL.AnimateOverrides[ent_class] = {} end
     if isfunction(min_or_callback) then
-        MEL.AnimateOverrides[ent_class][clientProp] = min_or_callback
+        MEL.AnimateOverrides[ent_class][clientprop_name] = min_or_callback
         return
     end
 
-    MEL.AnimateOverrides[ent_class][clientProp] = {min_or_callback, max, speed, damping, stickyness}
+    MEL.AnimateOverrides[ent_class][clientprop_name] = {min_or_callback, max, speed, damping, stickyness}
 end
 
-function MEL.OverrideAnimateValue(ent, clientProp, value_callback)
+function MEL.OverrideAnimateValue(ent, clientprop_name, value_callback)
     local ent_class = MEL.GetEntclass(ent)
     if not MEL.AnimateValueOverrides[ent_class] then MEL.AnimateValueOverrides[ent_class] = {} end
-    MEL.AnimateValueOverrides[ent_class][clientProp] = value_callback
+    MEL.AnimateValueOverrides[ent_class][clientprop_name] = value_callback
 end
 
 function MEL.UpdateCallback(ent, clientprop_name, new_callback, field_name, error_on_nil)

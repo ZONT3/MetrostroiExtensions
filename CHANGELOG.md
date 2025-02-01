@@ -1,3 +1,66 @@
+## 0.8.7 (2025-02-01)
+
+### Feat
+
+- start adding new docs
+- **generate_client_props**: add callback for labels
+
+### Fix
+
+- remove debug print
+- add fix for old custom bogeys
+- **asnp**: draw on every panel
+
+### Refactor
+
+- use vector_origin, angle_zero, color_white
+
+## 0.8.6 (2024-11-02)
+
+### Feat
+
+- add model precaching api
+- **MEL.UpdateModelCallback**: allow to pass string with model path for simple modelcallback
+- add cookiecutter template for fast creation of scoped recipies
+- add lamp base data
+- enable debug by default for now
+- improvments for non-debug logging and spawner working
+- add ability to choose scope of recipe
+- add dot5 as nw2 var for 717_lvz
+- add 717lvz custom
+- **717_lvz**: add kvr chooser
+- **spawner**: add ability to pass function as callback for autorandom
+- **helpers**: add helpers which help determine wagon type
+- **MarkClientPropForReload**: add ability to pass multiple field names as table with strings
+
+### Fix
+
+- make injects work on spawned trains on first enter
+- use right var name in MEL.NewClientProp
+-  do not check for server recipies on client in SinglePlayer
+- make opened seat cap at zeros by default
+- clear decorator cache on reload
+- actually send client recipe lol
+- use right BaseRecipe for this scope
+- typo in ModifyButtonMap and MoveButtonMapButton
+- 717_lvz_kvr_chooser
+- **714**: add lvz flag
+- allow usage of salon_seats and salon_lamp_types on spb 717
+- add states for otsekdoors into backports
+- make rolling sounds on 717 louder
+
+### Refactor
+
+- make 717_customization recipies scoped
+- salon seats
+- **salon_lamp_types**: use common vector for default color
+
+### Perf
+
+- optimizations and bugfixes
+- try to remove all client overrides on ext_reload
+- make use of Metrostroi.SpawnedTrains
+
 ## 0.5.2 (2024-08-08)
 
 ### Fix

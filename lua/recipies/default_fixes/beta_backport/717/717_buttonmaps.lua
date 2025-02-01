@@ -1,14 +1,17 @@
--- Copyright (c) Anatoly Raev, 2024. All right reserved
+-- Copyright (C) 2025 Anatoly Raev
 --
--- Unauthorized copying of any file in this repository, via any medium is strictly prohibited.
--- All rights reserved by the Civil Code of the Russian Federation, Chapter 70.
--- Proprietary and confidential.
--- ------------
--- Авторские права принадлежат Раеву Анатолию Анатольевичу.
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU Affero General Public License as
+-- published by the Free Software Foundation, either version 3 of the
+-- License, or (at your option) any later version.
 --
--- Копирование любого файла, через любой носитель абсолютно запрещено.
--- Все авторские права защищены на основании ГК РФ Глава 70.
--- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU Affero General Public License for more details.
+--
+-- You should have received a copy of the GNU Affero General Public License
+-- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 MEL.DefineRecipe("717_buttonmaps", "gmod_subway_81-717_mvm")
 RECIPE.BackportPriority = 5
 function RECIPE:Inject(ent)

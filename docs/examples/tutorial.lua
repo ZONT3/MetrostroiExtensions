@@ -20,6 +20,8 @@ function RECIPE:Inject(ent, entclass)
         ang = Angle(0, 0, 0),
     }, "HelloWorldPropType")
 
+    MEL.InjectIntoSharedFunction(ent, "InitializeSystems", function(wagon) wagon:LoadSystem("GreetWorld", "Relay", "Switch", {bass = true}) end)
+    MEL.AddToSyncTable(ent, "GreetWorld")
     MEL.NewButtonMap(ent, "HelloWorld", {
         pos = Vector(0, 0, 0),
         ang = Angle(0, 90, 90),
@@ -28,7 +30,7 @@ function RECIPE:Inject(ent, entclass)
         scale = 0.0625, -- на самом деле это 1/16
         buttons = {
             {
-                ID = "GreetWorld",
+                ID = "GreetWorldSet",
                 x = 0,
                 y = 0,
                 w = 100,
@@ -36,7 +38,7 @@ function RECIPE:Inject(ent, entclass)
                 tooltip = "Hello world!",
                 model = {
                     model = "models/metrostroi_train/81-710/ezh3_button_black.mdl",
-                    var = "KRZD",
+                    var = "GreetWorld",
                     speed = 16,
                     vmin = 1,
                     vmax = 0,
@@ -49,6 +51,16 @@ function RECIPE:Inject(ent, entclass)
             },
         }
     })
+    MEL.InjectIntoClientFunction(ent, "Think", function(wagon)
+        if wagon.OldGreetWorld ~= wagon:GetNW2Bool("GreetWorld") then
+            wagon.OldGreetWorld = wagon:GetNW2Bool("GreetWorld")
 
-    MEL.InjectIntoServerFunction(ent, "OnButtonPress", function(wagon, button, ply) if button == "GreetWorld" then ply:ChatPrint("Hello World!") end end)
+            local hello_world_prop = wagon.ClientEnts["hello_world_prop"]
+            -- wagon.OldGreetWorld == true нужен только для того, чтобы менять цвет только при нажатии кнопки, не менять его второй раз при отпускании
+            if wagon.OldGreetWorld == true and IsValid(hello_world_prop) then
+                hello_world_prop:SetColor(Color(math.random(0, 255), math.random(0, 255), math.random(0, 255)))
+            end
+        end
+    end)
+    MEL.InjectIntoServerFunction(ent, "OnButtonPress", function(wagon, button, ply) if button == "GreetWorldSet" then ply:ChatPrint("Hello World!") end end)
 end
