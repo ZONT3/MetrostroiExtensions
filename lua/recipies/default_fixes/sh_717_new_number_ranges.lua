@@ -16,7 +16,7 @@
 MEL.DefineRecipe("717_new_number_ranges", "gmod_subway_81-717_mvm")
 function RECIPE:Inject(ent)
     -- некрасиво? да.
-    if MEL.Debug then
+    if MEL.IsDebug() then
         ent.NumberRanges = {
             --717 МВМ
             {

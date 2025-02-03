@@ -12,11 +12,14 @@
 --
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 if SERVER then AddCSLuaFile() end
 if not MetrostroiExtensionsLib then MetrostroiExtensionsLib = {} end
 MEL = MetrostroiExtensionsLib -- alias. 23 symbols vs 3. and we name it MetrostroiExtensionLib because there is fly's old Metrostroi Extensions.
-MEL.Debug = true -- helps with autoreload, but may introduce problems. Disable in production!
+local MEL_DEBUG_CONVAR = CreateConVar("metrostroi_ext_debug", 0, {FCVAR_ARCHIVE, FCVAR_REPLICATED,}, "Metrostroi Extensions Debug mode status. See https://metrostroiextensions.github.io/MetrostroiExtensions/recipe_basics/#debug- for more info.", 0, 1)
+MEL.IsDebug = function()
+    return MEL_DEBUG_CONVAR:GetBool() -- helps with autoreload, but may introduce problems. Disable in production!
+end
+MEL.Debug = MEL.IsDebug()  -- DEPRECATED: Please use MEL.IsDebug function
 MEL.BaseRecipies = {}
 MEL.Recipes = {}
 MEL.InjectStack = {}
@@ -102,7 +105,7 @@ local function printPrefix()
 end
 
 local function logDebug(msg)
-    if MEL.Debug then
+    if MEL.IsDebug() then
         printPrefix()
         MsgC(DEBUG_COLOR, "Debug: ", msg, "\n")
     end
@@ -203,12 +206,17 @@ function MEL.DefineRecipe(name, train_type)
     RECIPE.Scope = CURRENT_SCOPE
 end
 
+local ignoreNames = {
+    ["warning.lua"] = true,
+    ["license.lua"] = true,
+    ["WARNING.lua"] = true,
+    ["LICENSE.lua"] = true,
+}
+
 local function findRecipeFiles(folder, recipe_files)
     local found_files, found_folders = file.Find(folder .. "/*", "LUA")
     for _, recipe_file in pairs(found_files) do
-        if string.GetExtensionFromFilename(recipe_file) ~= "lua"
-        or recipe_file == "warning.lua"
-        or recipe_file == "license.lua" then continue end
+        if string.GetExtensionFromFilename(recipe_file) ~= "lua" or ignoreNames[recipe_file] or ignoreNames[string.lower(recipe_file)] then continue end
         table.insert(recipe_files, folder .. "/" .. recipe_file)
     end
 
@@ -411,7 +419,7 @@ local function injectFieldUpdateHelper(entclass)
     MEL.InjectIntoClientFunction(entclass_inject, "UpdateWagonNumber", function(wagon)
         for key, props in pairs(MEL.ClientPropsToReload[entclass]) do
             local value = wagon:GetNW2Int(key, 1)
-            if MEL.Debug or wagon[key] ~= value then
+            if MEL.IsDebug() or wagon[key] ~= value then
                 for _, prop_name in pairs(props) do
                     wagon:RemoveCSEnt(prop_name)
                 end
@@ -606,9 +614,17 @@ end)
 
 -- reload command:
 -- reloads all recipies on client and server
-if MEL.Debug and SERVER then
+if SERVER then
     util.AddNetworkString("MetrostroiExtDoReload")
     concommand.Add("metrostroi_ext_reload", function(ply, cmd, args)
+        if not MEL.IsDebug() then
+            if IsValid(ply) then
+                ply:PrintMessage(HUD_PRINTCONSOLE, "Can't use metrostroi_ext_reload with metrostroi_ext_debug 0")
+            else
+                MEL._LogWarning("Can't use metrostroi_ext_reload with metrostroi_ext_debug 0")
+            end
+            return
+        end
         net.Start("MetrostroiExtDoReload")
         net.Broadcast()
         MEL.ApplyBackports()
@@ -630,7 +646,7 @@ if MEL.Debug and SERVER then
     end)
 end
 
-if MEL.Debug and CLIENT then
+if CLIENT then
     net.Receive("MetrostroiExtDoReload", function(len, ply)
         MEL._LogInfo(Format("(%s) reloading recipies...", string.FormattedTime(CurTime(), "%02i:%02i:%02i")))
         MEL.ApplyBackports()
