@@ -1,3 +1,13 @@
+## 0.9.0 (2025-02-03)
+
+### Feat
+
+- add new MEL_DEBUG_CONVAR convar
+
+### Fix
+
+- delete ci for now
+
 ## 0.8.7 (2025-02-01)
 
 ### Feat
