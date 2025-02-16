@@ -348,7 +348,6 @@ function RECIPE:Inject(ent, entclass)
     if CLIENT then
         hook.Remove("CalcView", "Metrostroi_TrainView")
         hook.Add("CalcVehicleView", "Metrostroi_TrainView_EXT", function(seat, ply, tbl)
-            print("CalcVehicleView")
             local train = ply.InMetrostroiTrain
             if not IsValid(train) then return end
             if seat:GetThirdPersonMode() and train.MirrorCams[1] then
