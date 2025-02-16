@@ -206,7 +206,6 @@ function RECIPE:Inject(ent)
             wagon:SetLightPower("Lamp_RTM2", dot5 and lamps_rtm > 0, lamps_rtm)
             if wagon.MaskType ~= mask then
                 wagon:ShowHide("mask22_mvm", mask == 1)
-                -- wagon:ShowHide("mask222_mvm_wp", mask == 2)
                 wagon:ShowHide("mask222_lvz", mask == 2)
                 wagon:ShowHide("mask222_mvm", mask == 3)
                 wagon:ShowHide("mask141_mvm", mask == 4)

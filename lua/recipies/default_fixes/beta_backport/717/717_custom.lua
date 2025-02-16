@@ -31,6 +31,8 @@ function RECIPE:Inject(ent, ent_class)
         return Announcer
     end
 
+    MEL.FindSpawnerField(ent_class, "MaskType")[MEL.Constants.Spawner.List.ELEMENTS] = {"2-2 (M)","2-2-2","2-2-2 (M)","1-4-1 (M)"}
+
     MEL.FindSpawnerField(ent, "SpawnMode")[MEL.Constants.Spawner.List.WAGON_CALLBACK] = function(wagon, val, rot, i, wagnum, rclk)
         if rclk then return end
         if wagon._SpawnerStarted ~= val then
