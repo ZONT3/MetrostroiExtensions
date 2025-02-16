@@ -12,7 +12,7 @@
 --
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
-MEL.DefineRecipe("platform_backport", {"gmod_track_platform"})
+MEL.DefineRecipe("platform_backport", "gmod_track_platform")
 RECIPE.BackportPriority = 2
 function RECIPE:Inject(ent)
     local dT = 0.25
@@ -265,8 +265,15 @@ function RECIPE:Inject(ent)
             return getTrainDriver(train.RearTrain, checked) or getTrainDriver(train.FrontTrain, checked)
         end
 
-        local function CDF(x,x0,sigma) return 0.5 * (1 + erf((x - x0)/math.sqrt(2*sigma^2))) end
-        local function merge(t1,t2) for k,v in pairs(t2) do table.insert(t1,v) end end
+        local function CDF(x, x0, sigma)
+            return 0.5 * (1 + erf((x - x0) / math.sqrt(2 * sigma ^ 2)))
+        end
+
+        local function merge(t1, t2)
+            for k, v in pairs(t2) do
+                table.insert(t1, v)
+            end
+        end
 
         local function getPassengerRate(passCount)
             if passCount < 80 then
@@ -458,10 +465,12 @@ function RECIPE:Inject(ent)
                     -- Keep list of door positions
                     if left_side then
                         for k, vec in ipairs(v.LeftDoorPositions) do
+                            if not isvector(vec) then continue end
                             table.insert(boardingDoorList, v:LocalToWorld(vec))
                         end
                     else
                         for k, vec in ipairs(v.RightDoorPositions) do
+                            if not isvector(vec) then continue end
                             table.insert(boardingDoorList, v:LocalToWorld(vec))
                         end
                     end

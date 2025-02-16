@@ -20,13 +20,6 @@ function RECIPE:Inject(ent)
         return Vector(359.0 - 35 / 2 - 229.5 * i, -65 * (1 - 2 * k), 7.5)
     end
 
-    ent.LeftDoorPositions = {}
-    ent.RightDoorPositions = {}
-    for i = 1, 4 do
-        table.insert(ent.LeftDoorPositions, GetDoorPosition(i - 1, 1))
-        table.insert(ent.RightDoorPositions, GetDoorPosition(i - 1, 0))
-    end
-
     local ARSRelays = {"EK", "EK1", "KPK1", "KPK2", "FMM1", "FMM2", "PD1", "PD2", "ARS_VP", "ARS_RT", "NG", "NH", "BUM_RVD1", "BUM_RVD2", "BUM_RUVD", "BUM_RB", "BUM_TR", "BUM_PTR", "BUM_PTR1", "BUM_EK", "BUM_EK1", "BUM_RVZ1", "BUM_RET", "BUM_LTR1", "BUM_RVT1", "BUM_RVT2", "BUM_RVT4", "BUM_RVT5", "BUM_RIPP", "BUM_PEK", "BUM_KPP", "BSM_GE", "BSM_SIR1", "BSM_SIR2", "BSM_SIR3", "BSM_SIR4", "BSM_SIR5", "BSM_SR1", "BSM_SR2", "BSM_KSR1", "BSM_KSR2", "BSM_KRO", "BSM_KRH", "BSM_KRT", "BSM_BR1", "BSM_BR2", "BSM_PR1", "BSM_RNT", "BSM_RNT1", "BLPM_1R1", "BLPM_1R2", "BLPM_1R3", "BLPM_2R1", "BLPM_2R2", "BLPM_2R3", "BLPM_3R1", "BLPM_3R2", "BLPM_3R3", "BLPM_4R1", "BLPM_4R2", "BLPM_4R3", "BLPM_5R1", "BLPM_5R2", "BLPM_5R3", "BLPM_6R1", "BLPM_6R2", "BLPM_6R3", "BIS_R0", "BIS_R1", "BIS_R2", "BIS_R3", "BIS_R4", "BIS_R5", "BIS_R6", "BIS_R7", "BIS_R8", "BIS_R10",}
     function ent.InitializeSounds(wagon)
         wagon.BaseClass.InitializeSounds(wagon)
