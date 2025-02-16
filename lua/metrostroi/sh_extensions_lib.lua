@@ -488,6 +488,7 @@ local function injectFunction(key, tbl)
         -- we need this cause Initialize would be called before MEL would build injects
         if CLIENT and MEL.FirstTimeInject then
             for _, functionName in pairs({"Initialize", "InitializeSystems", "InitializeSounds"}) do
+                if not MEL.FunctionInjectStack[key][functionName] then continue end
                 for priority, functionStack in SortedPairs(MEL.FunctionInjectStack[key][functionName]) do
                     for _, func in pairs(functionStack) do
                         func(ent)
