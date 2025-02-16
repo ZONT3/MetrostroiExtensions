@@ -1,3 +1,14 @@
+## 0.9.2 (2025-02-16)
+
+### Fix
+
+- error that happened if you would enter on map while in your PVS there was any train without Initialize, InitializeSystems or InitializeSounds inject
+- error when boarding passengers on 717
+- remove debug print in CalcVehicleView
+- cam height
+- update languages to fix SeatType spawner translation
+- 717 masks
+
 ## 0.9.1 (2025-02-04)
 
 ### Fix
