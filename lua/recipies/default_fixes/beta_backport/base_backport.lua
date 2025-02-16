@@ -12,7 +12,6 @@
 --
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 MEL.DefineRecipe("base_backport", "gmod_subway_base")
 RECIPE.BackportPriority = 1
 RECIPE.Description = "This recipe backports changes for gmod_subway_base from metrostroi beta"
@@ -21,9 +20,9 @@ local C_RenderDistance = GetConVar("metrostroi_renderdistance")
 local C_SoftDraw = GetConVar("metrostroi_softdrawmultipier")
 local C_ScreenshotMode = GetConVar("metrostroi_screenshotmode")
 local C_DrawDebug = GetConVar("metrostroi_drawdebug")
--- local C_CabFOV              = GetConVar("metrostroi_cabfov")
--- local C_CabZ                = GetConVar("metrostroi_cabz")
--- local C_FovDesired          = GetConVar("fov_desired")
+local C_CabFOV              = GetConVar("metrostroi_cabfov")
+local C_CabZ = GetConVar("metrostroi_cabz")
+local C_FovDesired          = GetConVar("fov_desired")
 -- local C_MinimizedShow       = GetConVar("metrostroi_minimizedshow")
 local C_Shadows1 = GetConVar("metrostroi_shadows1")
 local C_Shadows2 = GetConVar("metrostroi_shadows2")
@@ -33,6 +32,7 @@ local C_AA = GetConVar("mat_antialias")
 local C_Sprites = GetConVar("metrostroi_sprites")
 local C_DisableSeatShadows = GetConVar("metrostroi_disableseatshadows")
 function RECIPE:Init()
+
     hook.Remove("PopulateToolMenu", "Metrostroi cpanel")
     -- Build admin panel
     local function AdminPanel(panel)
@@ -346,6 +346,53 @@ function RECIPE:Inject(ent, entclass)
     end
 
     if CLIENT then
+        hook.Remove("CalcView", "Metrostroi_TrainView")
+        hook.Add("CalcVehicleView", "Metrostroi_TrainView_EXT", function(seat, ply, tbl)
+            print("CalcVehicleView")
+            local train = ply.InMetrostroiTrain
+            if not IsValid(train) then return end
+            if seat:GetThirdPersonMode() and train.MirrorCams[1] then
+                local trainAng = tbl.angles - train:GetAngles()
+                if trainAng.y > 180 then trainAng.y = trainAng.y - 360 end
+                if trainAng.y < -180 then trainAng.y = trainAng.y + 360 end
+                if trainAng.y > 0 then
+                    train.CamPos = train:LocalToWorld(train.MirrorCams[1])
+                    train.CamAngles = train:LocalToWorldAngles(train.MirrorCams[2])
+                    return {
+                        origin = train.CamPos,
+                        angles = train.CamAngles,
+                        fov = train.MirrorCams[3],
+                    }
+                else
+                    train.CamPos = train:LocalToWorld(train.MirrorCams[4])
+                    train.CamAngles = train:LocalToWorldAngles(train.MirrorCams[5])
+                    return {
+                        origin = train.CamPos,
+                        angles = train.CamAngles,
+                        fov = train.MirrorCams[6],
+                    }
+                end
+            elseif train.CurrentCamera > 0 and train.Cameras[train.CurrentCamera] then
+                local camera = train.Cameras[train.CurrentCamera]
+                train.CamPos = train:LocalToWorld(camera[1])
+                local tFov = tbl.fov / C_FovDesired:GetFloat() * C_CabFOV:GetFloat()
+                return {
+                    origin = train.CamPos,
+                    angles = tbl.angles, --+train:LocalToWorldAngles(camera[2]),
+                    fov = tFov,
+                }
+            else
+                train.CamPos = train:LocalToWorld(train:WorldToLocal(tbl.origin) + Vector(train.HeadAcceleration, 0, C_CabZ:GetFloat()))
+                local tFov = tbl.fov / C_FovDesired:GetFloat() * C_CabFOV:GetFloat()
+                return {
+                    origin = train.CamPos,
+                    angles = tbl.angles, --target_ang+train.CamAnglesComp,
+                    fov = tFov,
+                }
+            end
+            return
+        end)
+
         local function isValidTrainDriver(ply)
             if IsValid(ply.InMetrostroiTrain) then return ply.InMetrostroiTrain end
             local weapon = IsValid(LocalPlayer():GetActiveWeapon()) and LocalPlayer():GetActiveWeapon():GetClass()
