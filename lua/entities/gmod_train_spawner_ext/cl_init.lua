@@ -248,7 +248,7 @@ local function entityTypeCallback(self, index, value)
 	image = string.Replace(image, "_custom", "")
 	panelRegistry.entityImage:SetImage(image, BACKUP_TRAIN_IMAGE)
 	panelRegistry.layout:Clear()
-	local spawner = scripted_ents.Get(currentSettings.entityClass).Spawner
+	local spawner = MEL.getEntTable(currentSettings.entityClass).Spawner
 	local sections = aggregateBySection(utils.convertToNamedFormat(spawner))
 	drawSections(sections)
 	-- FIXME: really weird hack here...
@@ -351,7 +351,7 @@ local function spawn()
 	net.SendToServer()
 	local tool = LocalPlayer():GetTool("train_spawner_ext")
 	tool.Settings = settings
-	local ENT = scripted_ents.Get(tool.Settings.Train)
+	local ENT = MEL.getEntTable(tool.Settings.Train)
 	if ENT and ENT.Spawner then tool.Train = ENT end
 	panelRegistry.rootFrame:Close()
 end
