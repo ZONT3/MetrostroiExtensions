@@ -12,24 +12,21 @@
 --
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 if not MEL.SpawnerFieldMappings then
     MEL.SpawnerFieldMappings = {} -- lookup table for accessing spawner fields by name and list elements by default, non-translated name
 end
--- (key: train_class, value: (key: field_name, value: {index = index_of_field, list_elements = (key: name of list element, value: index)}))
 
+-- (key: train_class, value: (key: field_name, value: {index = index_of_field, list_elements = (key: name of list element, value: index)}))
 if not MEL.ButtonmapButtonMappings then
     MEL.ButtonmapButtonMappings = {} -- lookup table for accessing button of buttonmap by its id
 end
 
 MEL.SyncTableHashed = {} -- lookup table checking if some value is in SyncTable
 --  (key: train_class, value: (key: sync key, value: always true)
-
 local ENTCLASS_714_PATTERN = "714"
 local ENTCLASS_717_PATTERN = "717"
 local ENTCLASS_LVZ_PATTERN = "lvz"
 MEL.Helpers = {}
-
 local function stringContains(str, pattern)
     local i, _, _ = string.find(str, pattern)
     return i and true or false
@@ -39,22 +36,57 @@ end
 function MEL.Helpers.Is717(entclass)
     return stringContains(entclass, ENTCLASS_717_PATTERN)
 end
+
 function MEL.Helpers.Is714(entclass)
     return stringContains(entclass, ENTCLASS_714_PATTERN)
 end
+
 function MEL.Helpers.IsSPB(entclass)
     -- we probably should call this function as "IsLVZ", but this causes confusion. fuck metrostroi
     return stringContains(entclass, ENTCLASS_LVZ_PATTERN)
 end
 
-local SpawnerC = MEL.Constants.Spawner
-
+local SpawnerC = include("metrostroi/extensions/constants/spawner.lua")
 function MEL.Helpers.getListElementIndex(field_table, element_name)
-    if field_table[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field_table[SpawnerC.List.ELEMENTS]) then
-        for list_i, name in pairs(field_table[SpawnerC.List.ELEMENTS]) do
+    field_table = MEL.Helpers.SpawnerEnsureNamedFormat(field_table)
+    if field_table.Type == SpawnerC.TYPE_LIST and istable(field_table.Elements) then
+        for list_i, name in pairs(field_table.Elements) do
             if name == element_name then return list_i end
         end
     end
+end
+
+function MEL.Helpers.SpawnerEnsureNamedFormat(option)
+    local convertedOption = {}
+    -- TODO: why do we even get functions here sometimes?
+    if isfunction(option) then
+        return option
+    end
+    -- already in named format, no need to convert it
+    if option.Name then
+        convertedOption = option
+    else
+        convertedOption.Name = option[SpawnerC.NAME]
+        convertedOption.Translation = option[SpawnerC.TRANSLATION]
+        convertedOption.Type = option[SpawnerC.TYPE]
+        if convertedOption.Type == SpawnerC.TYPE_LIST then
+            convertedOption.Elements = option[SpawnerC.List.ELEMENTS]
+            convertedOption.Default = option[SpawnerC.List.DEFAULT_VALUE]
+            convertedOption.WagonCallback = option[SpawnerC.List.WAGON_CALLBACK]
+            convertedOption.ChangeCallback = option[SpawnerC.List.CHANGE_CALLBACK]
+        elseif convertedOption.Type == SpawnerC.TYPE_SLIDER then
+            convertedOption.Decimals = option[SpawnerC.Slider.DECIMALS]
+            convertedOption.Min = option[SpawnerC.Slider.MIN_VALUE]
+            convertedOption.Max = option[SpawnerC.Slider.MAX_VALUE]
+            convertedOption.Default = option[SpawnerC.Slider.DEFAULT]
+            convertedOption.WagonCallback = option[SpawnerC.Slider.WAGON_CALLBACK]
+        elseif convertedOption.Type == SpawnerC.TYPE_BOOLEAN then
+            convertedOption.Default = option[SpawnerC.Boolean.DEFAULT]
+            convertedOption.WagonCallback = option[SpawnerC.Boolean.WAGON_CALLBACK]
+            convertedOption.ChangeCallback = option[SpawnerC.Boolean.CHANGE_CALLBACK]
+        end
+    end
+    return convertedOption
 end
 
 function MEL.Helpers.getWeightedRandomValue(distribution)
@@ -67,10 +99,9 @@ function MEL.Helpers.getWeightedRandomValue(distribution)
     local cursor = 0
     for i = 1, #distribution do
         cursor = cursor + distribution[i]
-        if cursor >= random then
-            return i
-        end
+        if cursor >= random then return i end
     end
+
     MEL._LogError("getWeightedRandomValue is broken lol. Please report this error")
 end
 
@@ -103,8 +134,9 @@ local function populateSpawnerFieldMappings()
         if not ent_table.Spawner then continue end
         MEL.SpawnerFieldMappings[train_class] = {}
         for field_i, field in pairs(ent_table.Spawner) do
-            if istable(field) and isstring(field[SpawnerC.NAME]) then
-                local field_name = field[SpawnerC.NAME]
+            field = MEL.Helpers.SpawnerEnsureNamedFormat(field)
+            if istable(field) and isstring(field.Name) then
+                local field_name = field.Name
                 if MEL.SpawnerFieldMappings[train_class][field_name] then continue end
                 MEL.SpawnerFieldMappings[train_class][field_name] = {
                     index = field_i,
@@ -112,8 +144,8 @@ local function populateSpawnerFieldMappings()
                     list_elements_indexed = {}
                 }
 
-                if field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
-                    for list_i, name in pairs(field[SpawnerC.List.ELEMENTS]) do
+                if field.Type == SpawnerC.TYPE_LIST and istable(field.Elements) then
+                    for list_i, name in pairs(field.Elements) do
                         MEL.SpawnerFieldMappings[train_class][field_name].list_elements[name] = list_i
                         MEL.SpawnerFieldMappings[train_class][field_name].list_elements_indexed[list_i] = name
                     end

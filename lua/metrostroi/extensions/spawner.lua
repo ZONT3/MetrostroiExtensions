@@ -12,11 +12,10 @@
 --
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 MEL.ClientPropsToReload = {} -- client props, injected with Metrostroi Extensions, that needs to be reloaded on spawner update
 -- (key: entity class, value: table with key as field name and table with props as value)
 MEL.RandomFields = {} -- all fields, that marked as random (first value is list eq. random) (key: entity class, value: {field_name, amount_of_entries})
-local SpawnerC = MEL.Constants.Spawner
+local SpawnerC = include("metrostroi/extensions/constants/spawner.lua")
 local function getSpawnerEntclass(ent_or_entclass)
     local ent_class = MEL.GetEntclass(ent_or_entclass)
     -- TODO: HasValue is slow, needs refactor
@@ -64,9 +63,11 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
     local spawner = MEL.EntTables[ent_class].Spawner
     if not spawner then return end
     local old_pos = nil
+    field_data = MEL.Helpers.SpawnerEnsureNamedFormat(field_data)
     -- check if we have field with same name, remove it if needed
     for i, existing_field in pairs(spawner) do
-        if istable(existing_field) and isnumber(i) and #existing_field ~= 0 and existing_field[SpawnerC.NAME] == field_data[SpawnerC.NAME] then
+        existing_field = MEL.Helpers.SpawnerEnsureNamedFormat(existing_field)
+        if istable(existing_field) and isnumber(i) and existing_field.Name and existing_field.Name == field_data.Name then
             old_pos = i
             table.remove(spawner, old_pos)
         end
@@ -75,23 +76,23 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
     if random_field_data then
         local entclass_random = MEL.GetEntclass(ent_or_entclass)
         if not MEL.RandomFields[entclass_random] then MEL.RandomFields[entclass_random] = {} end
-        local field_type = field_data[SpawnerC.TYPE]
+        local field_type = field_data.Type
         local random_data = {
-            name = field_data[SpawnerC.NAME],
+            name = field_data.Name,
             type_ = field_type
         }
 
         if istable(random_field_data) then random_data.distribution = random_field_data end
         if isfunction(random_field_data) then random_data.callback = random_field_data end
         if field_type == SpawnerC.TYPE_LIST then
-            random_data.elements_length = #field_data[SpawnerC.List.ELEMENTS]
+            random_data.elements_length = #field_data.Elements
         elseif field_type == SpawnerC.TYPE_SLIDER then
-            random_data.min = field_data[SpawnerC.Slider.MIN_VALUE]
-            random_data.max = field_data[SpawnerC.Slider.MAX_VALUE]
-            random_data.decimals = field_data[SpawnerC.Slider.DECIMALS]
+            random_data.min = field_data.Min
+            random_data.max = field_data.Max
+            random_data.decimals = field_data.Decimals
         end
 
-        MEL.RandomFields[entclass_random][field_data[SpawnerC.NAME]] = random_data
+        MEL.RandomFields[entclass_random][field_data.Name] = random_data
     end
 
     if old_pos then
@@ -108,30 +109,11 @@ function MEL.RemoveSpawnerField(ent_or_entclass, field_name)
     local spawner = MEL.EntTables[ent_class].Spawner
     if not spawner then return end
     for i, field in pairs(spawner) do
-        if istable(field) and #field ~= 0 and field[SpawnerC.NAME] == field_name then table.remove(spawner, i) end
+        field = MEL.Helpers.SpawnerEnsureNamedFormat(field)
+        if istable(field) and #field ~= 0 and field.Name == field_name then table.remove(spawner, i) end
     end
 end
 
--- TODO: Document that shit
--- local function updateMapping(entclass, field_name, mapping_name, new_index)
---     if not MEL.ElementMappings[entclass] then MEL.ElementMappings[entclass] = {} end
---     if not MEL.ElementMappings[entclass][field_name] then MEL.ElementMappings[entclass][field_name] = {} end
---     MEL.ElementMappings[entclass][field_name][mapping_name] = new_index
--- end
--- function MEL.AddSpawnerListElement(ent_or_entclass, field_name, element)
---     local entclass = getSpawnerEntclass(ent_or_entclass)
---     local spawner = scripted_ents.GetStored(entclass).t.Spawner
---     if not spawner then return end
---     for _, field in pairs(spawner) do
---         if field and #field > 0 and field[1] == field_name then
---             -- just add it lol
---             local new_index = table.insert(field[4], element)
---             -- for god sake, if some shitty inject will insert element and not append it - i would be so mad
---             updateMapping(ent_or_entclass, field_name, element, new_index)
---             return
---         end
---     end
--- end
 function MEL.GetMappingValue(ent_or_entclass, field_name, element)
     if not field_name then
         MEL._LogError("please provide field_name for which to obtain spawner mapping value")
@@ -153,8 +135,9 @@ function MEL.GetMappingValue(ent_or_entclass, field_name, element)
 
     -- try to find index of it, if it non-existent in our SpawnerFieldMappings cache
     for field_i, field in pairs(ent_table.Spawner) do
-        if istable(field) and isstring(field[SpawnerC.NAME]) and field[SpawnerC.NAME] == field_name then
-            if MEL.SpawnerFieldMappings[ent_class][field_name] and field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST then
+        field = MEL.Helpers.SpawnerEnsureNamedFormat(field)
+        if istable(field) and isstring(field.Name) and field.Name == field_name then
+            if MEL.SpawnerFieldMappings[ent_class][field_name] and field.Type == SpawnerC.TYPE_LIST then
                 -- just update list_elements and try to find it
                 MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] = MEL.Helpers.getListElementIndex(field, element)
             end
@@ -164,7 +147,7 @@ function MEL.GetMappingValue(ent_or_entclass, field_name, element)
                 list_elements = {}
             }
 
-            if field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] = MEL.Helpers.getListElementIndex(field, element) end
+            if field.Type == SpawnerC.TYPE_LIST and istable(field.Elements) then MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] = MEL.Helpers.getListElementIndex(field, element) end
         end
     end
 end

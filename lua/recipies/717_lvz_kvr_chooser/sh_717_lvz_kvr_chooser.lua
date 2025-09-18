@@ -16,10 +16,10 @@
 MEL.DefineRecipe("717_lvz_kvr_chooser", "717_714_lvz")
 function RECIPE:InjectSpawner(entclass)
     MEL.AddSpawnerField(entclass, {
-        [1] = "WagonType",
-        [2] = "Spawner.717.WagonType",
-        [3] = "List",
-        [4] = {"Random", "81-717", "81-717.5 (KVR)"}
+        Name = "WagonType",
+        Translation = "Spawner.717.WagonType",
+        Type = "List",
+        Elements = {"Random", "81-717", "81-717.5 (KVR)"}
     }, function(wagon, elements_length)
         local type_ = wagon:GetNW2Int("Type")
         local isKVR = false

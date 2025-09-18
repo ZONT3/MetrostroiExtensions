@@ -148,8 +148,10 @@ MEL.RemoveSpawnerField("gmod_subway_81-775", "SomeField")
 
 **Пример использования**:
 ```lua
+local SpawnerConstants = include("metrostroi/extensions/constants/spawner.lua")
+
 -- находим поле Scheme и меняем функцию, которая возвращает элементы списка
-MEL.FindSpawnerField("gmod_subway_81-775", "Scheme")[MEL.Constants.Spawner.List.ELEMENTS] = function()
+MEL.FindSpawnerField("gmod_subway_81-775", "Scheme")[SpawnerConstants.List.ELEMENTS] = function()
     local Schemes = {}
     for k, v in pairs(Metrostroi.Skins["717_new_schemes"] or {}) do
         Schemes[k] = v.name or k

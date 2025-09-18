@@ -118,10 +118,11 @@ function RECIPE:InjectSpawner(entclass)
 
     -- actually adding a new field and removing old one - random is hardcoded... again......
     MEL.AddSpawnerField(entclass, {
-        [1] = "SalonLampType",
-        [2] = "Spawner.717.SalonLampType",
-        [3] = "List",
-        [4] = fields
+        Name = "SalonLampType",
+        Section = "Interior",
+        Translation = "Spawner.717.SalonLampType",
+        Type = "List",
+        Elements = fields
     }, true)
 
     MEL.RemoveSpawnerField(entclass, "LampType")

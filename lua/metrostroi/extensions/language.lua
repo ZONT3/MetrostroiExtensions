@@ -13,7 +13,7 @@
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-local LanguageIDC = MEL.Constants.LanguageID
+local LanguageIDC = include("metrostroi/extensions/constants/language_id.lua")
 local function handle_buttons(id_parts, id, phrase, ent_tables, ent_class)
     local name = id_parts[LanguageIDC.Buttons.NAME]
     -- check if buttonmap is existent in base SENT
@@ -34,7 +34,7 @@ local function handle_buttons(id_parts, id, phrase, ent_tables, ent_class)
     end
 end
 
-local SpawnerC = MEL.Constants.Spawner
+local SpawnerC = include("metrostroi/extensions/constants/spawner.lua")
 local function handle_spawner(id_parts, id, phrase, ent_tables, ent_class)
     for _, ent_table in pairs(ent_tables) do
         if not ent_table.Spawner then return end
@@ -43,16 +43,32 @@ local function handle_spawner(id_parts, id, phrase, ent_tables, ent_class)
         local field_index = field_mapping.index
         local field = ent_table.Spawner[field_index]
         local field_value = id_parts[LanguageIDC.Spawner.VALUE]
-        if field_value == LanguageIDC.Spawner.VALUE_NAME then
-            field[SpawnerC.TRANSLATION] = phrase
-        elseif field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
-            if field_mapping.list_elements[field_value] then
-                field[SpawnerC.List.ELEMENTS][field_mapping.list_elements[field_value]] = phrase
-            elseif isnumber(tonumber(field_value)) then
-                local number_value = tonumber(field_value)
-                local elements = field[SpawnerC.List.ELEMENTS]
-                if number_value > #elements or number_value < 1 then return end
-                field[SpawnerC.List.ELEMENTS][tonumber(field_value)] = phrase
+        -- TODO: retrofitting new named ext spawner format. but looks ugly...
+        if field.Name then
+            if field_value == LanguageIDC.Spawner.VALUE_NAME then
+                field.Translation = phrase
+            elseif field.Type == SpawnerC.TYPE_LIST and istable(field.Elements) then
+                if field_mapping.list_elements[field_value] then
+                    field.Elements[field_mapping.list_elements[field_value]] = phrase
+                elseif isnumber(tonumber(field_value)) then
+                    local number_value = tonumber(field_value)
+                    local elements = field.Elements
+                    if number_value > #elements or number_value < 1 then return end
+                    field.Elements[tonumber(field_value)] = phrase
+                end
+            end
+        else
+            if field_value == LanguageIDC.Spawner.VALUE_NAME then
+                field[SpawnerC.TRANSLATION] = phrase
+            elseif field[SpawnerC.TYPE] == SpawnerC.TYPE_LIST and istable(field[SpawnerC.List.ELEMENTS]) then
+                if field_mapping.list_elements[field_value] then
+                    field[SpawnerC.List.ELEMENTS][field_mapping.list_elements[field_value]] = phrase
+                elseif isnumber(tonumber(field_value)) then
+                    local number_value = tonumber(field_value)
+                    local elements = field[SpawnerC.List.ELEMENTS]
+                    if number_value > #elements or number_value < 1 then return end
+                    field[SpawnerC.List.ELEMENTS][tonumber(field_value)] = phrase
+                end
             end
         end
     end

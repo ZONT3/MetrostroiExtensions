@@ -14,6 +14,7 @@
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 MEL.DefineRecipe("717_new", "gmod_subway_81-717_mvm")
 RECIPE.BackportPriority = 7
+local SpawnerC = include("metrostroi/extensions/constants/spawner.lua")
 function RECIPE:Inject(ent)
     -- Setup door positions
     local function GetDoorPosition(i, k)
@@ -1455,7 +1456,7 @@ function RECIPE:Inject(ent)
         end
     end
 
-    MEL.FindSpawnerField(ent, "SpawnMode")[MEL.Constants.Spawner.List.WAGON_CALLBACK] = function(wagon, val, rot, i, wagnum, rclk)
+    MEL.FindSpawnerField(ent, "SpawnMode")[SpawnerC.List.WAGON_CALLBACK] = function(wagon, val, rot, i, wagnum, rclk)
         if rclk then return end
         if wagon._SpawnerStarted ~= val then
             wagon.VB:TriggerInput("Set", val <= 2 and 1 or 0)

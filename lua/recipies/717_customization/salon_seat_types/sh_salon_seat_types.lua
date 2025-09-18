@@ -62,10 +62,11 @@ function RECIPE:InjectSpawner(entclass)
     -- 2. random is so hard-coded, that it would be more work for me to just overwrite their random, than damage done by that change
     -- 3. just use ext for your new seats lol, its just gonna save you A LOT of time
     MEL.AddSpawnerField(entclass, {
-        [1] = "SeatTypeCustom",
-        [2] = "Spawner.717.SeatType",
-        [3] = "List",
-        [4] = fields
+        Name = "SeatTypeCustom",
+        Section = "Interior",
+        Translation = "Spawner.717.SeatType",
+        Type = "List",
+        Elements = fields
     }, true)
 
     MEL.RemoveSpawnerField(entclass, "SeatType")

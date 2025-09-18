@@ -27,10 +27,11 @@ function RECIPE:InjectSpawner(entclass)
     end
 
     MEL.AddSpawnerField(entclass, {
-        [1] = "KvTypeCustom",
-        [2] = "Spawner.717.KvTypeCustom",
-        [3] = "List",
-        [4] = fields
+        Name = "KvTypeCustom",
+        Section = "Cabine",
+        Translation = "Spawner.717.KvTypeCustom",
+        Type = "Combobox",
+        Elements = fields
     }, true)
 end
 

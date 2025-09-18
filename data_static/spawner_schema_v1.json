@@ -1,0 +1,40 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github.com/MetrostroiExtensions/MetrostroiExtensions/data_static/spawner_schema.json",
+    "title": "Metrostroi Extensions spawner settings",
+    "description": "Spawner settings as json. Used in presets and just simple settings saving",
+    "type": "object",
+    "properties": {
+        "entityClass": {
+            "description": "Entity class that would be spawned (e.g. gmod_subway_81-717_mvm_custom)",
+            "type": "string"
+        },
+        "wagonCount": {
+            "description": "Amount of wagons that would be spawned. Although you can set this in preset, it's not recommened. Used in latest.json preset, which contains last selected settings for specific entityClass",
+            "type": "integer"
+        },
+        "options": {
+            "description": "Spawner options that would be used for spawning. If option specified here is absent on user's client it's just silently ignored",
+            "type": "object",
+            "additionalProperties": {
+                "anyOf": [
+                    {
+                        "description": "Used in list (combobox) type",
+                        "type": "integer"
+                    },
+                    {
+                        "description": "Used in slider type",
+                        "type": "number"
+                    },
+                    {
+                        "description": "Used in boolean (checkbox) type",
+                        "type": "boolean"
+                    }
+                ]
+            }
+        }
+    },
+    "required": [
+        "entityClass"
+    ]
+}

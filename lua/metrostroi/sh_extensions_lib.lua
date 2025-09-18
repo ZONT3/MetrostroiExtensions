@@ -19,7 +19,8 @@ local MEL_DEBUG_CONVAR = CreateConVar("metrostroi_ext_debug", 0, {FCVAR_ARCHIVE,
 MEL.IsDebug = function()
     return MEL_DEBUG_CONVAR:GetBool() -- helps with autoreload, but may introduce problems. Disable in production!
 end
-MEL.Debug = MEL.IsDebug()  -- DEPRECATED: Please use MEL.IsDebug function
+
+MEL.Debug = MEL.IsDebug() -- DEPRECATED: Please use MEL.IsDebug function
 MEL.BaseRecipies = {}
 MEL.Recipes = {}
 MEL.InjectStack = {}
@@ -39,57 +40,8 @@ MEL.FirstTimeInject = true -- temp global variable
 MEL.EntTables = {}
 MEL.MetrostroiClasses = {}
 MEL.TrainClasses = {}
--- constants
--- TODO: move this to another file
-MEL.Constants = {
-    Spawner = {
-        NAME = 1,
-        TRANSLATION = 2,
-        TYPE = 3,
-        TYPE_LIST = "List",
-        TYPE_SLIDER = "Slider",
-        TYPE_BOOLEAN = "Boolean",
-        List = {
-            ELEMENTS = 4,
-            DEFAULT_VALUE = 5,
-            WAGON_CALLBACK = 6,
-            CHANGE_CALLBACK = 7,
-        },
-        Slider = {
-            DECIMALS = 4,
-            MIN_VALUE = 5,
-            MAX_VALUE = 6,
-            DEFAULT = 7,
-            WAGON_CALLBACK = 8,
-        },
-        Boolean = {
-            DEFAULT = 4,
-            WAGON_CALLBACK = 5,
-            CHANGE_CALLBACK = 6,
-        }
-    },
-    LanguageID = {
-        Entity = {
-            CLASS = 2,
-            TYPE = 3,
-            PREFIX = "Entities.",
-        },
-        Spawner = {
-            NAME = 4,
-            VALUE = 5,
-            VALUE_NAME = "Name",
-        },
-        Buttons = {
-            NAME = 4,
-            ID = 5,
-        },
-        Weapons = {
-            PREFIX = "Weapons.",
-            CLASS = 2,
-            TYPE = 3,
-        }
-    }
-}
+
+local backportsNeeded = Metrostroi.Version <= 1537278077
 
 local LOG_PREFIX = "[MetrostroiExtensionsLib] "
 local WARNING_COLOR = Color(255, 255, 0)
@@ -477,6 +429,7 @@ local function injectFunction(key, tbl)
     end
 
     if string.StartsWith(key, "sys_") then return end
+    -- FIXME: can we actually reinject after injecting all functions? this would save a lot of iterations
     for ent, _ in pairs(Metrostroi.SpawnedTrains) do
         if ent:GetClass() ~= key then continue end
         -- reinject functions on already spawned wagons
@@ -548,7 +501,7 @@ local function inject(isBackports)
                 -- mark this call of inject as for entity (needed for InjectInto*Function)
                 MEL.InjectIntoSpawnedEnt = true
                 -- yup, this is slow
-                for ent, _ in pairs(Metrostroi.SpawnedTrains) do
+                for _, ent in ents.Iterator() do
                     if ent:GetClass() ~= entclass then continue end
                     recipe:Inject(ent, entclass)
                 end
@@ -602,7 +555,7 @@ discoverRecipies()
 -- injection logic
 hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()
     -- just for backports
-    if Metrostroi.Version <= 1537278077 then
+    if backportsNeeded then
         getEntTables()
         inject(true)
     end
@@ -626,6 +579,7 @@ if SERVER then
             end
             return
         end
+
         net.Start("MetrostroiExtDoReload")
         net.Broadcast()
         MEL.ApplyBackports()

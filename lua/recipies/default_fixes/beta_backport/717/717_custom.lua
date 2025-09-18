@@ -14,8 +14,10 @@
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 MEL.DefineRecipe("717_custom", "gmod_subway_81-717_mvm_custom")
 RECIPE.BackportPriority = 6
+
+local SpawnerC = include("metrostroi/extensions/constants/spawner.lua")
 function RECIPE:Inject(ent, ent_class)
-    MEL.FindSpawnerField(ent_class, "Scheme")[MEL.Constants.Spawner.List.ELEMENTS] = function()
+    MEL.FindSpawnerField(ent_class, "Scheme")[SpawnerC.List.ELEMENTS] = function()
         local Schemes = {}
         for k, v in pairs(Metrostroi.Skins["717_new_schemes"] or {}) do
             Schemes[k] = v.name or k
@@ -23,7 +25,7 @@ function RECIPE:Inject(ent, ent_class)
         return Schemes
     end
 
-    MEL.FindSpawnerField(ent_class, "Announcer")[MEL.Constants.Spawner.List.ELEMENTS] = function()
+    MEL.FindSpawnerField(ent_class, "Announcer")[SpawnerC.List.ELEMENTS] = function()
         local Announcer = {}
         for k, v in pairs(Metrostroi.AnnouncementsASNP or {}) do
             Announcer[k] = v.name or k
@@ -31,9 +33,9 @@ function RECIPE:Inject(ent, ent_class)
         return Announcer
     end
 
-    MEL.FindSpawnerField(ent_class, "MaskType")[MEL.Constants.Spawner.List.ELEMENTS] = {"2-2 (M)","2-2-2","2-2-2 (M)","1-4-1 (M)"}
+    MEL.FindSpawnerField(ent_class, "MaskType")[SpawnerC.List.ELEMENTS] = {"2-2 (M)","2-2-2","2-2-2 (M)","1-4-1 (M)"}
 
-    MEL.FindSpawnerField(ent, "SpawnMode")[MEL.Constants.Spawner.List.WAGON_CALLBACK] = function(wagon, val, rot, i, wagnum, rclk)
+    MEL.FindSpawnerField(ent, "SpawnMode")[SpawnerC.List.WAGON_CALLBACK] = function(wagon, val, rot, i, wagnum, rclk)
         if rclk then return end
         if wagon._SpawnerStarted ~= val then
             wagon.VB:TriggerInput("Set", val <= 2 and 1 or 0)
