@@ -12,12 +12,15 @@
 --
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 MEL.AnimateOverrides = {} -- table with Animate overrides
 -- (key: ent_class, value: (key: clientProp name, value: sequential table to unpack into animate (starting from min)))
 MEL.AnimateValueOverrides = {} -- table with Animate value overrides
 -- (key: ent_class, value: (key: clientProp name, value: function to get value))
 MEL.ShowHideOverrides = {} -- table with ShowHide value overrides
+-- (key: ent_class, value: (key: clientProp name, value: function to get value))
+MEL.SetLightPowerPowerOverrides = {} -- table with SetLightPower power value overrides
+-- (key: ent_class, value: (key: clientProp name, value: function to get value))
+MEL.SetLightPowerBrightnessOverrides = {} -- table with SetLightPower brightness value overrides
 -- (key: ent_class, value: (key: clientProp name, value: function to get value))
 MEL.DecoratorCache = {} -- table with cached values like angles and vectors for CachedDecorator
 -- (key: ent_class, value: (key: decorator name, (key: key, value: cached value)))
@@ -71,7 +74,6 @@ function MEL._OverrideAnimate(ent)
         if not min or not max or not speed then
             return
         end]]
-
         if MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)] and MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)][id] then
             local value_callback = MEL.AnimateValueOverrides[MEL.GetEntclass(wagon)][id]
             value = value_callback(wagon)
@@ -267,6 +269,8 @@ function MEL._OverrideSetLightPower(ent)
         if wagon.HiddenLamps and wagon.HiddenLamps[index] then return end
         local lightData = wagon.LightsOverride and wagon.LightsOverride[index] or wagon.Lights[index]
         if not lightData then return end
+        if MEL.SetLightPowerPowerOverrides[MEL.GetEntclass(wagon)] and MEL.SetLightPowerPowerOverrides[MEL.GetEntclass(wagon)][index] then power = MEL.SetLightPowerPowerOverrides[MEL.GetEntclass(wagon)][index](wagon) end
+        if MEL.SetLightPowerBrightnessOverrides[MEL.GetEntclass(wagon)] and MEL.SetLightPowerBrightnessOverrides[MEL.GetEntclass(wagon)][index] then brightness = MEL.SetLightPowerBrightnessOverrides[MEL.GetEntclass(wagon)][index](wagon) end
         brightness = brightness or 1
         if lightData[1] == "glow" or lightData[1] == "light" then
             if lightData.panel and not wagon.SpritesEnabled or lightData.aa and wagon.AAEnabled then return end
@@ -372,4 +376,18 @@ function MEL._OverrideSetLightPower(ent)
             wagon.GlowingLights[index] = light
         end
     end
+end
+
+-- ееее тавталогия
+-- оввериде сет лигхт повер повер
+function MEL.OverrideSetLightPowerPower(ent, index, value_callback)
+    local ent_class = MEL.GetEntclass(ent)
+    if not MEL.SetLightPowerPowerOverrides[ent_class] then MEL.SetLightPowerPowerOverrides[ent_class] = {} end
+    MEL.SetLightPowerPowerOverrides[ent_class][index] = value_callback
+end
+
+function MEL.OverrideSetLightPowerBrightness(ent, index, value_callback)
+    local ent_class = MEL.GetEntclass(ent)
+    if not MEL.SetLightPowerBrightnessOverrides[ent_class] then MEL.SetLightPowerBrightnessOverrides[ent_class] = {} end
+    MEL.SetLightPowerBrightnessOverrides[ent_class][index] = value_callback
 end

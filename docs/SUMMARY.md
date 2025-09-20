@@ -1,6 +1,7 @@
 * [Главная страница](index.md)
 * [Рецепты](recipe_basics.md)
 * [Клиентпропы](clientprops.md)
+* [Источники света](lights.md)
 * [Спавнер](spawner.md)
 * [Баттнмапы](buttonmaps.md)
 * [Инжекты в функции](function_inject.md)
