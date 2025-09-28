@@ -128,6 +128,24 @@ function MEL.GetButtonmapButtonMapping(ent_or_entclass, buttonmap_name, button_n
     return button_index
 end
 
+function MEL.BodygroupLookup(model)
+    local entity = ents.Create("prop_dynamic")
+    entity:SetModel(model)
+    local transformed = {}
+    local bodyGroups = entity:GetBodyGroups()
+    for bodyGroupId, bodyGroup in pairs(bodyGroups) do
+        transformed[bodyGroup.name] = {}
+        local bodyGroupData = transformed[bodyGroup.name]
+        -- we need -1 here cause SetBodygroup doesn't accomodate main model id
+        bodyGroupData.id = bodyGroupId - 1
+        for subModelId, subModel in pairs(bodyGroup.submodels) do
+            bodyGroupData[subModel] = subModelId
+        end
+    end
+    entity:Remove()
+    return transformed
+end
+
 local function populateSpawnerFieldMappings()
     for _, train_class in pairs(MEL.TrainClasses) do
         local ent_table = MEL.getEntTable(train_class)

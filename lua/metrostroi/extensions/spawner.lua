@@ -154,7 +154,7 @@ end
 
 function MEL.IsRandomField(ent_or_entclass, field_name)
     local ent_class = MEL.GetEntclass(ent_or_entclass)
-    return MEL.RandomFields[ent_class] and MEL.RandomFields[ent_class][field_name]
+    return MEL.RandomFields[ent_class] and MEL.RandomFields[ent_class][field_name] and true or false
 end
 
 function MEL.GetRealSpawnerValue(ent, field_name)
