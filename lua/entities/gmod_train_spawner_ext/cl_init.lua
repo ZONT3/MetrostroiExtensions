@@ -169,6 +169,7 @@ end
 
 local optionsRegistry = {}
 local function drawOptions(options)
+	optionsRegistry = {}
 	for _, option in pairs(options) do
 		createFunction = nil
 		if option.Name == "SpawnMode" then
@@ -238,7 +239,6 @@ local function entityTypeCallback(self, index, value)
 	if currentSettings.entityClass then saveLatestSettings() end
 	currentSettings.entityClass = self:GetOptionData(index)
 	panelRegistry.rootFrame:SetCookie("lastEntityType", currentSettings.entityClass)
-	print("setting", currentSettings.entityClass)
 	currentSettings.options = {}
 	-- try to load saved settings
 	local savedSettings = utils.preset.loadLatest(currentSettings.entityClass)
@@ -270,7 +270,7 @@ local function drawSidebar(frame)
 	panelRegistry.entityImage:SetImage("vgui/entities/gmod_subway_81-717_mvm")
 	-- PANEL Entity type chooser
 	local entityTypePanel = panel:Add(SidebarPanel)
-	entityTypePanel:SetText("Тип вагона")
+	entityTypePanel:SetText(Metrostroi.GetPhrase("Common.Spawner.Type"))
 	panelRegistry.entityTypeComboBox = vgui.Create("DComboBox", entityTypePanel)
 	panelRegistry.entityTypeComboBox:Dock(TOP)
 	panelRegistry.entityTypeComboBox:DockMargin(0, 10, 0, 0)
@@ -287,12 +287,12 @@ local function drawSidebar(frame)
 	panelRegistry.entityTypeComboBox.OnSelect = entityTypeCallback
 	-- PANEL Wagon count chooser
 	local wagonCountPanel = panel:Add(SidebarPanel)
-	wagonCountPanel:SetText("Количество вагонов")
+	wagonCountPanel:SetText(Metrostroi.GetPhrase("Spawner.WagNum"))
 	panelRegistry.wagonCount = vgui.Create("DNumSlider", wagonCountPanel)
 	panelRegistry.wagonCount:Dock(TOP)
 	panelRegistry.wagonCount:SetDecimals(0)
-	panelRegistry.wagonCount:SetMin(1)
-	panelRegistry.wagonCount:SetMax(8)
+	panelRegistry.wagonCount:SetMin(2)
+	panelRegistry.wagonCount:SetMax(MaxWagonsOnPlayer)
 	panelRegistry.wagonCount:SetValue(panelRegistry.rootFrame:GetCookie("wagonCount" , 2))
 	-- WARNING: HACKS AHEAD!
 	-- We don't need label here, cause we got it on top as wagonCountLabel. Can we reuse this label? probably.
@@ -308,7 +308,7 @@ local function drawSidebar(frame)
 
 	-- PANEL Spawn mode chooser
 	local spawnModePanel = panel:Add(SidebarPanel)
-	spawnModePanel:SetText("Состояние поезда")
+	spawnModePanel:SetText(Metrostroi.GetPhrase("Common.Spawner.SpawnMode"))
 	panelRegistry.spawnMode = vgui.Create("DComboBox", spawnModePanel)
 	panelRegistry.spawnMode:Dock(TOP)
 	panelRegistry.spawnMode:DockMargin(0, 10, 0, 0)
@@ -343,9 +343,6 @@ local function spawn()
 	settings.Train = panelRegistry.entityTypeComboBox:GetOptionData(panelRegistry.entityTypeComboBox:GetSelectedID())
 	settings.AutoCouple = true
 	settings.wagonCount = math.Round(panelRegistry.wagonCount:GetValue(), 0)
-	-- for name, panel in pairs(optionsRegistry) do
-	-- 	settings[name] = panel:GetValue()
-	-- end
 	net.Start("train_spawner_open_ext")
 	net.WriteTable(settings)
 	net.SendToServer()
@@ -363,7 +360,7 @@ local function drawActionbar(frame)
 	panel:SetHeight(utils.resizeHeight(40))
 	panel:DockMargin(utils.resizeWidth(10), 0, utils.resizeWidth(10), 0)
 	local closeButton = vgui.Create("DButton", panel)
-	closeButton:SetText("Закрыть")
+	closeButton:SetText(Metrostroi.GetPhrase("Spawner.Close"))
 	closeButton:Dock(LEFT)
 	closeButton:DockMargin(0, utils.resizeHeight(5), 0, utils.resizeHeight(5))
 	closeButton:SetWide(utils.resizeWidth(100))
@@ -375,7 +372,7 @@ local function drawActionbar(frame)
 	end
 
 	local spawnButton = vgui.Create("DButton", panel)
-	spawnButton:SetText("Создать состав")
+	spawnButton:SetText(Metrostroi.GetPhrase("Spawner.Spawn"))
 	spawnButton:Dock(RIGHT)
 	spawnButton:DockMargin(0, utils.resizeHeight(5), 0, utils.resizeHeight(5))
 	spawnButton:SetWide(utils.resizeWidth(150))
@@ -385,12 +382,12 @@ local function drawActionbar(frame)
 end
 
 local function draw(frame)
-	drawMenuBar(frame)
+	-- TODO: we don't need this right now, cause actionbar is not usable
+	-- drawMenuBar(frame)
 	drawActionbar(frame)
 	drawSidebar(frame)
 	drawMain(frame)
 	local entityTypeIndex = entityTypesIndexes[panelRegistry.rootFrame:GetCookie("lastEntityType")] or 1
-	print(entityTypeIndex, panelRegistry.rootFrame:GetCookie("lastEntityType"))
 	-- FIXME: if we call this in same tick, max amount of options that we can have would be limited to amount of options on first draw.. wtf
 	timer.Simple(0, function() panelRegistry.entityTypeComboBox:ChooseOptionID(entityTypeIndex) end)
 end
