@@ -197,6 +197,10 @@ local function drawOptions(options)
 	end
 end
 
+local function getSectionTranslation(sectionName)
+	return Metrostroi.GetPhrase(Format("Entities.%s.Spawner.Section.%s", currentSettings.entityClass, sectionName))
+end
+
 local function drawSubsections(subsections)
 	-- draw Default subsection first without section label
 	drawOptions(subsections.Default)
@@ -209,7 +213,7 @@ local function drawSubsections(subsections)
 		subsectionPanel:SetTall(utils.resizeHeight(30))
 		subsectionPanel:SetWide(utils.resizeWidth(200))
 		subsectionLabel = subsectionPanel:Add("DLabel")
-		subsectionLabel:SetText(sectionName)
+		subsectionLabel:SetText(getSectionTranslation(sectionName))
 		subsectionLabel:SetFont("Arial20Bold")
 		subsectionLabel:Dock(BOTTOM)
 		drawOptions(options)
@@ -228,7 +232,7 @@ local function drawSections(sections)
 		sectionPanel:SetTall(utils.resizeHeight(60))
 		sectionPanel:SetWide(utils.resizeWidth(200))
 		sectionLabel = sectionPanel:Add("DLabel")
-		sectionLabel:SetText(sectionName)
+		sectionLabel:SetText(getSectionTranslation(sectionName))
 		sectionLabel:SetFont("Arial30Bold")
 		sectionLabel:Dock(BOTTOM)
 		drawSubsections(subsections)
@@ -293,7 +297,7 @@ local function drawSidebar(frame)
 	panelRegistry.wagonCount:SetDecimals(0)
 	panelRegistry.wagonCount:SetMin(2)
 	panelRegistry.wagonCount:SetMax(MaxWagonsOnPlayer)
-	panelRegistry.wagonCount:SetValue(panelRegistry.rootFrame:GetCookie("wagonCount" , 2))
+	panelRegistry.wagonCount:SetValue(panelRegistry.rootFrame:GetCookie("wagonCount", 2))
 	-- WARNING: HACKS AHEAD!
 	-- We don't need label here, cause we got it on top as wagonCountLabel. Can we reuse this label? probably.
 	panelRegistry.wagonCount.Label:SetSize(0, 0)
@@ -301,7 +305,9 @@ local function drawSidebar(frame)
 	panelRegistry.wagonCount.TextArea:SetWide(utils.resizeWidth(16))
 	-- PerformLayout of DNumSlider resets size of Label again
 	-- https://github.com/Facepunch/garrysmod/blob/2303e61a5ea696dba22140cdda0549bb6a1a2487/garrysmod/lua/vgui/dnumslider.lua#L159
-	function panelRegistry.wagonCount.PerformLayout() end
+	function panelRegistry.wagonCount.PerformLayout()
+	end
+
 	function panelRegistry.wagonCount:OnValueChanged(value)
 		panelRegistry.rootFrame:SetCookie("wagonCount", math.Round(value, 0))
 	end

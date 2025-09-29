@@ -13,4 +13,7 @@ Entities.gmod_subway_81-717_mvm_custom.Spawner.SeatTypeCustom.Name = Salon seats
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SeatTypeCustom.Random = @[Common.Spawner.Random]
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SeatTypeCustom.Old = @[Common.Spawner.Old]
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SeatTypeCustom.New = @[Common.Spawner.New]
+
+# sections
+Entities.gmod_subway_81-717_mvm_custom.Spawner.Section.Interior = Interior
 ]]
