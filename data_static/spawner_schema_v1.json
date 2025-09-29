@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/MetrostroiExtensions/MetrostroiExtensions/data_static/spawner_schema.json",
+    "$id": "https://raw.githubusercontent.com/MetrostroiExtensions/MetrostroiExtensions/refs/heads/main/data_static/spawner_schema_v1.json",
     "title": "Metrostroi Extensions spawner settings",
     "description": "Spawner settings as json. Used in presets and just simple settings saving",
     "type": "object",

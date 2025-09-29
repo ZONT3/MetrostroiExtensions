@@ -1,6 +1,6 @@
 local utils = {preset = {}}
 
-local SCHEMA_PATH = "file:///E:/devserver/gmod/garrysmod/addons/MetrostroiExtensions/data_static/spawner_schema_v1.json"
+local SCHEMA_PATH = "https://raw.githubusercontent.com/MetrostroiExtensions/MetrostroiExtensions/refs/heads/main/data_static/spawner_schema_v1.json"
 local SPAWNER_FOLDER = "metrostroi_extensions/spawner"
 
 function utils.preset.export(settings)
