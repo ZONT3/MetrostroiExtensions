@@ -323,7 +323,7 @@ local function drawSidebar(frame)
 	panelRegistry.wagonCount = vgui.Create("DNumSlider", wagonCountPanel)
 	panelRegistry.wagonCount:Dock(TOP)
 	panelRegistry.wagonCount:SetDecimals(0)
-	panelRegistry.wagonCount:SetMin(2)
+	panelRegistry.wagonCount:SetMin(1)
 	panelRegistry.wagonCount:SetMax(MaxWagonsOnPlayer)
 	panelRegistry.wagonCount:SetValue(panelRegistry.rootFrame:GetCookie("wagonCount", 2))
 	-- WARNING: HACKS AHEAD!
