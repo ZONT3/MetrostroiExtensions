@@ -18,5 +18,6 @@ Entities.gmod_subway_81-717_mvm_custom.Spawner.SeatTypeCustom.New = @[Common.Spa
 Entities.gmod_subway_81-717_mvm_custom.Spawner.Section.Body = Кузов
 Entities.gmod_subway_81-717_mvm_custom.Spawner.Section.Cabine = Кабина
 Entities.gmod_subway_81-717_mvm_custom.Spawner.Section.Equipment = Оборудование
+Entities.gmod_subway_81-717_mvm_custom.Spawner.Section.Console = Пульт
 Entities.gmod_subway_81-717_mvm_custom.Spawner.Section.Interior = Салон
 ]]
