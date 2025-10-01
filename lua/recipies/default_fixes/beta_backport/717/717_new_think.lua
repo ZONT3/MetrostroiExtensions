@@ -204,29 +204,26 @@ function RECIPE:Inject(ent)
             wagon:ShowHideSmooth("Lamp_RTM2", dot5 and lamps_rtm or 0)
             wagon:SetLightPower("Lamp_RTM1", not dot5 and lamps_rtm > 0, lamps_rtm)
             wagon:SetLightPower("Lamp_RTM2", dot5 and lamps_rtm > 0, lamps_rtm)
-            if wagon.MaskType ~= mask then
-                wagon:ShowHide("mask22_mvm", mask == 1)
-                wagon:ShowHide("mask222_lvz", mask == 2)
-                wagon:ShowHide("mask222_mvm", mask == 3)
-                wagon:ShowHide("mask141_mvm", mask == 4)
-                wagon:ShowHideSmooth("Headlights222_1", 0)
-                wagon:ShowHideSmooth("Headlights222_2", 0)
-                wagon:ShowHideSmooth("Headlights141_1", 0)
-                wagon:ShowHideSmooth("Headlights141_2", 0)
-                wagon:ShowHideSmooth("Headlights22_1", 0)
-                wagon:ShowHideSmooth("Headlights22_2", 0)
-                -- впизду, все равно в эксте новые масочки
-                -- if mask == 4 then
-                --     wagon.LightsOverride[30][2] = Vector(465, -48, -23.5)
-                --     wagon.LightsOverride[31][2] = Vector(465, 48, -23.5)
-                --     wagon.LightsOverride[32][2] = Vector(465, 0, -23.5)
-                -- elseif mask < 4 then
-                --     wagon.LightsOverride[30][2] = Vector(465, -45, -23.5)
-                --     wagon.LightsOverride[31][2] = Vector(465, 45, -23.5)
-                --     wagon.LightsOverride[32][2] = Vector(465, 0, 52)
-                -- end
-                wagon.MaskType = mask
-            end
+            wagon:ShowHide("mask22_mvm", mask == 1)
+            wagon:ShowHide("mask222_lvz", mask == 2)
+            wagon:ShowHide("mask222_mvm", mask == 3)
+            wagon:ShowHide("mask141_mvm", mask == 4)
+            wagon:ShowHideSmooth("Headlights222_1", 0)
+            wagon:ShowHideSmooth("Headlights222_2", 0)
+            wagon:ShowHideSmooth("Headlights141_1", 0)
+            wagon:ShowHideSmooth("Headlights141_2", 0)
+            wagon:ShowHideSmooth("Headlights22_1", 0)
+            wagon:ShowHideSmooth("Headlights22_2", 0)
+            -- впизду, все равно в эксте новые масочки
+            -- if mask == 4 then
+            --     wagon.LightsOverride[30][2] = Vector(465, -48, -23.5)
+            --     wagon.LightsOverride[31][2] = Vector(465, 48, -23.5)
+            --     wagon.LightsOverride[32][2] = Vector(465, 0, -23.5)
+            -- elseif mask < 4 then
+            --     wagon.LightsOverride[30][2] = Vector(465, -45, -23.5)
+            --     wagon.LightsOverride[31][2] = Vector(465, 45, -23.5)
+            --     wagon.LightsOverride[32][2] = Vector(465, 0, 52)
+            -- end
 
             --wagon:ShowHide("mask141_lvz",mask and lvz)
             wagon:ShowHide("1:KVTSet", not lvz)
