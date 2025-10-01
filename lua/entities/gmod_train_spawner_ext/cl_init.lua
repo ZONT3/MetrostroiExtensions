@@ -2,8 +2,10 @@ include("shared.lua")
 local utils = include("utils.lua")
 local SidebarPanel = include("elements/sidebar_panel.lua")
 local ListOption = include("elements/list_option.lua")
+local CheckboxOption = include("elements/checkbox_option.lua")
+local SliderOption = include("elements/slider_option.lua")
 -- used then there is no spawnmenu image for entity
-local BACKUP_TRAIN_IMAGE = "vgui/entities/gmod_train_spawner"
+local BACKUP_TRAIN_IMAGE = "vgui/entities/gmod_subway_none"
 local DEFAULT_WIDTH = utils.resizeWidth(655)
 local DEFAULT_HEIGHT = utils.resizeHeight(700)
 local currentSettings = {
@@ -114,8 +116,11 @@ local function getEntityTypes()
 	end
 end
 
-local function updateSettingsDecorator(name)
-	return function(self, index, value, data) currentSettings.options[name] = data end
+local function updateListSettingsDecorator(name, callback)
+	return function(self, index, value, data)
+		if callback then callback(self, panelRegistry) end
+		currentSettings.options[name] = data
+	end
 end
 
 local function createList(option)
@@ -123,7 +128,7 @@ local function createList(option)
 	if isfunction(elements) then elements = elements() end
 	if #elements == 0 then return end
 	local setting = panelRegistry.layout:Add(ListOption)
-	setting.ComboBox.OnSelect = updateSettingsDecorator(option.Name)
+	setting.ComboBox.OnSelect = updateListSettingsDecorator(option.Name, option.ChangeCallback)
 	setting:SetText(option.Translation)
 	for i, value in pairs(elements) do
 		setting:AddChoice(value, i)
@@ -133,18 +138,35 @@ local function createList(option)
 	return setting
 end
 
+local function updateCheckboxSettingsDecorator(name)
+	return function(self, value) currentSettings.options[name] = value end
+end
+
 local function createCheckbox(option)
-	local panel = panelRegistry.layout:Add("DPanel")
-	panel:SetSize(200, 50)
-	panel:SetPaintBackground(false)
-	local entityTypeLabel = vgui.Create("DLabel", panel)
-	entityTypeLabel:Dock(TOP)
-	entityTypeLabel:SetText(option.Translation)
-	local list_element = vgui.Create("DCheckBox", panel)
-	list_element:SetSize(15, 15)
-	list_element:SetPos(0, 25)
-	-- list_element:Dock(TOP)
-	return panel
+	local setting = panelRegistry.layout:Add(CheckboxOption)
+	setting:SetText(option.Translation)
+	setting.CheckBox.OnChange = updateCheckboxSettingsDecorator(option.Name)
+	setting:SetValue(currentSettings.options[option.Name] or option.Default or false)
+	return setting
+end
+
+local function updateSliderSettingsDecorator(name, callback)
+	return function(self, value)
+		if callback then callback(self, panelRegistry) end
+		currentSettings.options[name] = value
+	end
+end
+
+local function createSlider(option)
+	local setting = panelRegistry.layout:Add(SliderOption)
+	setting:SetText(option.Translation)
+	setting:SetDecimals(option.Decimals)
+	setting:SetMin(option.Min)
+	setting:SetMax(option.Max)
+	setting.Slider.OnValueChanged = updateSliderSettingsDecorator(option.Name, option.ChangeCallback)
+	if option.Default then setting:SetDefaultValue(option.Default) end
+	setting:SetValue(currentSettings.options[option.Name] or option.Default or 1)
+	return setting
 end
 
 local function aggregateBySection(spawner)
@@ -170,6 +192,10 @@ end
 local optionsRegistry = {}
 local function drawOptions(options)
 	optionsRegistry = {}
+	if not options then
+		-- TODO: why?
+		return
+	end
 	for _, option in pairs(options) do
 		createFunction = nil
 		if option.Name == "SpawnMode" then
@@ -179,14 +205,16 @@ local function drawOptions(options)
 			end
 
 			panelRegistry.spawnMode:ChooseOptionID(currentSettings.options[option.Name] or option.Default or 1)
-			panelRegistry.spawnMode.OnSelect = updateSettingsDecorator(option.Name)
+			panelRegistry.spawnMode.OnSelect = updateListSettingsDecorator(option.Name)
 			continue
 		end
 
 		if option.Type == "List" then
 			createFunction = createList
-		elseif elementType == "Boolean" then
+		elseif option.Type == "Boolean" then
 			createFunction = createCheckbox
+		elseif option.Type == "Slider" then
+			createFunction = createSlider
 		else
 			continue
 		end
@@ -345,6 +373,7 @@ local function drawMain(frame)
 end
 
 local function spawn()
+	saveLatestSettings()
 	local settings = table.Copy(currentSettings)
 	settings.Train = panelRegistry.entityTypeComboBox:GetOptionData(panelRegistry.entityTypeComboBox:GetSelectedID())
 	settings.AutoCouple = true
