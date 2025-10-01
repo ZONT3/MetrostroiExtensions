@@ -1,4 +1,4 @@
-local utils = include("../utils.lua")
+local utils = include("entities/gmod_train_spawner_ext/utils.lua")
 PANEL = {}
 function PANEL:Init()
     self:Dock(TOP)
