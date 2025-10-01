@@ -1,3 +1,23 @@
+## 0.10.0 (2025-10-01)
+
+### Feat
+
+- add translation for console section
+- support slider and option in new spawner
+- **spawner**: add support for translation of sections and subsections
+- **spawner**: i18n support
+- new BodygroupLookup
+- new Override functions for SetLightPower
+- basics of new spawner
+
+### Fix
+
+- **spawner**: allow spawn of single wagon
+- **backports**: mask update
+- use right path to schema
+- RemoveSpawnerField
+- use ext function for getting ent table
+
 ## 0.9.2 (2025-02-16)
 
 ### Fix
