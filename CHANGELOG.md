@@ -1,3 +1,9 @@
+## 0.10.1 (2025-10-01)
+
+### Fix
+
+- **spawner**: use relative path in include
+
 ## 0.10.0 (2025-10-01)
 
 ### Feat
