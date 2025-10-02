@@ -1,3 +1,9 @@
+## 0.10.2 (2025-10-02)
+
+### Fix
+
+- **spawner**: many small and needed fixes
+
 ## 0.10.1 (2025-10-01)
 
 ### Fix
