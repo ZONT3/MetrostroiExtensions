@@ -12,7 +12,11 @@
 --
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
-if SERVER then AddCSLuaFile() end
+if SERVER then
+    AddCSLuaFile()
+    AddCSLuaFile("metrostroi/extensions/constants/language_id.lua")
+    AddCSLuaFile("metrostroi/extensions/constants/spawner.lua")
+end
 if not MetrostroiExtensionsLib then MetrostroiExtensionsLib = {} end
 MEL = MetrostroiExtensionsLib -- alias. 23 symbols vs 3. and we name it MetrostroiExtensionLib because there is fly's old Metrostroi Extensions.
 local MEL_DEBUG_CONVAR = CreateConVar("metrostroi_ext_debug", 0, {FCVAR_ARCHIVE, FCVAR_REPLICATED,}, "Metrostroi Extensions Debug mode status. See https://metrostroiextensions.github.io/MetrostroiExtensions/recipe_basics/#debug- for more info.", 0, 1)

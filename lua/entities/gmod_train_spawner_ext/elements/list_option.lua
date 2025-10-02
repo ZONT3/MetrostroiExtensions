@@ -1,7 +1,8 @@
 PANEL = {}
 
 function PANEL:Init()
-	self.DefaultIndex = 1
+	self.OptionByData = {}
+	self.FirstId = nil
 	self:SetSize(200, 50)
 	self:SetPaintBackground(false)
 	self.Label = vgui.Create("DLabel", self)
@@ -18,13 +19,15 @@ function PANEL:SetText(text)
 	self:SetTooltipDelay(1)
 end
 
-function PANEL:ChooseID(index)
+function PANEL:SetValue(data)
 	-- Set and select default value
-	self.ComboBox:ChooseOptionID(index)
+	if self.OptionByData[data] then
+		self.ComboBox:ChooseOptionID(self.OptionByData[data])
+	end
 end
 
 function PANEL:AddChoice(value, data)
-	self.ComboBox:AddChoice(value, data)
+	self.OptionByData[data] = self.ComboBox:AddChoice(value, data)
 end
 
 return vgui.Register("ExtSpawnerListOption", PANEL, "DPanel")

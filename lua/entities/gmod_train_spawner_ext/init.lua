@@ -1,5 +1,10 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
+AddCSLuaFile("utils.lua")
+AddCSLuaFile("elements/checkbox_option.lua")
+AddCSLuaFile("elements/list_option.lua")
+AddCSLuaFile("elements/slider_option.lua")
+AddCSLuaFile("elements/sidebar_panel.lua")
 include("shared.lua")
 
 util.AddNetworkString "MetrostroiTrainSpawner"

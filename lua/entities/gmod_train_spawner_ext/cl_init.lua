@@ -15,6 +15,7 @@ local currentSettings = {
 local panelRegistry = {}
 local entityTypes = {}
 local entityTypesIndexes = {}
+
 surface.CreateFont("Arial15Bold", {
 	font = "Arial",
 	extended = true,
@@ -116,9 +117,12 @@ local function getEntityTypes()
 	end
 end
 
+local optionsRegistry = {}
+local isAllDraw = false
+
 local function updateListSettingsDecorator(name, callback)
 	return function(self, index, value, data)
-		if callback then callback(self, panelRegistry) end
+		if isAllDraw and callback then callback(self, optionsRegistry) end
 		currentSettings.options[name] = data
 	end
 end
@@ -126,15 +130,14 @@ end
 local function createList(option)
 	local elements = option.Elements
 	if isfunction(elements) then elements = elements() end
-	if #elements == 0 then return end
 	local setting = panelRegistry.layout:Add(ListOption)
 	setting.ComboBox.OnSelect = updateListSettingsDecorator(option.Name, option.ChangeCallback)
 	setting:SetText(option.Translation)
 	for i, value in pairs(elements) do
+		if not setting.FirstId then setting.FirstId = i end
 		setting:AddChoice(value, i)
 	end
 
-	setting:ChooseID(currentSettings.options[option.Name] or option.Default or 1)
 	return setting
 end
 
@@ -146,13 +149,12 @@ local function createCheckbox(option)
 	local setting = panelRegistry.layout:Add(CheckboxOption)
 	setting:SetText(option.Translation)
 	setting.CheckBox.OnChange = updateCheckboxSettingsDecorator(option.Name)
-	setting:SetValue(currentSettings.options[option.Name] or option.Default or false)
 	return setting
 end
 
 local function updateSliderSettingsDecorator(name, callback)
 	return function(self, value)
-		if callback then callback(self, panelRegistry) end
+		if isAllDraw and callback then callback(self, optionsRegistry) end
 		currentSettings.options[name] = value
 	end
 end
@@ -165,7 +167,6 @@ local function createSlider(option)
 	setting:SetMax(option.Max)
 	setting.Slider.OnValueChanged = updateSliderSettingsDecorator(option.Name, option.ChangeCallback)
 	if option.Default then setting:SetDefaultValue(option.Default) end
-	setting:SetValue(currentSettings.options[option.Name] or option.Default or 1)
 	return setting
 end
 
@@ -189,17 +190,22 @@ local function aggregateBySection(spawner)
 	return bySection
 end
 
-local optionsRegistry = {}
 local function drawOptions(options)
+	isAllDraw = false
 	optionsRegistry = {}
 	if not options then
 		-- TODO: why?
 		return
 	end
+	-- First pass: create and not call any callbacks
 	for _, option in pairs(options) do
 		createFunction = nil
 		if option.Name == "SpawnMode" then
 			-- special case for spawnMode combobox
+			-- without this Metrostroi Advanced would break everything
+			panelRegistry.spawnMode:Clear()
+			-- just in case
+			optionsRegistry.SpawnMode = panelRegistry.spawnMode
 			for i, value in pairs(option.Elements) do
 				panelRegistry.spawnMode:AddChoice(value, i)
 			end
@@ -222,6 +228,18 @@ local function drawOptions(options)
 		local panel = createFunction(option)
 		if not panel then continue end
 		optionsRegistry[option.Name] = panel
+	end
+	isAllDraw = true
+	-- Second pass: create and call all of callbacks, select values and of that shit
+	for _, option in pairs(options) do
+		-- FIXME: empty options? HOW???
+		if not option.Name then continue end
+		if option.Name == "SpawnMode" then continue end
+		setting = optionsRegistry[option.Name]
+		if options.ChangeCallback then
+			options.ChangeCallback(setting, optionsRegistry)
+		end
+		setting:SetValue(currentSettings.options[option.Name] or option.Default or setting.FirstId or 1)
 	end
 end
 
@@ -378,6 +396,8 @@ local function spawn()
 	settings.Train = panelRegistry.entityTypeComboBox:GetOptionData(panelRegistry.entityTypeComboBox:GetSelectedID())
 	settings.AutoCouple = true
 	settings.wagonCount = math.Round(panelRegistry.wagonCount:GetValue(), 0)
+	-- needed for Metrostroi Advanced
+	settings.WagNum = settings.wagonCount
 	net.Start("train_spawner_open_ext")
 	net.WriteTable(settings)
 	net.SendToServer()
