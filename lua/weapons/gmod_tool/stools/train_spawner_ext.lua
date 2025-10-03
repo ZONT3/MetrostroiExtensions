@@ -197,6 +197,15 @@ function TOOL:SpawnWagon(trace)
         FIXFIXFIX[i]:Spawn()
     end
 
+    -- Many trains (mostly E-derived types) don't know about 'options' field, they expect all settings in-place
+    -- We also leave 'options' field in new table for possible 'forward'-compatibility
+    local settingsFlatten = table.Copy(self.Settings)
+    for k, v in pairs(self.Settings.options) do
+        if not settingsFlatten[k] then
+            settingsFlatten[k] = v
+        end
+    end
+
     local LastRot, LastEnt = false
     local trains = {}
     for i = 1, self.Settings.wagonCount do
@@ -204,7 +213,7 @@ function TOOL:SpawnWagon(trace)
         local ent
         if i == 1 then
             if spawnfunc then
-                ent = self.Train:SpawnFunction(ply, trace, spawnfunc(i, self.Settings, self.Train), self:GetOwner():GetNW2Bool("metrostroi_train_spawner_rev"), UpdateWagPos)
+                ent = self.Train:SpawnFunction(ply, trace, spawnfunc(i, settingsFlatten, self.Train), self:GetOwner():GetNW2Bool("metrostroi_train_spawner_rev"), UpdateWagPos)
             else
                 ent = self.Train:SpawnFunction(ply, trace, self.Train.Spawner.head or self.Train.ClassName, self:GetOwner():GetNW2Bool("metrostroi_train_spawner_rev"), UpdateWagPos)
             end
@@ -225,7 +234,7 @@ function TOOL:SpawnWagon(trace)
         if i > 1 then
             local rot = i == self.Settings.wagonCount or math.random() > 0.5 -- Rotate last wagon or rotate it randomly
             if spawnfunc then
-                ent = ents.Create(spawnfunc(i, self.Settings, self.Train))
+                ent = ents.Create(spawnfunc(i, settingsFlatten, self.Train))
             else
                 ent = ents.Create(i ~= self.Settings.wagonCount and self.Train.Spawner.interim or self.Train.Spawner.head or self.Train.ClassName)
             end

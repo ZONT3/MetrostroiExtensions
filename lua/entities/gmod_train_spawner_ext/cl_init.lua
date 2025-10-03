@@ -117,12 +117,13 @@ local function getEntityTypes()
 	end
 end
 
+local optionsPanelsRegistry = {}
 local optionsRegistry = {}
 local isAllDraw = false
 
 local function updateListSettingsDecorator(name, callback)
 	return function(self, index, value, data)
-		if isAllDraw and callback then callback(self, optionsRegistry) end
+		if isAllDraw and callback then callback(self, optionsPanelsRegistry) end
 		currentSettings.options[name] = data
 	end
 end
@@ -130,6 +131,8 @@ end
 local function createList(option)
 	local elements = option.Elements
 	if isfunction(elements) then elements = elements() end
+	-- Don't create empty or invalid list since it can break something
+	if not istable(elements) or #elements == 0 and table.Count(elements) == 0 then return end
 	local setting = panelRegistry.layout:Add(ListOption)
 	setting.ComboBox.OnSelect = updateListSettingsDecorator(option.Name, option.ChangeCallback)
 	setting:SetText(option.Translation)
@@ -154,7 +157,7 @@ end
 
 local function updateSliderSettingsDecorator(name, callback)
 	return function(self, value)
-		if isAllDraw and callback then callback(self, optionsRegistry) end
+		if isAllDraw and callback then callback(self, optionsPanelsRegistry) end
 		currentSettings.options[name] = value
 	end
 end
@@ -191,8 +194,6 @@ local function aggregateBySection(spawner)
 end
 
 local function drawOptions(options)
-	isAllDraw = false
-	optionsRegistry = {}
 	if not options then
 		-- TODO: why?
 		return
@@ -205,7 +206,7 @@ local function drawOptions(options)
 			-- without this Metrostroi Advanced would break everything
 			panelRegistry.spawnMode:Clear()
 			-- just in case
-			optionsRegistry.SpawnMode = panelRegistry.spawnMode
+			optionsPanelsRegistry.SpawnMode = panelRegistry.spawnMode
 			for i, value in pairs(option.Elements) do
 				panelRegistry.spawnMode:AddChoice(value, i)
 			end
@@ -227,19 +228,8 @@ local function drawOptions(options)
 
 		local panel = createFunction(option)
 		if not panel then continue end
-		optionsRegistry[option.Name] = panel
-	end
-	isAllDraw = true
-	-- Second pass: create and call all of callbacks, select values and of that shit
-	for _, option in pairs(options) do
-		-- FIXME: empty options? HOW???
-		if not option.Name then continue end
-		if option.Name == "SpawnMode" then continue end
-		setting = optionsRegistry[option.Name]
-		if options.ChangeCallback then
-			options.ChangeCallback(setting, optionsRegistry)
-		end
-		setting:SetValue(currentSettings.options[option.Name] or option.Default or setting.FirstId or 1)
+		optionsPanelsRegistry[option.Name] = panel
+		optionsRegistry[option.Name] = option
 	end
 end
 
@@ -267,6 +257,10 @@ local function drawSubsections(subsections)
 end
 
 local function drawSections(sections)
+	isAllDraw = false
+	optionsPanelsRegistry = {}
+	optionsRegistry = {}
+
 	-- draw Default section first without section label
 	drawSubsections(sections.Default)
 	sections.Default = nil
@@ -282,6 +276,24 @@ local function drawSections(sections)
 		sectionLabel:SetFont("Arial30Bold")
 		sectionLabel:Dock(BOTTOM)
 		drawSubsections(subsections)
+	end
+
+	-- Some trains rely on this (e.g. Ezh3 RU1)
+	optionsPanelsRegistry.WagNum = panelRegistry.wagonCount
+
+	isAllDraw = true
+	-- Second pass: create and call all of callbacks, select values and of that shit
+	for name, setting in pairs(optionsPanelsRegistry) do
+		if name == "SpawnMode" or name == "WagNum" then continue end
+		local option = optionsRegistry[name]
+		if not setting or not option then continue end
+
+		if option.ChangeCallback then
+			option.ChangeCallback(setting.ComboBox or setting.Slider or setting.CheckBox, optionsPanelsRegistry)
+		end
+		-- FIXME: Dynamically created options (e.g. Attach508t on RU1) are not saving their value
+		-- Possibly because they populate their list after that invocation below
+		setting:SetValue(currentSettings.options[name] or option.Default or setting.FirstId or 1)
 	end
 end
 
@@ -355,7 +367,9 @@ local function drawSidebar(frame)
 	end
 
 	function panelRegistry.wagonCount:OnValueChanged(value)
-		panelRegistry.rootFrame:SetCookie("wagonCount", math.Round(value, 0))
+		value = math.Round(value, 0)
+		panelRegistry.rootFrame:SetCookie("wagonCount", value)
+		self:SetValue(value)
 	end
 
 	-- PANEL Spawn mode chooser

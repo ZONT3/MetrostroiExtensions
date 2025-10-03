@@ -23,6 +23,11 @@ function PANEL:SetValue(data)
 	-- Set and select default value
 	if self.OptionByData[data] then
 		self.ComboBox:ChooseOptionID(self.OptionByData[data])
+	else
+		-- Some trains dynamically change the list contents
+		-- This often depends on skin registry, or wagon count (Ezh3 RU1 with older wagons coupled)
+		-- So we want to set something here, if the saved option was not found
+		self.ComboBox:ChooseOptionID(1)
 	end
 end
 
