@@ -130,6 +130,8 @@ end
 local function createList(option)
 	local elements = option.Elements
 	if isfunction(elements) then elements = elements() end
+	-- Don't create empty or invalid list since it can break something
+	if not istable(elements) or #elements == 0 and table.Count(elements) == 0 then return end
 	local setting = panelRegistry.layout:Add(ListOption)
 	setting.ComboBox.OnSelect = updateListSettingsDecorator(option.Name, option.ChangeCallback)
 	setting:SetText(option.Translation)
@@ -229,6 +231,10 @@ local function drawOptions(options)
 		if not panel then continue end
 		optionsRegistry[option.Name] = panel
 	end
+
+	-- Some trains rely on this (e.g. Ezh3 RU1)
+	optionsRegistry.WagNum = panelRegistry.wagonCount
+
 	isAllDraw = true
 	-- Second pass: create and call all of callbacks, select values and of that shit
 	for _, option in pairs(options) do
@@ -236,9 +242,12 @@ local function drawOptions(options)
 		if not option.Name then continue end
 		if option.Name == "SpawnMode" then continue end
 		setting = optionsRegistry[option.Name]
+		if not setting then continue end
 		if options.ChangeCallback then
 			options.ChangeCallback(setting, optionsRegistry)
 		end
+		-- FIXME: Dynamically created options (e.g. Attach508t on RU1) are not saving their value
+		-- Possibly because they populate their list after that invocation below
 		setting:SetValue(currentSettings.options[option.Name] or option.Default or setting.FirstId or 1)
 	end
 end
