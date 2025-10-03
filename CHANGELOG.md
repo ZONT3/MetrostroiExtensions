@@ -1,3 +1,9 @@
+## 0.10.3 (2025-10-03)
+
+### Fix
+
+- boolean values in preset system
+
 ## 0.10.2 (2025-10-02)
 
 ### Fix
