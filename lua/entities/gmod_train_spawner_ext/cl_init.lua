@@ -293,7 +293,18 @@ local function drawSections(sections)
 		end
 		-- FIXME: Dynamically created options (e.g. Attach508t on RU1) are not saving their value
 		-- Possibly because they populate their list after that invocation below
-		setting:SetValue(currentSettings.options[name] or option.Default or setting.FirstId or 1)
+		local defaultValue = nil
+		-- remember that we can deal with boolean values. so if we can't really use one-liner here
+		if currentSettings.options[name] ~= nil then
+			defaultValue = currentSettings.options[name]
+		elseif option.Default ~= nil then
+			defaultValue = option.Default
+		elseif setting.FirstId then
+			defaultValue = setting.FirstId
+		else
+			defaultValue = 1
+		end
+setting:SetValue(defaultValue)
 	end
 end
 
